@@ -1,6 +1,6 @@
 /*
  *  my_getopt.c - my re-implementation of getopt.
- *  Copyright 1997, 2000, 2001, 2002, 2006, Benjamin Sittler
+ *  Copyright 1997, 2000, 2001, 2002, 2006, 2008, Benjamin C. Wiley Sittler
  *
  *  Permission is hereby granted, free of charge, to any person
  *  obtaining a copy of this software and associated documentation
@@ -23,22 +23,23 @@
  *  DEALINGS IN THE SOFTWARE.
  */
 
+#ifdef macintosh
+#include <types.h>
+#else
 #include <sys/types.h>
+#endif
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include "my_getopt.h"
 
-int my_optind=1, my_opterr=1, my_optopt=0;
+int my_optind=1, my_opterr=1, my_optopt=0, my_optreset=0;
 char *my_optarg=0;
 
 /* reset argument parser to start-up values */
 int my_getopt_reset(void)
 {
-    my_optind = 1;
-    my_opterr = 1;
-    my_optopt = 0;
-    my_optarg = 0;
+    my_optreset = 1;
     return 0;
 }
 
@@ -53,6 +54,14 @@ int my_getopt(int argc, char * argv[], const char *opts)
   char mode, colon_mode;
   int off = 0, opt = -1;
 
+  if (my_optreset)
+  {
+    my_optind = 1;
+    my_opterr = 1;
+    my_optopt = 0;
+    my_optarg = 0;
+    my_optreset = 0;
+  }
   if(getenv("POSIXLY_CORRECT")) colon_mode = mode = '+';
   else {
     if((colon_mode = *opts) == ':') off ++;
@@ -149,6 +158,14 @@ int _my_getopt_internal(int argc, char * argv[], const char *shortopts,
   char mode, colon_mode = *shortopts;
   int shortoff = 0, opt = -1;
 
+  if (my_optreset)
+  {
+    my_optind = 1;
+    my_opterr = 1;
+    my_optopt = 0;
+    my_optarg = 0;
+    my_optreset = 0;
+  }
   if(getenv("POSIXLY_CORRECT")) colon_mode = mode = '+';
   else {
     if((colon_mode = *shortopts) == ':') shortoff ++;

@@ -1,6 +1,6 @@
 /*
  *  my_getopt.h - interface to my re-implementation of getopt.
- *  Copyright 1997, 2000, 2001, 2002, 2006, Benjamin Sittler
+ *  Copyright 1997, 2000, 2001, 2002, 2006, 2008, Benjamin C. Wiley Sittler
  *
  *  Permission is hereby granted, free of charge, to any person
  *  obtaining a copy of this software and associated documentation
@@ -36,7 +36,7 @@ extern int my_getopt_reset(void);
 /* UNIX-style short-argument parser */
 extern int my_getopt(int argc, char * argv[], const char *opts);
 
-extern int my_optind, my_opterr, my_optopt;
+extern int my_optind, my_opterr, my_optopt, my_optreset;
 extern char *my_optarg;
 
 struct option {

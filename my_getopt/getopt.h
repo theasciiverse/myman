@@ -1,6 +1,6 @@
 /*
  *  getopt.h - cpp wrapper for my_getopt to make it look like getopt.
- *  Copyright 1997, 2000, 2001, 2002, Benjamin Sittler
+ *  Copyright 1997, 2000, 2001, 2002, 2008, Benjamin C. Wiley Sittler
  *
  *  Permission is hereby granted, free of charge, to any person
  *  obtaining a copy of this software and associated documentation
@@ -48,6 +48,8 @@ extern "C" {
 #define optopt my_optopt
 #undef optarg
 #define optarg my_optarg
+#undef optreset
+#define optreset my_optreset
 
 #ifdef __cplusplus
 }

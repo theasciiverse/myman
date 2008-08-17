@@ -32,8 +32,10 @@ static int locale_is_utf8(void) { return 0; }
 #endif
 #ifdef BUILDING_MYCURSES
 #define RAWCURSES_GLOBAL(dfn, init) dfn init
+#define RAWCURSES_GLOBAL0(dfn) dfn
 #else
 #define RAWCURSES_GLOBAL(dfn, init) extern dfn
+#define RAWCURSES_GLOBAL0(dfn) extern dfn
 #endif
 #define OPTCURSES_GLOBAL RAWCURSES_GLOBAL
 #include "rawcurs.h"

@@ -51,11 +51,14 @@ CURSESINCLUDE=
 CURSOPTS=
 
 # getopt library
-MY_GETOPTDIR=my_getopt
-MY_GETOPTCPPFLAGS=-DMY_GETOPT_H=\"getopt.h\"
-MY_GETOPTLIBS=$(MY_GETOPTDIR)/my_getopt.c
+MYGETOPTDIR=mygetopt
+MYGETOPTCPPFLAGS=-DMYGETOPT_H=\"getopt.h\"
+MYGETOPTLIBS=$(MYGETOPTDIR)/mygetopt.c
 
-CINCLUDES=-Iinc -I$(MY_GETOPTDIR)
+# utility functions
+UTILSOBJS=src/utils.c
+
+CINCLUDES=-Iinc -I$(MYGETOPTDIR)
 
 all: hugeman bigman smallman squareman
 
@@ -70,8 +73,8 @@ clean:
 # "big" is the default size (large ASCII-art pictures)
 bigman=$(big) $(myman)
 
-bigman: src/myman.c
-	$(CC) $(CINCLUDES) $(CFLAGS) $(CURSOPTS) $(CURSESINCLUDE) $(MY_GETOPTCPPFLAGS) $(bigman) -o $@ $< $(CURSESLIBS) $(MY_GETOPTLIBS)
+bigman: src/myman.c $(UTILSOBJS)
+	$(CC) $(CINCLUDES) $(CFLAGS) $(CURSOPTS) $(CURSESINCLUDE) $(MYGETOPTCPPFLAGS) $(bigman) -o$@ $< $(CURSESLIBS) $(MYGETOPTLIBS) $(UTILSOBJS)
 
 # "huge" is the largest size (huge ASCII-art pictures)
 TILEFILE_huge=chr5x3.txt
@@ -81,8 +84,8 @@ hugesprites=-DSPRITEFILE=\"spr/$(SPRITEFILE_huge)\"
 huge=-DMYMANSIZE=\"huge\" $(hugetiles) $(hugesprites)
 hugeman=$(huge) $(myman)
 
-hugeman: src/myman.c
-	$(CC) $(CINCLUDES) $(CFLAGS) $(CURSOPTS) $(CURSESINCLUDE) $(MY_GETOPTCPPFLAGS) $(hugeman) -o $@ $< $(CURSESLIBS) $(MY_GETOPTLIBS)
+hugeman: src/myman.c $(UTILSOBJS)
+	$(CC) $(CINCLUDES) $(CFLAGS) $(CURSOPTS) $(CURSESINCLUDE) $(MYGETOPTCPPFLAGS) $(hugeman) -o$@ $< $(CURSESLIBS) $(MYGETOPTLIBS) $(UTILSOBJS)
 
 # "small" uses a pair of character-cells to represent each tile and sprite
 TILEFILE_small=khr2h.txt
@@ -92,8 +95,8 @@ smallsprites=-DSPRITEFILE=\"spr/$(SPRITEFILE_small)\"
 small=-DMYMANSIZE=\"small\" $(smalltiles) $(smallsprites)
 smallman=$(small) $(myman)
 
-smallman: src/myman.c
-	$(CC) $(CINCLUDES) $(CFLAGS) $(CURSOPTS) $(CURSESINCLUDE) $(MY_GETOPTCPPFLAGS) $(smallman) -o $@ $< $(CURSESLIBS) $(MY_GETOPTLIBS)
+smallman: src/myman.c $(UTILSOBJS)
+	$(CC) $(CINCLUDES) $(CFLAGS) $(CURSOPTS) $(CURSESINCLUDE) $(MYGETOPTCPPFLAGS) $(smallman) -o$@ $< $(CURSESLIBS) $(MYGETOPTLIBS) $(UTILSOBJS)
 
 # "square" uses one character-cell to represent each tile and sprite
 TILEFILE_square=khr1.txt
@@ -103,8 +106,8 @@ squaresprites=-DSPRITEFILE=\"spr/$(SPRITEFILE_square)\"
 square=-DMYMANSIZE=\"square\" $(squaretiles) $(squaresprites)
 squareman=$(square) $(myman)
 
-squareman: src/myman.c
-	$(CC) $(CINCLUDES) $(CFLAGS) $(CURSOPTS) $(CURSESINCLUDE) $(MY_GETOPTCPPFLAGS) $(squareman) -o $@ $< $(CURSESLIBS) $(MY_GETOPTLIBS)
+squareman: src/myman.c $(UTILSOBJS)
+	$(CC) $(CINCLUDES) $(CFLAGS) $(CURSOPTS) $(CURSESINCLUDE) $(MYGETOPTCPPFLAGS) $(squareman) -o$@ $< $(CURSESLIBS) $(MYGETOPTLIBS) $(UTILSOBJS)
 
 .PHONY: all clean
 

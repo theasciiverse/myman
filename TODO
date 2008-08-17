@@ -1,7 +1,5 @@
 ﻿TODO:
 
-        document recent additions to file formats (named parameters) in README
-
         refactor
 
         for "bicolor" mazes (maze flag "~4"), use edge/gate proximity rather than width

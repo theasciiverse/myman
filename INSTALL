@@ -57,11 +57,19 @@ try again.
 0. Prerequisites -- see the end of this for URLs:
   (a) a working POSIX-style Bourne-compatible shell, e.g. bash, ash, or pdksh
     ---- substitute the full path to this shell for /bin/sh in each step below
-  (b) a working ANSI C compiler, e.g. gcc in the GNU Compiler Collection (GCC)
-    ---- configure this by changing the CC variable in Makefile
+  (b) a working ANSI C compiler, e.g. gcc in the GNU Compiler Collection (GCC),
+      TinyCC (tcc), or Open Watcom (owcc)
+    ---- configure this by changing the CC variable in Makefile; you can also
+         run myman.c directly using the Linux kernel's binfmt_c module and TinyCC;
+         a simple TinyCC build-and-run may be achieved on Win32 with:
+             tcc -DRAWCURSES -Iinc -Imygetopt \
+                 src/utils.c mygetopt/mygetopt.c \
+                 -luser32 -ladvapi32 \
+                 -run src/myman.c
   (c) a modern curses library, e.g. ncurses, slang, PDCurses or
-      XCurses; or libcaca, AA-lib, Twin, LibGGI/LibGII, Allegro, or
-      the Win32 Console/*nix TTY APIs
+      XCurses; or libcaca, AA-lib, Twin, LibGGI/LibGII, Allegro, newt,
+      Carbon/Toolbox, FLTK, GTK, <disp.h>, or the Win32
+      Console/CONIO/TOS/*nix TTY APIs
     ---- old BSD curses *will not work*!
   (d) GNU Make
     ---- version 3.80 works; version 3.79.1 *will not work*!
@@ -115,14 +123,18 @@ conjunction with the MyMan video game:
 
 GNU bash       http://ftp.gnu.org/pub/gnu/bash
 GCC            ftp://gcc.gnu.org/pub/gcc
-ncurses        http://ftp.gnu.org/pub/gnu/ncurses
 GNU Make       http://ftp.gnu.org/pub/gnu/make
 GNU coreutils  http://ftp.gnu.org/pub/gnu/coreutils
 GNU sed        http://ftp.gnu.org/pub/gnu/sed
-libiconv       http://ftp.gnu.org/pub/gnu/libiconv
-Linux kernel   ftp://ftp.kernel.org/pub/linux/kernel/
-XFree86        ftp://ftp.xfree86.org/pub/XFree86/
-ctheme         http://sourceforge.net/project/?group_id=2640
+netpbm         http://netpbm.sourceforge.net/
+Info-ZIP       http://www.info-zip.org/pub/infozip/Zip.html
+
+For ncurses output:
+
+ncurses        http://ftp.gnu.org/pub/gnu/ncurses
+
+For other output drivers:
+
 S-Lang         http://www.s-lang.org/
 PDCurses       http://pdcurses.sourceforge.net/
 libcaca        http://sam.zoy.org/libcaca/
@@ -130,5 +142,41 @@ AA-lib         http://aa-project.sourceforge.net/
 Twin           http://twin.sourceforce.net/
 LibGGI/LibGII  http://www.ggi-project.org/
 Allegro        http://www.talula.demon.co.uk/allegro/
-netpbm         http://netpbm.sourceforge.net/
-Info-ZIP       http://www.info-zip.org/pub/infozip/Zip.html
+GTK/GTK+       http://www.gtk.org/
+CONIO          http://conio.sourceforge.net/
+FLTK           http://www.fltk.org/
+"TurboC CONIO" http://www.sandroid.org/TurboC/
+
+For optional extras:
+
+libiconv       http://ftp.gnu.org/pub/gnu/libiconv
+XFree86        ftp://ftp.xfree86.org/pub/XFree86/
+ctheme         http://sourceforge.net/project/?group_id=2640
+TinyCC         http://www.landley.net/code/tinycc/
+
+For GNU/Linux hosting:
+
+Debian         http://www.debian.org/
+Gentoo         http://www.gentoo.org/
+Mandriva       http://www.mandriva.com/
+Ubuntu         http://www.ubuntu.com/
+Linux kernel   ftp://ftp.kernel.org/pub/linux/kernel/
+
+For Win32 hosting:
+
+MinGW          http://www.mingw.org/
+Wine           http://www.winehq.org/
+
+For DOS hosting:
+
+DJGPP          http://www.delorie.com/djgpp/
+FreeDOS        http://www.freedos.org/
+DOSBox         http://dosbox.sourceforge.net/
+
+For TOS hosting:
+
+SpareMiNT      http://sparemint.atariforge.net/sparemint/
+AFROS          http://aranym.org/afros.html
+EmuTOS         http://emutos.sourceforge.net/
+ARAnyM         http://aranym.org/
+Hatari         http://hatari.sourceforge.net/

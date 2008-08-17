@@ -44,7 +44,7 @@ three data files: a maze file (equivalent to -v pac), a tile file and
 a sprite file. It worked with ncurses on Linux and cygwin. Several
 variations using other maze layouts were created over the following
 hours. Color came in December of that year, as did support for small
-tiles (equivalent to -z small.) The my_getopt argument parser is a bit
+tiles (equivalent to -z small.) The mygetopt argument parser is a bit
 older, having been started in 1997 as part of the SMOKE-16 project.
 
 
@@ -73,10 +73,10 @@ ncurses, slang, PDCurses, SysV curses, or the raw stdio terminal
 driver), (B) on an X Window System display (using PDCurses for X,
 a.k.a. XCurses), (C) on any terminal or display supported by PDCurses
 for SDL, libcaca, LibGGI/LibGII, Allegro, TWin, aalib, Carbon/Toolbox,
-or (D) in a Win32 command prompt window (using the raw Win32 terminal
-driver).  Since MyMan is fairly fast-moving, you'll need a reasonably
-fast computer and display.  It once ran acceptably fast on a 486-66
-under Linux, and may still.
+newt, GTK+, FLTK, <disp.h>, or (D) in a Win32 command prompt window
+(using the raw Win32 terminal driver).  Since MyMan is fairly
+fast-moving, you'll need a reasonably fast computer and display.  It
+once ran acceptably fast on a 486-66 under Linux, and may still.
 
 Installation
 ------------
@@ -94,9 +94,9 @@ executable, run e.g. 'myman -V'.
 This version of MyMan has a BSD-like license; see the file LICENSE for
 details. Earlier versions were placed in the public domain.
 
-MyMan includes a bundled copy of the 'my_getopt' argument parser,
+MyMan includes a bundled copy of the 'mygetopt' argument parser,
 which is licensed under the same terms as MyMan; see the README file
-in the 'my_getopt-1.5' subdirectory of the MyMan source distribution
+in the 'mygetopt' subdirectory of the MyMan source distribution
 for details.
 
 Note that the contents of the MyMan datafiles (tiles, sprites and
@@ -239,7 +239,7 @@ the underlying display libraries:
                                             Braille pseudo-bitmap characters
                                             on a Unicode display
 
-LibGGI/LibGII           GGICURSES_BITMAP    Nonempty value causes bitmap
+ LibGGI/LibGII          GGICURSES_BITMAP    Nonempty value causes bitmap
                                             rendering
                         GGICURSES_SWAPRB    Nonempty value interchanges
                                             red and blue color channels
@@ -274,7 +274,7 @@ LibGGI/LibGII           GGICURSES_BITMAP    Nonempty value causes bitmap
                                             Braille pseudo-bitmap characters
                                             on a Unicode display
 
-Allegro                 ALLEGROCURSES_BITMAP
+ Allegro                ALLEGROCURSES_BITMAP
                                             Nonempty value causes bitmap
                                             rendering
                         ALLEGROCURSES_BITMAP_DOUBLE
@@ -315,7 +315,8 @@ Allegro                 ALLEGROCURSES_BITMAP
                                             Braille pseudo-bitmap characters
                                             on a Unicode display
 
-Win32 Console/*nix TTY  RAWCURSES_RAW       Nonzero value causes raw UTF-8
+ Win32 Console/CONIO/TOS/*nix TTY
+                        RAWCURSES_RAW       Nonzero value causes raw UTF-8
                                             character output (Unicode) or
                                             CP-437 byte output (CP-437)
                         RAWCURSES_WCWIDTH   Nonzero value causes builtin
@@ -326,7 +327,12 @@ Win32 Console/*nix TTY  RAWCURSES_RAW       Nonzero value causes raw UTF-8
                                             all non-ASCII characters to
                                             assume that width (in cells)
                         RAWCURSES_STDIO     Nonzero value forces use of stdio
-                                            (Win32)
+                                            (Win32/CONIO)
+                        RAWCURSES_CONIO     Nonzero value forces use of Borland-
+                                            style CONIO
+                        RAWCURSES_CONIO_INPUT
+                                            Nonzero value forces use
+                                            of CONIO input
                         RAWCURSES_UTF8      Nonzero value forces UTF-8 output
                                             when using stdio
                         RAWCURSES_DEBUG_UTF8
@@ -404,7 +410,7 @@ Win32 Console/*nix TTY  RAWCURSES_RAW       Nonzero value causes raw UTF-8
                                             Nonzero value forces use of
                                             Braille pseudo-bitmap characters
                                             on a Unicode display
-Carbon/Toolbox          MACCURSES_FONT      Font name
+ Carbon/Toolbox         MACCURSES_FONT      Font name
                         MACCURSES_FONTSIZE  Initial font size in pixels
                         MACCURSES_FONTENCODING
                                             Font encoding name, possibly one of:
@@ -427,6 +433,87 @@ Carbon/Toolbox          MACCURSES_FONT      Font name
                                             Nonzero value forces use of
                                             Braille pseudo-bitmap characters
                                             on a Unicode display
+ GTK+                   GTKCURSES_FONT      Font name
+                        GTKCURSES_ICON      Icon graphic
+                        GTKCURSES_BITMAP    Nonzero value causes
+                                            psuedo-bitmap rendering
+                        OPTCURSES_DIRECT    Nonzero value disables redraw
+                                            optimization layer
+                        OPTCURSES_INTERLACE Nonzero value renders by
+                                            interleaving half-screens
+                        OPTCURSES_BITMAP    Nonzero value causes use of
+                                            pseudo-bitmap characters
+                        OPTCURSES_BITMAP_FORCE
+                                            Nonzero value allows use of
+                                            inverse video when using
+                                            ASCII pseudo-bitmap characters
+                        OPTCURSES_BITMAP_BRAILLE
+                                            Nonzero value forces use of
+                                            Braille pseudo-bitmap characters
+                                            on a Unicode display
+ newt                   OPTCURSES_DIRECT    Nonzero value disables redraw
+                                            optimization layer
+                        OPTCURSES_INTERLACE Nonzero value renders by
+                                            interleaving half-screens
+                        OPTCURSES_BITMAP    Nonzero value causes use of
+                                            pseudo-bitmap characters
+                        OPTCURSES_BITMAP_FORCE
+                                            Nonzero value allows use of
+                                            inverse video when using
+                                            ASCII pseudo-bitmap characters
+                        OPTCURSES_BITMAP_BRAILLE
+                                            Nonzero value forces use of
+                                            Braille pseudo-bitmap characters
+                                            on a Unicode display
+ FLTK                   FLTKCURSES_FONT     Font face
+                        FLTKCURSES_FONTSIZE
+                                            Font size
+                        OPTCURSES_DIRECT    Nonzero value disables redraw
+                                            optimization layer
+                        OPTCURSES_INTERLACE Nonzero value renders by
+                                            interleaving half-screens
+                        OPTCURSES_BITMAP    Nonzero value causes use of
+                                            pseudo-bitmap characters
+                        OPTCURSES_BITMAP_FORCE
+                                            Nonzero value allows use of
+                                            inverse video when using
+                                            ASCII pseudo-bitmap characters
+                        OPTCURSES_BITMAP_BRAILLE
+                                            Nonzero value forces use of
+                                            Braille pseudo-bitmap characters
+                                            on a Unicode display
+ Borland-style CONIO    OPTCURSES_DIRECT    Nonzero value disables redraw
+                                            optimization layer
+                        OPTCURSES_INTERLACE Nonzero value renders by
+                                            interleaving half-screens
+                        OPTCURSES_BITMAP    Nonzero value causes use of
+                                            pseudo-bitmap characters
+                        OPTCURSES_BITMAP_FORCE
+                                            Nonzero value allows use of
+                                            inverse video when using
+                                            ASCII pseudo-bitmap characters
+                        OPTCURSES_BITMAP_BRAILLE
+                                            Nonzero value forces use of
+                                            Braille pseudo-bitmap characters
+                                            on a Unicode display
+ <disp.h>               DISPCURSES_USEBIOS  Nonzero value forces use of
+                                            BIOS routines for display I/O
+                                            (DOS)
+                        OPTCURSES_DIRECT    Nonzero value disables redraw
+                                            optimization layer
+                        OPTCURSES_INTERLACE Nonzero value renders by
+                                            interleaving half-screens
+                        OPTCURSES_BITMAP    Nonzero value causes use of
+                                            pseudo-bitmap characters
+                        OPTCURSES_BITMAP_FORCE
+                                            Nonzero value allows use of
+                                            inverse video when using
+                                            ASCII pseudo-bitmap characters
+                        OPTCURSES_BITMAP_BRAILLE
+                                            Nonzero value forces use of
+                                            Braille pseudo-bitmap characters
+                                            on a Unicode display
+
 
 Detailed Notes
 --------------

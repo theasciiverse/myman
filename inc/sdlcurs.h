@@ -280,9 +280,6 @@ static int addch(const chtype ch) {
     return OK;
 }
 
-#define NEED_CP437_TO_ASCII
-static chtype cp437_to_ascii(unsigned char ch);
-
 static int sdlcurses_addch(unsigned long ch, unsigned long attr, unsigned long x, unsigned long y) {
     int fg, bg;
     Uint32 fgpixel, bgpixel, halfpixel;

@@ -1,3 +1,85 @@
+2008-08-16  bsittler  <bsittler@>
+
+	* website/htdocs/index.html: website is now in the source package
+
+	* src/myman.man: new URL: http://myman.sourceforge.net/
+
+2008-08-15  bsittler  <bsittler@>
+
+	* utl/lsic.sh: wrapper to run utl/lsic.bat inside DOSBox
+
+	* utl/lsic.bat: compile using LSIC-86 (does not work yet,
+	compiler runs out of memory)
+
+2008-08-12  bsittler  <bsittler@>
+
+	* Makefile (config.h): moved some of the lengthier definitions to
+	an automatically-generated config.h file so that compiler command
+	lines do not need unreasonable length or special quoting
+
+2008-08-11  bsittler@macosx  <bsittler@>
+
+	* configure (dump_command): removed --help reference to
+	--with-sdl, since pure SDL builds do not work yet; use
+	--with-pdcursessdl instead
+
+2008-08-08  bsittler  <bsittler@>
+
+	* inc/rawcurs.h: preliminary support for compiling with dmc (the
+	Digital Mars C/C++ compiler); so far this works for Win32 but not
+	for 16-bit DOS (although it does get further than the other
+	compilers...); options used:
+	    configure --with-raw \
+	              objdir=. \
+	              CC=dmc \
+	              CFLAGS=-DWIN32\ -DUSE_CONIO_INPUT=1\ -o+space\ -NS\ -mn\ -3 \
+	              EXTRAHOSTLIBS=advapi32.lib
+
+	* utl/cpmbuild.sh: build script for CP/M (does not work yet,
+	compiler runs out of memory)
+
+2008-08-07  bsittler  <bsittler@>
+
+	* src/utils.c: moved a lot of stuff to a separate compilation unit
+	to make small compilers happy (not done yet)
+
+	* utl/turboc.sh: wrapper to run utl/turboc.bat in DOSBox
+
+	* utl/turboc.bat: build script for Turbo C (does not work yet,
+	compiler runs out of memory)
+
+	* utl/pacificc.sh: wrapper to run utl/pacificc.bat in DOSBox
+
+	* utl/pacificc.bat: build script for Pacific C (does not work yet,
+	compiler runs out of memory)
+
+2008-08-05  bsittler  <bsittler@>
+
+	* src/myman.c (fopen_datafile): add support for DOS
+
+	* inc/rawcurs.h: add support for Borland-style CONIO; so far
+	tested only with the DJGPP implementation, CONIO 2.0 under MinGW, and
+	Ronald S. Burkey's "TurboC" porting package
+
+2008-07-28  bsittler  <bsittler@>
+
+	* inc/fltkcurs.h: preliminary FLTK driver; there are still no
+	attributes, and major color problems persist.
+
+2008-07-23  bsittler  <bsittler@>
+
+	* AUTHORS: added a preliminary list of authors
+
+	* THANKS: added an initial (and very incomplete) list of
+	thank-yous
+
+	* inc/gtkcurs.h: added a preliminary GTK+ driver
+
+	* inc/newtcurs.h: added a very skeletal driver using "newt" (which
+	in turn uses S/Lang); this is useful mainly as a starting point
+	for other drivers, since "newt" is not well suited to a colorful
+	video game
+
 2008-07-18  bsittler  <bsittler@>
 
 	* utl/mymancmd.in: added a shell script for launching MyMan using

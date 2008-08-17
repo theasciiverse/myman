@@ -6,7 +6,17 @@ are permitted in any medium without royalty provided the copyright
 notice and this notice are preserved.
 
 
-myman 0.7pre5
+myman 0.7.1
+
+Added preliminary drivers for "newt" (--with-newt) and GTK+
+(--with-gtk/--with-gtk2); added THANKS and AUTHORS files.
+
+
+myman 0.7.0
+
+Monolithic (compiled-in tile, sprite and maze data) is now the only
+configuration supported by "configure" and "Makefile". Non-monolithic
+builds can still be made using "simple.mk".
 
 Added a new variant (--variant=kpacman) inspired by Jörg Thönnissen's
 Kpacman, another new variant (--variant=mspp) inspired by Ms Pac Plus,
@@ -33,8 +43,9 @@ Added an AA-Lib backend (--with-aalib). AA-Lib is a grayscale
 Ascii-Art library; see
 http://zoehep.xent.com/~bsittler/myman-0.7pre4.tar.gz for details.
 
-Added a "raw" backend (--with-raw) that uses no external libraries
-and displays on Win32 console and most UNIX terminals.
+Added a "raw" backend (--with-raw) that uses no external libraries and
+displays on Win32 console, most UNIX terminals, and various Atari ST
+operating systems.
 
 Added an Allegro backend (--with-allegro). Allegro is a cross-platfrom
 general-purpose game-programming library; see
@@ -46,6 +57,12 @@ for details.
 
 Added a Twin backend (--with-twin). Twin is a text-mode windowing
 system; see http://twin.sourceforce.net/ for details.
+
+Added a Carbon/Toolbox backend, optionally using ATSUI
+(--with-mac/--with-mac-unicode).
+
+Added a PDCurses/SDL (--with-pdcursessdl) backend, including SDL mixer
+support (--with-sdl-mixer) inspired by "Spot"'s Amiga OS4 port.
 
 myman 0.6
 

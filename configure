@@ -343,18 +343,17 @@ do
           echoline "--with-dmg         "generate .dmg-format binary distribution
           echoline "--with-mac-icon    "include program icon for Mac OS
           echoline "--with-win-icon    "include program icon and version information for Win32
+          echoline
           echoline Output drivers \(select at most one\):
           echoline "--with-libcaca     "use libcaca
           echoline "--with-libcaca0    "use libcaca with \<caca0.h\>
           echoline "--with-aalib       "use AA-Lib
-          echoline "--with-raw         "use *nix TTY/Win32 Console API \(Unicode\)
-          echoline "--with-raw-cp437   "use *nix TTY/Win32 Console API \(CP-437\)
+          echoline "--with-raw         "use *nix TTY/CONIO/TOS/Win32 Console API \(Unicode\)
+          echoline "--with-raw-cp437   "use *nix TTY/CONIO/TOS/Win32 Console API \(CP-437\)
           echoline "--with-allegro     "use Allegro
           echoline "--with-twin        "use Twin
           echoline "--with-ggi         "use LibGGI/LibGII
           echoline "--with-ggiwmh      "use LibGGI/LibGII with WindowManagerHints
-          echoline "--with-sdl         "use SDL
-          echoline "--with-sdl-mixer   "use SDL Mixer for audio \(only works with SDL or PDCurses SDL\)
           echoline "--with-slang-utf8  "use UTF-8 S-Lang curses emulation \(a.k.a. slcurses\)
           echoline "--with-slang       "use S-Lang curses emulation \(a.k.a. slcurses\)
           echoline "--with-xcursesw    "use PDCurses for X \(a.k.a. XCurses\) \(wide character version\)
@@ -362,11 +361,20 @@ do
           echoline "--with-pdcursesw   "use PDCurses \(wide character version\)
           echoline "--with-pdcurses    "use PDCurses
           echoline "--with-pdcursessdl "use PDCurses \(SDL version\)
+          #echoline "--with-sdl         "use SDL \(DOES NOT WORK\!\!\!\)
+          echoline "--with-sdl-mixer   "use SDL Mixer for audio \(only works with PDCurses SDL\)
           echoline "--with-ncursesw    "use ncurses \(wide character version\)
           echoline "                   "\(--with-libiconv is recommended too if not using glibc\)
           echoline "--with-ncurses     "use ncurses
           echoline "--with-mac         "use Carbon \(Quickdraw Text\)
           echoline "--with-mac-unicode "use Carbon \(ATSUI\)
+          echoline "--with-newt        "use newt
+          echoline "--with-gtk2        "use the GIMP Toolkit \(GTK/GTK\+\), version 2.x
+          echoline "--with-gtk         "use the GIMP Toolkit \(GTK/GTK\+\), version 1.x
+          echoline "--with-fltk2       "use FLTK 2 \(requires CC\=g\+\+ or similar\)
+          echoline "--with-fltk        "use FLTK \(requires CC\=g\+\+ or similar\)
+          echoline "--with-conio       "use Borland-style CONIO
+          echoline "--with-disp        "use \<disp.h\> \(Digital Mars/Symantec/Zortech C/C\+\+\)
           echoline
           echoline Report bugs to \<bsittler@gmail.com\>.
           exit 0

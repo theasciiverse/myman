@@ -377,7 +377,7 @@
 #endif
 
 #ifndef USE_TERMIOS
-#if defined(macintosh) || defined(WIN16)
+#if defined(macintosh) || defined(WIN16) || defined(__AROS__)
 #define USE_TERMIOS 0
 #else
 #define USE_TERMIOS 1

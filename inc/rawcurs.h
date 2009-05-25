@@ -5758,8 +5758,18 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
         fflush(stdout);
         tcgetattr(fileno(stdin), &rawcurses_old_tty);
         rawcurses_tty = rawcurses_old_tty;
-        rawcurses_tty.c_lflag &= ~ICANON;
+        rawcurses_tty.c_iflag = 0;
         rawcurses_tty.c_lflag &= ~ECHO;
+        rawcurses_tty.c_lflag &= ~ICANON;
+#ifdef ISIG
+        rawcurses_tty.c_lflag &= ~ISIG;
+#endif
+#ifdef XCASE
+        rawcurses_tty.c_lflag &= ~XCASE;
+#endif
+#ifdef OPOST
+        rawcurses_tty.c_oflag &= ~OPOST;
+#endif
 #ifdef ONLCR
         rawcurses_tty.c_oflag &= ~ONLCR;
 #else
@@ -5767,6 +5777,8 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
         rawcurses_tty.c_oflag &= ~CRMOD;
 #endif
 #endif
+        rawcurses_tty.c_cc[VMIN] = 0;
+        rawcurses_tty.c_cc[VTIME] = 0;
         tcsetattr(fileno(stdin), TCSANOW, &rawcurses_tty);
         setbuf(stdin, NULL);
     }

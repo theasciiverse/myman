@@ -171,7 +171,7 @@ static int OPTCURSES_IS_ROW_DIRTY(int y)
 {
     return (0xFFU
             !=
-            optcurses_backing[(y / ((optcurses_bitmap && *optcurses_bitmap) ? 2 : 1))].clean);
+            (unsigned) optcurses_backing[(y / ((optcurses_bitmap && *optcurses_bitmap) ? 2 : 1))].clean);
 }
 
 static void OPTCURSES_DIRTY_ROW(int y)

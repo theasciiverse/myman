@@ -232,11 +232,11 @@
 /* HAVE_SYS_SOCKET_H: do we have <sys/socket.h>? */
 
 #ifndef HAVE_SYS_SOCKET_H
-#if ! (defined(__MSDOS__) || defined(CPM) || defined(macintosh) || defined(__DMC__) || defined(__WATCOMC__) || defined(__EFI__))
+#if ! (defined(__MSDOS__) || defined(CPM) || defined(macintosh) || defined(__DMC__) || defined(__WATCOMC__) || defined(__EFI__) || defined(__AROS__))
 #if ! (defined(__atarist__) && defined(__GNUC__) && (__GNUC__ == 2))
 #define HAVE_SYS_SOCKET_H 1
 #endif /* ! (defined(__atarist__) && defined(__GNUC__) && (__GNUC__ == 2)) */
-#endif /* ! (defined(__MSDOS__) || defined(CPM) || defined(macintosh) || defined(__DMC__) || defined(__WATCOMC__) || defined(__EFI__)) */
+#endif /* ! (defined(__MSDOS__) || defined(CPM) || defined(macintosh) || defined(__DMC__) || defined(__WATCOMC__) || defined(__EFI__) || defined(__AROS__)) */
 #endif
 
 #ifndef HAVE_SYS_SOCKET_H

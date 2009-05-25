@@ -933,10 +933,10 @@ typedef int rawcurses_wchar_t;
 #endif
 #endif
 
-/* Win32 does not have select() in any meaningful sense for regular,
+/* Win32 and AROS do not have select() in any meaningful sense for regular,
  * non-socket fds */
 #ifndef HAVE_SELECT
-#ifdef WIN32
+#if defined(WIN32) || defined(__AROS__)
 #define HAVE_SELECT 0
 #endif
 #endif

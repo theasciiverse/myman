@@ -136,7 +136,7 @@
 /* HAVE_LANGINFO_H: do we have <langinfo.h>? */
 
 #ifndef HAVE_LANGINFO_H
-#if ! (defined(WIN32) || defined(CPM) || defined(macintosh) || defined(__MSDOS__) || defined(atarist) || defined(__atarist__) || defined(__DMC__) || defined(__HAIKU__) || defined(__WATCOMC__) || defined(__EFI__))
+#if ! (defined(WIN32) || defined(CPM) || defined(macintosh) || defined(__MSDOS__) || defined(atarist) || defined(__atarist__) || defined(__DMC__) || defined(__HAIKU__) || defined(__WATCOMC__) || defined(__EFI__) || defined(__AROS__))
 #define HAVE_LANGINFO_H 1
 #endif
 #endif

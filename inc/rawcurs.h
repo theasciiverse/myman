@@ -5762,7 +5762,7 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
         rawcurses_tty.c_lflag &= ~ECHO;
         rawcurses_tty.c_lflag &= ~ICANON;
 #ifdef ISIG
-        rawcurses_tty.c_lflag &= ~ISIG;
+        /*rawcurses_tty.c_lflag &= ~ISIG;*/
 #endif
 #ifdef XCASE
         rawcurses_tty.c_lflag &= ~XCASE;

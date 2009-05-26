@@ -2583,8 +2583,8 @@ static int rawcurses_fput_enacs(FILE *fh)
         return 1;
     }
 #endif
-    if (rawcurses_stdio_adm3a || rawcurses_stdio_atascii) return 0;
-    if (rawcurses_stdio_vt52 || rawcurses_stdio_acs_h19 || rawcurses_stdio_acs_wy60 || rawcurses_stdio_acs_kaypro2x || rawcurses_stdio_cp437) return 1;
+    if (rawcurses_stdio_adm3a) return 0;
+    if (rawcurses_stdio_vt52 || rawcurses_stdio_acs_h19 || rawcurses_stdio_atascii || rawcurses_stdio_acs_wy60 || rawcurses_stdio_acs_kaypro2x || rawcurses_stdio_cp437) return 1;
     if (! rawcurses_stdio_iso2022) return 1;
     return fputs(ESCAPE("(B") ESCAPE(")0"), fh) != EOF;
 }
@@ -2734,7 +2734,7 @@ static int rawcurses_fput_bel(FILE *fh)
 #endif
     if (rawcurses_stdio_atascii)
     {
-        return fputc('\xfd', fh) != EOF;
+        return fputc(0xfd, fh) != EOF;
     }
     return fputc('\7', fh) != EOF;
 }
@@ -3218,7 +3218,7 @@ static chtype rawcurses_map_acs(chtype ch)
         case RAWCURSES__ACS_THALF:
             return ch;
         default:
-            if (ch == ACS_BULLET) return ch;
+            if (ch == (chtype) ACS_BULLET) return ch;
             return ERR;
         }
     }
@@ -5084,6 +5084,10 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
     else
     {
         rawcurses_stdio_atascii = 0;
+        if (! strcmp(termType, "atascii"))
+        {
+            rawcurses_stdio_atascii = 1;
+        }
     }
     if (rawcurses_getenv_boolean("RAWCURSES_DECTERM"))
     {
@@ -5388,6 +5392,10 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
         {
             rawcurses_stdio_noswapdots = 1;
         }
+    }
+    if (rawcurses_stdio_atascii && ! rawcurses_getenv_boolean("RAWCURSES_ACS"))
+    {
+        rawcurses_stdio_acs = 1;
     }
     if (rawcurses_stdio_acs_h19 && ! rawcurses_getenv_boolean("RAWCURSES_ACS"))
     {
@@ -8609,7 +8617,7 @@ static int addch(chtype ch) {
                     {
                         ch = 0x14;
                     }
-                    else if (ch & ~0xff)
+                    else if ((ch < 0x20) || (ch > 0x7c))
                     {
                         ch = RAWCURSES_ASCII_REPLACEMENT_CHARACTER;
                     }

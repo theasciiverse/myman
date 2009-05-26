@@ -352,7 +352,7 @@
 #endif
 #endif
 
-#if defined(WIN32) || defined(macintosh) || defined(__EFI__)
+#if defined(WIN32) || defined(macintosh) || defined(__EFI__) || defined(__AROS__)
 #ifndef HAVE_PUTENV
 #define HAVE_PUTENV 0
 #endif
@@ -374,7 +374,7 @@
 #endif
 #endif /* defined(macintosh) */
 
-#if defined(WIN32) || defined(__MSDOS__) || defined(__DMC__) || defined(macintosh) || defined(__EFI__)
+#if defined(WIN32) || defined(__MSDOS__) || defined(__DMC__) || defined(macintosh) || defined(__EFI__) || defined(__AROS__)
 #ifndef HAVE_SETENV
 #define HAVE_SETENV 0
 #endif

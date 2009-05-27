@@ -2352,7 +2352,17 @@ static int rawcurses_fput_ich(FILE *fh, int n)
         return 1;
     }
 #endif /* USE_CONIO */
-    if (rawcurses_stdio_adm3a || rawcurses_stdio_vt52 || rawcurses_stdio_atascii) return 0;
+    if (rawcurses_stdio_atascii)
+    {
+        int i;
+
+        for (i = 0; i < n; i ++)
+        {
+            if (fprintf(fh, "\377") <= 0) return 0;
+        }
+        return 1;
+    }
+    if (rawcurses_stdio_adm3a || rawcurses_stdio_vt52) return 0;
     return (fprintf(fh, CSI("%d@"), n) > 0);
 }
 
@@ -2387,7 +2397,17 @@ static int rawcurses_fput_dch(FILE *fh, int n)
         return 1;
     }
 #endif /* USE_CONIO */
-    if (rawcurses_stdio_adm3a || rawcurses_stdio_vt52 || rawcurses_stdio_atascii) return 0;
+    if (rawcurses_stdio_atascii)
+    {
+        int i;
+
+        for (i = 0; i < n; i ++)
+        {
+            if (fprintf(fh, "\376") <= 0) return 0;
+        }
+        return 1;
+    }
+    if (rawcurses_stdio_adm3a || rawcurses_stdio_vt52) return 0;
     return (fprintf(fh, CSI("%dP"), n) > 0);
 }
 
@@ -2469,7 +2489,7 @@ static int rawcurses_fput_clear(FILE *fh)
         return 1;
     }
 #endif
-    if (rawcurses_stdio_atascii) return fputs("\x7d", fh) != EOF;
+    if (rawcurses_stdio_atascii) return fputs("\175", fh) != EOF;
     if (rawcurses_stdio_adm3a) return fputs(ESCAPE(";") ESCAPE("*") ESCAPE("+") "\x1a", fh) != EOF;
     if (rawcurses_stdio_vt52) return fputs("\f" ESCAPE("H") ESCAPE("J"), fh) != EOF;
     if (rawcurses_stdio_amiga) ret = fputs(CSI("H") CSI("J"), fh) != EOF;
@@ -2734,7 +2754,7 @@ static int rawcurses_fput_bel(FILE *fh)
 #endif
     if (rawcurses_stdio_atascii)
     {
-        return fputc(0xfd, fh) != EOF;
+        return fputc('\376', fh) != EOF;
     }
     return fputc('\7', fh) != EOF;
 }
@@ -2782,28 +2802,28 @@ static int rawcurses_fput_relcup(FILE *fh, int dy, int dx)
     {
         while (dy < 0)
         {
-            if (rawcurses_stdio_atascii) ret = ret && (fputc('\x1c', fh) != EOF);
+            if (rawcurses_stdio_atascii) ret = ret && (fputc('\034', fh) != EOF);
             else if (rawcurses_stdio_adm3a) ret = ret && (fputc('\v', fh) != EOF);
             else ret = ret && (fputs(ESCAPE("A"), fh) != EOF);
             dy ++;
         }
         while (dx < 0)
         {
-            if (rawcurses_stdio_atascii) ret = ret && (fputc('\x1e', fh) != EOF);
+            if (rawcurses_stdio_atascii) ret = ret && (fputc('\036', fh) != EOF);
             else if (rawcurses_stdio_adm3a) ret = ret && (fputc('\b', fh) != EOF);
             else ret = ret && (fputs(ESCAPE("D"), fh) != EOF);
             dx ++;
         }
         while (dy > 0)
         {
-            if (rawcurses_stdio_atascii) ret = ret && (fputc('\x1d', fh) != EOF);
+            if (rawcurses_stdio_atascii) ret = ret && (fputc('\035', fh) != EOF);
             else if (rawcurses_stdio_adm3a) ret = ret && (fputc('\n', fh) != EOF);
             else ret = ret && (fputs(ESCAPE("B"), fh) != EOF);
             dy --;
         }
         while (dx > 0)
         {
-            if (rawcurses_stdio_atascii) ret = ret && (fputc('\x1f', fh) != EOF);
+            if (rawcurses_stdio_atascii) ret = ret && (fputc('\037', fh) != EOF);
             else if (rawcurses_stdio_adm3a) ret = ret && (fputc('\f', fh) != EOF);
             else ret = ret && (fputs(ESCAPE("C"), fh) != EOF);
             dx --;
@@ -2891,7 +2911,7 @@ static int rawcurses_fput_sgr(FILE *fh, attr_t a, attr_t a_rgb)
         return 1;
     }
 #endif
-    if (rawcurses_stdio_atascii) return 0;
+    if (rawcurses_stdio_atascii) return 1;
     if (rawcurses_stdio_vt52)
     {
         if (rawcurses_stdio_tw52)
@@ -5084,7 +5104,11 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
     else
     {
         rawcurses_stdio_atascii = 0;
-        if (! strcmp(termType, "atascii"))
+        if ((! strncmp(termType, "atari400", strlen("atari400")))
+            ||
+            (! strncmp(termType, "atari800", strlen("atari800")))
+            ||
+            (! strncmp(termType, "atascii", strlen("atascii"))))
         {
             rawcurses_stdio_atascii = 1;
         }
@@ -6088,6 +6112,14 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
         if (rawcurses_w < 1)
         {
             rawcurses_w = 80;
+            if ((! strncmp(termType, "atari400", strlen("atari400")))
+                ||
+                (! strncmp(termType, "atari800", strlen("atari800")))
+                ||
+                (! strncmp(termType, "atascii", strlen("atascii"))))
+            {
+                rawcurses_w = 40;
+            }
             got_winsize = 0;
         }
         if (rawcurses_h < 1)
@@ -8556,7 +8588,7 @@ static int addch(chtype ch) {
                     ch = '[';
                     break;
                 case '~':
-                    ch = '^';
+                    ch = '\015';
                     break;
                 case '}':
                     ch = ']';

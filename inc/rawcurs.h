@@ -1283,6 +1283,7 @@ RAWCURSES_GLOBAL(int rawcurses_stdio_amiga, = 0);
 RAWCURSES_GLOBAL(int rawcurses_stdio_tw52, = 0);
 RAWCURSES_GLOBAL(int rawcurses_stdio_adm3a, = 0);
 RAWCURSES_GLOBAL(int rawcurses_stdio_atascii, = 0);
+RAWCURSES_GLOBAL(int rawcurses_stdio_idchok, = 1);
 RAWCURSES_GLOBAL(int rawcurses_stdio_decterm, = 0);
 RAWCURSES_GLOBAL(int rawcurses_stdio_relcup, = 0);
 RAWCURSES_GLOBAL(int rawcurses_stdio_256color, = 0);
@@ -2323,6 +2324,7 @@ static void rawcurses_stdio_vmscon_cleanup(void)
 
 static int rawcurses_fput_ich(FILE *fh, int n)
 {
+    if (! rawcurses_stdio_idchok) return 0;
 #if USE_CONIO
     if (rawcurses_stdio_conio)
     {
@@ -2368,6 +2370,7 @@ static int rawcurses_fput_ich(FILE *fh, int n)
 
 static int rawcurses_fput_dch(FILE *fh, int n)
 {
+    if (! rawcurses_stdio_idchok) return 0;
 #if USE_CONIO
     if (rawcurses_stdio_conio)
     {
@@ -5104,13 +5107,21 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
     else
     {
         rawcurses_stdio_atascii = 0;
-        if ((! strncmp(termType, "atari400", strlen("atari400")))
-            ||
-            (! strncmp(termType, "atari800", strlen("atari800")))
-            ||
-            (! strncmp(termType, "atascii", strlen("atascii"))))
+        if (! strncmp(termType, "atascii", strlen("atascii")))
         {
             rawcurses_stdio_atascii = 1;
+        }
+    }
+    if (rawcurses_getenv_boolean("RAWCURSES_IDCHOK"))
+    {
+        rawcurses_stdio_idchok = *(rawcurses_getenv_boolean("RAWCURSES_IDCHOK")) ? 1 : 0;
+    }
+    else
+    {
+        rawcurses_stdio_idchok = 1;
+        if (! strncmp(termType, "atascii-23", strlen("atascii-23")))
+        {
+            rawcurses_stdio_idchok = 0;
         }
     }
     if (rawcurses_getenv_boolean("RAWCURSES_DECTERM"))
@@ -6112,11 +6123,7 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
         if (rawcurses_w < 1)
         {
             rawcurses_w = 80;
-            if ((! strncmp(termType, "atari400", strlen("atari400")))
-                ||
-                (! strncmp(termType, "atari800", strlen("atari800")))
-                ||
-                (! strncmp(termType, "atascii", strlen("atascii"))))
+            if (! strncmp(termType, "atascii", strlen("atascii")))
             {
                 rawcurses_w = 40;
             }

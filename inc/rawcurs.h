@@ -8595,7 +8595,7 @@ static int addch(chtype ch) {
                     ch = '[';
                     break;
                 case '~':
-                    ch = '\015';
+                    ch = '^';
                     break;
                 case '}':
                     ch = ']';

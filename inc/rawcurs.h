@@ -23,15 +23,17 @@
  *  DEALINGS IN THE SOFTWARE.
  */
 
-/* NOTE: Right now the stdio (i.e. non-Win32 Console, non-CONIO) driver
- * outputs raw ANSI/VT100/XTerm-style, VT52-style, or ADM3A-style
- * escape sequences [probably about 99% of all terminals and
- * emulations still in use that are not block mode and not Tektronix
- * can be convinced to fall into one of these categories] and expects
- * special keys (only LEFT, RIGHT, UP and DOWN so far) and reports
- * (cursor position, title and icon title) in the corresponding
- * format. The VT52-style and ADM3A-style modes don't support color or
- * attributes. */
+/* NOTE: Right now the stdio (i.e. non-Win32 Console, non-CONIO)
+ * driver outputs raw ANSI/VT100/XTerm-style, VT52-style, or
+ * ADM3A-style escape sequences [probably about 99% of all terminals
+ * and emulations still in use that are not block mode and not
+ * Tektronix can be convinced to fall into one of these categories]
+ * and expects special keys (only LEFT, RIGHT, UP and DOWN so far) and
+ * reports (cursor position, title and icon title) in the
+ * corresponding format. The VT52-style and ADM3A-style modes don't
+ * support color or attributes. There are also a couple strange modes
+ * for talking to Atari 8-bit computers using ATASCII and Commodore
+ * 8-bit computers using PETSCII (either shifted or unshifted.) */
 
 /* FIXME: Maybe we should use termcap or terminfo for the stdio
  * (i.e. non-Win32 Console, non-CONIO, non-TOS, non-AROS) case... then
@@ -99,7 +101,7 @@
  * Console registry entries are read from (in order of preference):
  *
  * 1. HKCU\Console\<Title> where <Title> is one of (in order of
-      preference):
+ *    preference):
  *
  *    a. Value fetched by GetConsoleTitle
  *

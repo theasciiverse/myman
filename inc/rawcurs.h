@@ -7328,7 +7328,7 @@ static int rawcurses_getch(void)
                     myman_setenv("RAWCURSES_PETSCII_SHIFTED", "0");
                     rawcurses_nw = rawcurses_w;
                     rawcurses_nh = rawcurses_h;
-                    rawcurses_ungetch_buffer = KEY_RESIZE;
+                    return KEY_RESIZE;
                 }
             }
             if ((ret == 0x09) || (ret == 0x0e))
@@ -7338,7 +7338,7 @@ static int rawcurses_getch(void)
                     myman_setenv("RAWCURSES_PETSCII_SHIFTED", "1");
                     rawcurses_nw = rawcurses_w;
                     rawcurses_nh = rawcurses_h;
-                    rawcurses_ungetch_buffer = KEY_RESIZE;
+                    return KEY_RESIZE;
                 }
             }
             if ((ret >= 0xc0) && (ret <= 0xdf)) ret += (0x60 - 0xc0);

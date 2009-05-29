@@ -9011,7 +9011,7 @@ static int addch(chtype ch) {
                 &&
                 (rawcurses_fput_relcup(stdout, -999, -999) > 0)
                 &&
-                (rawcurses_fput_relcup(stdout, rawcurses_y, rawcurses_h) > 0))
+                (rawcurses_fput_relcup(stdout, rawcurses_y, rawcurses_x) > 0))
             {
             }
             else

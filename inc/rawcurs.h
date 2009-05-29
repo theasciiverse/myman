@@ -2579,7 +2579,7 @@ static int rawcurses_fput_smcup(FILE *fh)
         return 1;
     }
 #endif
-    if (rawcurses_stdio_petscii) return (fprintf(fh, rawcurses_stdio_petscii_shifted ? "\011" : "\010") > 0) && rawcurses_fput_clear(fh);
+    if (rawcurses_stdio_petscii) return (fprintf(fh, rawcurses_stdio_petscii_shifted ? "\016\011" : "\017\010") > 0) && rawcurses_fput_clear(fh);
     if (rawcurses_stdio_vt52 || rawcurses_stdio_adm3a || rawcurses_stdio_amiga || rawcurses_stdio_atascii) return rawcurses_fput_clear(fh);
     return (fprintf(fh, ESCAPE("7") CSI("s") "%s" CSI("\?7l") CSI("r"),
                     rawcurses_stdio_amiga ? "" : (CSI("\?47h"))) > 0);

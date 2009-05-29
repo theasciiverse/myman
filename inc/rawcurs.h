@@ -7321,27 +7321,25 @@ static int rawcurses_getch(void)
         }
         if (rawcurses_stdio_petscii)
         {
-            if (ret == 0x08)
+            if ((ret == 0x08) || (ret == 0x8e))
             {
                 if (rawcurses_stdio_petscii_shifted)
                 {
                     myman_setenv("RAWCURSES_PETSCII_SHIFTED", "0");
                     rawcurses_nw = rawcurses_w;
                     rawcurses_nh = rawcurses_h;
-                    return KEY_RESIZE;
+                    rawcurses_ungetch_buffer = KEY_RESIZE;
                 }
-                return ERR;
             }
-            if (ret == 0x09)
+            if ((ret == 0x09) || (ret == 0x0e))
             {
                 if (! rawcurses_stdio_petscii_shifted)
                 {
                     myman_setenv("RAWCURSES_PETSCII_SHIFTED", "1");
                     rawcurses_nw = rawcurses_w;
                     rawcurses_nh = rawcurses_h;
-                    return KEY_RESIZE;
+                    rawcurses_ungetch_buffer = KEY_RESIZE;
                 }
-                return ERR;
             }
             if ((ret >= 0xc0) && (ret <= 0xdf)) ret += (0x60 - 0xc0);
             else if ((ret >= 0xe0) && (ret <= 0xfe)) ret += (0xa0 - 0xe0);

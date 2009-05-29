@@ -1979,13 +1979,21 @@ my_wcswidth(const wchar_t *s, size_t n)
 
 #endif
 
+static int use_raw = USE_RAW;
+
+static int use_raw_ucs = USE_RAW_UCS;
+
 static void
 init_trans(int use_bullet_for_dots)
 {
     int i;
 
     for (i = 0; i < 256; i ++)
-        if (isprint(i))
+        if (isprint(i)
+            &&
+            (((i >= ' ') && (i <= '~'))
+             ||
+             (use_raw && ! use_raw_ucs)))
         {
             altcharset_cp437[i] =
 #if USE_WIDEC_SUPPORT
@@ -1995,12 +2003,24 @@ init_trans(int use_bullet_for_dots)
         }
         else
         {
+            int j;
+
+            j = i;
+            while ((j < ' ') || (j > '~')
+                   ||
+                   (! isprint(j)))
+            {
+                int k;
+
+                k = fallback_cp437[j];
+                if (j == k) break;
+                j = k;
+            }
             altcharset_cp437[i] =
 #if USE_WIDEC_SUPPORT
                 NULL;
 #endif
-            ascii_cp437[i] =
-                '\?';
+            ascii_cp437[i] = j;
         }
     altcharset_cp437[19] =
 #if USE_WIDEC_SUPPORT
@@ -2030,7 +2050,7 @@ init_trans(int use_bullet_for_dots)
     
 #if USE_ATTR
 #ifdef MY_A_REVERSE
-    if (! isprint(8))
+    if ((! isprint(8)) && use_raw && ! use_raw_ucs)
     {
 #if ! USE_WIDEC_SUPPORT
         if (! (MY_A_REVERSE & 0xff))
@@ -2598,10 +2618,6 @@ init_trans(int use_bullet_for_dots)
     ascii_cp437[158] =
         'P';
 }
-
-static int use_raw = USE_RAW;
-
-static int use_raw_ucs = USE_RAW_UCS;
 
 int use_underline = USE_UNDERLINE;
 
@@ -4537,7 +4553,7 @@ my_addch(unsigned long b, chtype attrs)
                             if (my_wch && (my_wcwidth(my_wch) < 2))
                             {
                                 unsigned char rhs;
-                    
+
                                 rhs = cp437_fullwidth_rhs[b];
                                 if ((int) (unsigned char) rhs)
                                 {
@@ -5279,6 +5295,7 @@ pager(void)
                         else if ((k == 'x') || (k == 'X'))
                         {
                             use_raw = ! use_raw;
+                            init_trans(use_bullet_for_dots);
                             my_clear();
                             clearok(curscr, TRUE);
                             pager = pager_remaining;
@@ -5287,6 +5304,7 @@ pager(void)
                         else if ((k == 'e') || (k == 'E'))
                         {
                             use_raw_ucs = ! use_raw_ucs;
+                            init_trans(use_bullet_for_dots);
                             my_clear();
                             clearok(curscr, TRUE);
                             pager = pager_remaining;
@@ -5486,12 +5504,14 @@ pager(void)
                 else if ((k == 'x') || (k == 'X'))
                 {
                     use_raw = ! use_raw;
+                    init_trans(use_bullet_for_dots);
                     my_clear();
                     clearok(curscr, TRUE);
                 }
                 else if ((k == 'e') || (k == 'E'))
                 {
                     use_raw_ucs = ! use_raw_ucs;
+                    init_trans(use_bullet_for_dots);
                     my_clear();
                     clearok(curscr, TRUE);
                 }
@@ -6906,6 +6926,7 @@ gameinput(void)
         } else if ((k == 'x') || (k == 'X'))
         {
             use_raw = ! use_raw;
+            init_trans(use_bullet_for_dots);
             my_clear();
             clearok(curscr, TRUE);
             DIRTY_ALL();
@@ -6928,6 +6949,7 @@ gameinput(void)
         } else if ((k == 'e') || (k == 'E'))
         {
             use_raw_ucs = ! use_raw_ucs;
+            init_trans(use_bullet_for_dots);
             my_clear();
             clearok(curscr, TRUE);
             DIRTY_ALL();

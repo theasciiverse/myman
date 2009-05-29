@@ -1,6 +1,6 @@
 /*
  * rawcurs.h - Win32 Console / CONIO / TOS / AROS / *nix TTY driver for the MyMan video game
- * Copyright 2007-2008, Benjamin C. Wiley Sittler <bsittler@gmail.com>
+ * Copyright 2007-2009, Benjamin C. Wiley Sittler <bsittler@gmail.com>
  *
  *  Permission is hereby granted, free of charge, to any person
  *  obtaining a copy of this software and associated documentation

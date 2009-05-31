@@ -5051,3 +5051,15 @@ char *myman_getenv(const char *name)
     }
     return ret;
 }
+
+char *myman_strrstr(const char *haystack, const char *needle)
+{
+    char *ret, *probe;
+
+    ret = strstr(haystack, needle);
+    while ((probe = strstr(ret, needle)) != NULL)
+    {
+        ret = probe;
+    }
+    return ret;
+}

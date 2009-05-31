@@ -1059,4 +1059,6 @@ extern int myman_setenv(const char *name, const char *value);
 
 extern char *myman_getenv(const char *name);
 
+extern char *myman_strrstr(const char *haystack, const char *needle);
+
 #endif /* ! defined(MYMAN_UTILS_H_INCLUDED) */

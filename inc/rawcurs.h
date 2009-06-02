@@ -50,6 +50,14 @@
  * Adjust as appropriate if your shell is not Bourne-style. Enjoy! :)
  */
 
+/* NOTE: You will need to set up the color palette on a color PETSCII
+ * machine prior to running MyMan. For VIC-20 I recommend running this
+ * BASIC program:
+ *     ?chr$(5);:poke 36879,8
+ * And for C-64 and C-128:
+ *     poke 53280,0:poke 53281,peek(53280)
+ */
+
 /*
  * Win32 console custom color palettes (HACK!)
  *
@@ -1287,6 +1295,7 @@ RAWCURSES_GLOBAL(int rawcurses_stdio_adm3a, = 0);
 RAWCURSES_GLOBAL(int rawcurses_stdio_atascii, = 0);
 RAWCURSES_GLOBAL(int rawcurses_stdio_petscii, = 0);
 RAWCURSES_GLOBAL(int rawcurses_stdio_petscii_shifted, = 1);
+RAWCURSES_GLOBAL(int rawcurses_stdio_petscii_palette, = 0);
 RAWCURSES_GLOBAL(int rawcurses_stdio_idchok, = 1);
 RAWCURSES_GLOBAL(int rawcurses_stdio_decterm, = 0);
 RAWCURSES_GLOBAL(int rawcurses_stdio_relcup, = 0);
@@ -2565,6 +2574,8 @@ static int rawcurses_fput_cnorm(FILE *fh)
     return fputs(CSI("\?25h"), fh) != EOF;
 }
 
+static const char *rawcurses_term_type(void);
+
 static int rawcurses_fput_smcup(FILE *fh)
 {
 #if USE_SETVBUF
@@ -2579,7 +2590,23 @@ static int rawcurses_fput_smcup(FILE *fh)
         return 1;
     }
 #endif
-    if (rawcurses_stdio_petscii) return (fprintf(fh, rawcurses_stdio_petscii_shifted ? "\016\011" : "\216\010") > 0) && rawcurses_fput_clear(fh);
+    if (rawcurses_stdio_petscii)
+    {
+        if (rawcurses_fput_clear(fh) <= 0) return 0;
+        fflush(fh);
+        usleep(100000UL);
+        if (fprintf(fh,
+                    "%s",
+                    rawcurses_stdio_petscii_shifted
+                    ? "\216\010\216\010\016\011\016\011"
+                    : "\016\011\016\011\216\010\216\010") <= 0)
+        {
+            return 0;
+        }
+        fflush(fh);
+        usleep(100000UL);
+        return 1;
+    }
     if (rawcurses_stdio_vt52 || rawcurses_stdio_adm3a || rawcurses_stdio_amiga || rawcurses_stdio_atascii) return rawcurses_fput_clear(fh);
     return (fprintf(fh, ESCAPE("7") CSI("s") "%s" CSI("\?7l") CSI("r"),
                     rawcurses_stdio_amiga ? "" : (CSI("\?47h"))) > 0);
@@ -2598,7 +2625,20 @@ static int rawcurses_fput_rmcup(FILE *fh, int lines)
         return 1;
     }
 #endif
-    if (rawcurses_stdio_vt52 || rawcurses_stdio_adm3a || rawcurses_stdio_atascii || rawcurses_stdio_petscii) return 1;
+    if (rawcurses_stdio_petscii)
+    {
+        fflush(fh);
+        usleep(100000UL);
+        fprintf(fh,
+                "%s",
+                strncmp(rawcurses_term_type(), "petscii-unshifted", strlen("petscii-unshifted"))
+                ? "\216\010\216\010\016\011\016\011"
+                : "\016\011\016\011\216\010\216\010");
+        fflush(fh);
+        usleep(100000UL);
+        return 1;
+    }
+    if (rawcurses_stdio_vt52 || rawcurses_stdio_adm3a || rawcurses_stdio_atascii) return 1;
     return (fprintf(fh, CSI("%d;1H") CSI("39;49m") CSI("0m") CSI("\?7h") "%s" CSI("u") ESCAPE("8"),
                     lines,
                     rawcurses_stdio_amiga ? "" : (CSI("\?47l"))) > 0);
@@ -2930,7 +2970,7 @@ static int rawcurses_fput_sgr(FILE *fh, attr_t a, attr_t a_rgb)
         {
             attr_t tmp;
 
-            fputs("\022", fh);
+            if (fputs("\022", fh) == EOF) return 0;
             tmp = 0;
             if (a_rgb & FOREGROUND_RED) tmp |= BACKGROUND_RED;
             if (a_rgb & FOREGROUND_GREEN) tmp |= BACKGROUND_GREEN;
@@ -2939,49 +2979,94 @@ static int rawcurses_fput_sgr(FILE *fh, attr_t a, attr_t a_rgb)
             if (a_rgb & BACKGROUND_RED) tmp |= FOREGROUND_RED;
             if (a_rgb & BACKGROUND_GREEN) tmp |= FOREGROUND_GREEN;
             if (a_rgb & BACKGROUND_BLUE) tmp |= FOREGROUND_BLUE;
-            if (a_rgb & BACKGROUND_INTENSITY) tmp |= FOREGROUND_INTENSITY;
+            if ((a_rgb & BACKGROUND_INTENSITY) || ((a & A_REVERSE) && (a & A_BOLD))) tmp |= FOREGROUND_INTENSITY;
             a_rgb = tmp;
         }
         else
         {
-            fputs("\222", fh);
+            if (fputs("\222", fh) == EOF) return 0;
         }
-        switch ((a_rgb & (FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY))
-                |
-                ((a & A_BOLD) ? FOREGROUND_INTENSITY : 0))
+        if (rawcurses_color)
         {
-        case 0:
-            return fputs("\220", fh) != EOF;
-        case FOREGROUND_BLUE:
-            return fputs("\232", fh) != EOF;
-        case FOREGROUND_GREEN:
-            return fputs("\036", fh) != EOF;
-        case FOREGROUND_BLUE | FOREGROUND_GREEN:
-            return fputs("\237", fh) != EOF;
-        case FOREGROUND_RED:
-            return fputs("\225", fh) != EOF;
-        case FOREGROUND_RED | FOREGROUND_BLUE:
-            return fputs("\226", fh) != EOF;
-        case FOREGROUND_RED | FOREGROUND_GREEN:
-            return fputs("\201", fh) != EOF;
-        case FOREGROUND_RED | FOREGROUND_BLUE | FOREGROUND_GREEN:
-            return fputs("\233", fh) != EOF;
-        case FOREGROUND_INTENSITY:
-            return fputs("\227", fh) != EOF;
-        case FOREGROUND_INTENSITY | FOREGROUND_BLUE:
-            return fputs("\037", fh) != EOF;
-        case FOREGROUND_INTENSITY | FOREGROUND_GREEN:
-            return fputs("\231", fh) != EOF;
-        case FOREGROUND_INTENSITY | FOREGROUND_BLUE | FOREGROUND_GREEN:
-            return fputs("\237", fh) != EOF;
-        case FOREGROUND_INTENSITY | FOREGROUND_RED:
-            return fputs("\034", fh) != EOF;
-        case FOREGROUND_INTENSITY | FOREGROUND_RED | FOREGROUND_BLUE:
-            return fputs("\234", fh) != EOF;
-        case FOREGROUND_INTENSITY | FOREGROUND_RED | FOREGROUND_GREEN:
-            return fputs("\236", fh) != EOF;
-        case FOREGROUND_INTENSITY | FOREGROUND_RED | FOREGROUND_BLUE | FOREGROUND_GREEN:
-            return fputs("\005", fh) != EOF;
+            /*
+             * PETSCII palettes
+             *
+             * 0 VIC+
+             * 1 C64 / C128 (40)
+             * 2 264 series
+             * 3 C128 (80)
+             * 4 C128 RGB (80) (SyncTERM)
+             */
+
+            /*
+             *      VIC+        C64/C128 (40)   264 series      C128 (80)       RGB (80)
+             *
+             * \220 black       black           black           black           black
+             * \037 blue        blue            blue            blue            brown
+             * \036 green       green           green           green           dark magenta
+             * \227 -           dark grey       pink            dark cyan       cyan
+             * \034 red         red             red             red             green
+             * \201 -           orange          orange          dark purple     dark grey
+             * \225 -           brown           brown           dark yellow     light blue
+             * \233 -           light grey      light green     light grey      white
+             * \230 -           medium grey     blue-green      medium gray     light red
+             * \232 -           light blue      dark blue       light blue      yellow
+             * \231 -           light green     light blue      light green     light magenta
+             * \237 cyan        cyan            cyan            cyan            dark cyan
+             * \226 -           light red       yellow-green    light red       light green
+             * \234 purple      purple          purple          purple          red
+             * \236 yellow      yellow          yellow          yellow          light grey
+             * \005 white       white           white           white           blue
+             */
+
+            static const char *petscii_palette[16] = {
+                "\220\220\220\220\220", /* black */
+                "\037\037\232\037\005", /* blue */
+                "\036\036\036\036\034", /* green */
+                "\237\237\230\227\237", /* cyan */
+                "\034\034\034\034\234", /* red */
+                "\234\234\234\201\036", /* magenta */
+                "\236\225\225\225\037", /* brown */
+                "\005\233\005\233\236", /* light grey */
+                "\005\230\005\230\201", /* dark grey */
+                "\037\232\037\232\225", /* light blue */
+                "\036\231\233\231\226", /* light green */
+                "\237\237\237\237\227", /* light cyan */
+                "\034\226\201\226\230", /* light red */
+                "\234\234\227\234\231", /* light magenta */
+                "\236\236\236\236\232", /* yellow */
+                "\005\005\005\005\233"  /* white */
+            };
+
+#define RAWCURSES__PETSCII_PALETTE_ENTRY(s) (*((s) + ((rawcurses_stdio_petscii_palette < strlen(s)) ? rawcurses_stdio_petscii_palette : 0)))
+
+            int petscii_color;
+            const char *petscii_palette_entries;
+
+            petscii_color =
+                (((a_rgb & FOREGROUND_INTENSITY) || (a & A_BOLD)) ? 8 : 0)
+                |
+                ((a_rgb & FOREGROUND_RED) ? 4 : 0)
+                |
+                ((a_rgb & FOREGROUND_GREEN) ? 2 : 0)
+                |
+                ((a_rgb & FOREGROUND_BLUE) ? 1 : 0);
+            petscii_palette_entries = petscii_palette[petscii_color % (sizeof(petscii_palette)/sizeof(*petscii_palette))];
+            if (fputc(RAWCURSES__PETSCII_PALETTE_ENTRY(petscii_palette_entries), fh) == EOF)
+            {
+                return 0;
+            }
+        }
+        if (rawcurses_w == 80)
+        {
+            if (a & A_UNDERLINE)
+            {
+                if (fputs("\002", fh) == EOF) return 0;
+            }
+            else
+            {
+                if (fputs("\202", fh) == EOF) return 0;
+            }
         }
         return 1;
     }
@@ -6255,20 +6340,275 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
         int got_winsize;
 
         got_winsize = 1;
+        if ((rawcurses_w < 1)
+            &&
+            (rawcurses_h < 1)
+            &&
+            (*termType))
+        {
+            const char *needle;
+
+            /* look for a suspicious dimension in the termtype */
+            needle = termType;
+            while ((needle[0] != '\0')
+                   &&
+                   ((needle = strstr(needle + 1, "-")) != NULL))
+            {
+                int termw, termh;
+                char dummy;
+
+                termw = 0;
+                termh = 0;
+                dummy = '\0';
+                if ((sscanf(needle + 1, "%dx%d%c", &termw, &termh, &dummy) >= 2)
+                    &&
+                    ((dummy == '\0') || (dummy == '-'))
+                    &&
+                    (termw >= 1)
+                    &&
+                    (termh >= 1))
+                {
+                    if ((termw == 12) && (termh == 40))
+                    {
+                        termw = 40;
+                        termh = 12;
+                    }
+                    rawcurses_w = termw;
+                    rawcurses_h = termh;
+                    if (strstr(termType, "-s-")
+                        ||
+                        (myman_strrstr(termType, "-s") && ! strcmp(myman_strrstr(termType, "-s"), "-s")))
+                    {
+                        rawcurses_h --;
+                    }
+                    got_winsize = 0;
+                    break;
+                }
+            }
+        }
         if (rawcurses_w < 1)
         {
             rawcurses_w = 80;
             if ((! strncmp(termType, "atascii", strlen("atascii")))
                 ||
-                (! strncmp(termType, "petscii", strlen("petscii"))))
+                (! strncmp(termType, "petscii", strlen("petscii")))
+                ||
+                (! strncmp(termType, "ibm6153-40", strlen("ibm6153-40"))))
             {
                 rawcurses_w = 40;
+            }
+            if (! strncmp(termType, "ibm6153-90", strlen("ibm6153-90")))
+            {
+                rawcurses_w = 90;
+            }
+            if (strstr(termType, "-132-")
+                ||
+                (myman_strrstr(termType, "-132") && ! strcmp(myman_strrstr(termType, "-132"), "-132"))
+                ||
+                strstr(termType, "-w-")
+                ||
+                (myman_strrstr(termType, "-w") && ! strcmp(myman_strrstr(termType, "-w"), "-w")))
+            {
+                rawcurses_w = 132;
+                if (strstr(termType, "-w-")
+                    ||
+                    (myman_strrstr(termType, "-w") && ! strcmp(myman_strrstr(termType, "-w"), "-w")))
+                {
+                    if ((strstr(termType, "opennt") || strstr(termType, "ntconsole"))
+                        &&
+                        (! strstr(termType, "-vt")))
+                    {
+                        rawcurses_w = 125;
+                    }
+                    if (strstr(termType, "osborne"))
+                    {
+                        rawcurses_w = 104;
+                    }
+                    if ((! strncmp(termType, "d4", strlen("d4")))
+                        ||
+                        (! strncmp(termType, "d5", strlen("d5"))))
+                    {
+                        rawcurses_w = 126;
+                    }
+                }
             }
             got_winsize = 0;
         }
         if (rawcurses_h < 1)
         {
             rawcurses_h = 24;
+            if ((! strncmp(termType, "petscii", strlen("petscii")))
+                ||
+                (! strncmp(termType, "ansi", strlen("ansi")))
+                ||
+                (! strncmp(termType, "pcansi", strlen("pcansi")))
+                ||
+                strstr(termType, "ntconsole")
+                ||
+                strstr(termType, "opennt")
+                ||
+                strstr(termType, "-25-")
+                ||
+                (myman_strrstr(termType, "-25") && ! strcmp(myman_strrstr(termType, "-25"), "-25")))
+            {
+                rawcurses_h = 25;
+            }
+            if (! strncmp(termType, "ibm6153-90", strlen("ibm6153-90")))
+            {
+                rawcurses_h = 36;
+            }
+            if ((strstr(termType, "ntconsole")
+                 ||
+                 strstr(termType, "opennt"))
+                &&
+                (strstr(termType, "-100-")
+                 ||
+                 (myman_strrstr(termType, "-100") && ! strcmp(myman_strrstr(termType, "-100"), "-100"))))
+            {
+                rawcurses_h = 100;
+            }
+            if (strstr(termType, "-76-")
+                ||
+                (myman_strrstr(termType, "-76") && ! strcmp(myman_strrstr(termType, "-76"), "-76")))
+            {
+                rawcurses_h = 76;
+            }
+            if (strstr(termType, "-65-")
+                ||
+                (myman_strrstr(termType, "-65") && ! strcmp(myman_strrstr(termType, "-65"), "-65")))
+            {
+                rawcurses_h = 65;
+            }
+            if (strstr(termType, "-60-")
+                ||
+                (myman_strrstr(termType, "-60") && ! strcmp(myman_strrstr(termType, "-60"), "-60")))
+            {
+                rawcurses_h = 60;
+            }
+            if (strstr(termType, "-50-")
+                ||
+                (myman_strrstr(termType, "-50") && ! strcmp(myman_strrstr(termType, "-50"), "-50")))
+            {
+                rawcurses_h = 50;
+            }
+            if (strstr(termType, "-48-")
+                ||
+                (myman_strrstr(termType, "-48") && ! strcmp(myman_strrstr(termType, "-48"), "-48")))
+            {
+                rawcurses_h = 48;
+            }
+            if (strstr(termType, "-44-")
+                ||
+                (myman_strrstr(termType, "-44") && ! strcmp(myman_strrstr(termType, "-44"), "-44")))
+            {
+                rawcurses_h = 44;
+            }
+            if (strstr(termType, "-43-")
+                ||
+                (myman_strrstr(termType, "-43") && ! strcmp(myman_strrstr(termType, "-43"), "-43")))
+            {
+                rawcurses_h = 43;
+            }
+            if (strstr(termType, "-42-")
+                ||
+                (myman_strrstr(termType, "-42") && ! strcmp(myman_strrstr(termType, "-42"), "-42")))
+            {
+                rawcurses_h = 42;
+            }
+            if (strstr(termType, "-41-")
+                ||
+                (myman_strrstr(termType, "-41") && ! strcmp(myman_strrstr(termType, "-41"), "-41")))
+            {
+                rawcurses_h = 41;
+            }
+            if (strstr(termType, "-40-")
+                ||
+                (myman_strrstr(termType, "-40") && ! strcmp(myman_strrstr(termType, "-40"), "-40")))
+            {
+                rawcurses_h = 40;
+                if (! strncmp(termType, "ibm6153-40", strlen("ibm6153-40")))
+                {
+                    rawcurses_h = 12;
+                }
+            }
+            if (strstr(termType, "-36-")
+                ||
+                (myman_strrstr(termType, "-36") && ! strcmp(myman_strrstr(termType, "-36"), "-36")))
+            {
+                rawcurses_h = 36;
+            }
+            if (strstr(termType, "-35-")
+                ||
+                (myman_strrstr(termType, "-35") && ! strcmp(myman_strrstr(termType, "-35"), "-35")))
+            {
+                rawcurses_h = 34;
+            }
+            if (strstr(termType, "-34-")
+                ||
+                (myman_strrstr(termType, "-34") && ! strcmp(myman_strrstr(termType, "-34"), "-34")))
+            {
+                rawcurses_h = 34;
+            }
+            if (strstr(termType, "-33-")
+                ||
+                (myman_strrstr(termType, "-33") && ! strcmp(myman_strrstr(termType, "-33"), "-33")))
+            {
+                rawcurses_h = 34;
+            }
+            if (strstr(termType, "-30-")
+                ||
+                (myman_strrstr(termType, "-30") && ! strcmp(myman_strrstr(termType, "-30"), "-30")))
+            {
+                rawcurses_h = 30;
+            }
+            if (strstr(termType, "-28-")
+                ||
+                (myman_strrstr(termType, "-28") && ! strcmp(myman_strrstr(termType, "-28"), "-28")))
+            {
+                rawcurses_h = 28;
+            }
+            if (strstr(termType, "-24-")
+                ||
+                (myman_strrstr(termType, "-24") && ! strcmp(myman_strrstr(termType, "-24"), "-24")))
+            {
+                rawcurses_h = 24;
+            }
+            if (strstr(termType, "-22-")
+                ||
+                (myman_strrstr(termType, "-22") && ! strcmp(myman_strrstr(termType, "-22"), "-22")))
+            {
+                rawcurses_h = 22;
+            }
+            if (strstr(termType, "-20-")
+                ||
+                (myman_strrstr(termType, "-20") && ! strcmp(myman_strrstr(termType, "-20"), "-20")))
+            {
+                rawcurses_h = 20;
+            }
+            if (strstr(termType, "-18-")
+                ||
+                (myman_strrstr(termType, "-18") && ! strcmp(myman_strrstr(termType, "-18"), "-18")))
+            {
+                rawcurses_h = 18;
+            }
+            if (strstr(termType, "-17-")
+                ||
+                (myman_strrstr(termType, "-17") && ! strcmp(myman_strrstr(termType, "-17"), "-17")))
+            {
+                rawcurses_h = 17;
+            }
+            if (strstr(termType, "-12-")
+                ||
+                (myman_strrstr(termType, "-12") && ! strcmp(myman_strrstr(termType, "-12"), "-12")))
+            {
+                rawcurses_h = 12;
+            }
+            if (strstr(termType, "-s-")
+                ||
+                (myman_strrstr(termType, "-s") && ! strcmp(myman_strrstr(termType, "-s"), "-s")))
+            {
+                rawcurses_h --;
+            }
             got_winsize = 0;
         }
         rawcurses_stdio_new_shortname = NULL;
@@ -6471,6 +6811,20 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
 #endif
             memcpy((void *) rawcurses_old_palette, (void *) rawcurses_palette, sizeof(rawcurses_old_palette));
         }
+    }
+    if (myman_getenv("RAWCURSES_PETSCII_PALETTE") && *(myman_getenv("RAWCURSES_PETSCII_PALETTE")))
+    {
+        rawcurses_stdio_petscii_palette = atoi(myman_getenv("RAWCURSES_PETSCII_PALETTE"));
+        if (rawcurses_stdio_petscii_palette < 0) rawcurses_stdio_petscii_palette = 0;
+    }
+    else
+    {
+        rawcurses_stdio_petscii_palette =
+            (rawcurses_w == 80)
+            ? 3
+            : (rawcurses_w == 22)
+            ? 0
+            : 1;
     }
     refresh();
     rawcurses_after_endwin = 0;

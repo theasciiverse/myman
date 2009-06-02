@@ -2013,7 +2013,8 @@ pac188 \
 small188 \
 full188 \
 lim \
-jobman
+jobman \
+quikman
 all_sizes = \
 small \
 big \
@@ -3835,6 +3836,8 @@ lvl/qman.asc \
 lvl/qman.txt \
 lvl/quackman.asc \
 lvl/quackman.txt \
+lvl/quikman.asc \
+lvl/quikman.txt \
 lvl/remake.asc \
 lvl/remake.txt \
 lvl/revenge.asc \

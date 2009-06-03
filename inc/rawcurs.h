@@ -880,7 +880,7 @@ typedef int rawcurses_wchar_t;
 #endif
 
 #ifndef SWAPDOTS
-#define SWAPDOTS (! (rawcurses_stdio && rawcurses_stdio_acs && (rawcurses_stdio_atascii || (rawcurses_stdio_petscii && ! rawcurses_stdio_petscii_shifted) || rawcurses_stdio_acs_h19 || rawcurses_stdio_acs_wy60 || rawcurses_stdio_cp437 || rawcurses_stdio_noswapdots)))
+#define SWAPDOTS (! (rawcurses_stdio && rawcurses_stdio_acs && (rawcurses_stdio_atascii || (rawcurses_stdio_petscii && ! rawcurses_stdio_petscii_shifted) || (rawcurses_stdio_petscii_shifted && rawcurses_stdio_acs_c128 && (rawcurses_w == 80) && rawcurses_color && rawcurses_stdio_petscii_shifted) || rawcurses_stdio_acs_h19 || rawcurses_stdio_acs_wy60 || rawcurses_stdio_cp437 || rawcurses_stdio_noswapdots)))
 #endif
 
 #ifndef USE_RAW_UCS
@@ -1279,6 +1279,7 @@ RAWCURSES_GLOBAL(int rawcurses_stdio_acs, = 0);
 RAWCURSES_GLOBAL(int rawcurses_stdio_acs_h19, = 0);
 RAWCURSES_GLOBAL(int rawcurses_stdio_acs_wy60, = 0);
 RAWCURSES_GLOBAL(int rawcurses_stdio_acs_kaypro2x, = 0);
+RAWCURSES_GLOBAL(int rawcurses_stdio_acs_c128, = 0);
 RAWCURSES_GLOBAL(int rawcurses_stdio_wy60, = 0);
 RAWCURSES_GLOBAL(int rawcurses_stdio_kaypro2x, = 0);
 RAWCURSES_GLOBAL(int rawcurses_stdio_noswapdots, = 0);
@@ -2548,6 +2549,7 @@ static int rawcurses_fput_civis(FILE *fh)
     if (rawcurses_stdio_st52) return fputs(ESCAPE("f"), fh) != EOF;
     if (rawcurses_stdio_wy60) return fputs(ESCAPE("`0"), fh) != EOF;
     if (rawcurses_stdio_kaypro2x) return fputs(ESCAPE("C4"), fh) != EOF;
+    if (rawcurses_stdio_petscii && rawcurses_color && (rawcurses_w == 80)) return fputs(ESCAPE("U"), fh) != EOF;
     if (rawcurses_stdio_vt52 || rawcurses_stdio_adm3a || rawcurses_stdio_atascii || rawcurses_stdio_petscii) return 0;
     if (rawcurses_stdio_amiga) return fputs(CSI("0 p"), fh) != EOF;
     return fputs(CSI("\?25l"), fh) != EOF;
@@ -2569,6 +2571,7 @@ static int rawcurses_fput_cnorm(FILE *fh)
     if (rawcurses_stdio_st52) return fputs(ESCAPE("e"), fh) != EOF;
     if (rawcurses_stdio_wy60) return fputs(ESCAPE("`1"), fh) != EOF;
     if (rawcurses_stdio_kaypro2x) return fputs(ESCAPE("B4"), fh) != EOF;
+    if (rawcurses_stdio_petscii && rawcurses_color && (rawcurses_w == 80)) return fputs(ESCAPE("S"), fh) != EOF;
     if (rawcurses_stdio_vt52 || rawcurses_stdio_adm3a || rawcurses_stdio_atascii || rawcurses_stdio_petscii) return 0;
     if (rawcurses_stdio_amiga) return fputs(CSI(" p"), fh) != EOF;
     return fputs(CSI("\?25h"), fh) != EOF;
@@ -2598,8 +2601,8 @@ static int rawcurses_fput_smcup(FILE *fh)
         if (fprintf(fh,
                     "%s",
                     rawcurses_stdio_petscii_shifted
-                    ? "\216\010\216\010\016\011\016\011"
-                    : "\016\011\016\011\216\010\216\010") <= 0)
+                    ? "\216\216\016\016"
+                    : "\016\016\216\216") <= 0)
         {
             return 0;
         }
@@ -2632,8 +2635,8 @@ static int rawcurses_fput_rmcup(FILE *fh, int lines)
         fprintf(fh,
                 "%s",
                 strncmp(rawcurses_term_type(), "petscii-unshifted", strlen("petscii-unshifted"))
-                ? "\216\010\216\010\016\011\016\011"
-                : "\016\011\016\011\216\010\216\010");
+                ? "\216\216\016\016"
+                : "\016\016\216\216");
         fflush(fh);
         usleep(100000UL);
         return 1;
@@ -2668,6 +2671,18 @@ static int rawcurses_fput_smacs(FILE *fh)
 #endif
     if (rawcurses_stdio_vt52) return fputs(ESCAPE("F"), fh) != EOF;
     if (rawcurses_stdio_wy60 && rawcurses_stdio_acs_wy60) return fputs(ESCAPE("H"), fh) != EOF;
+    if (rawcurses_stdio_petscii
+        &&
+        rawcurses_stdio_acs_c128
+        &&
+        (rawcurses_w == 80)
+        &&
+        rawcurses_color
+        &&
+        rawcurses_stdio_petscii_shifted)
+    {
+        return fputs("\216", fh) != EOF;
+    }
     if (rawcurses_stdio_kaypro2x || rawcurses_stdio_acs_kaypro2x || rawcurses_stdio_atascii || rawcurses_stdio_petscii) return 1;
     if (rawcurses_stdio_cp437 && ! rawcurses_stdio_adm3a)
     {
@@ -2689,6 +2704,18 @@ static int rawcurses_fput_rmacs(FILE *fh)
 #endif
     if (rawcurses_stdio_vt52) return fputs(ESCAPE("G"), fh) != EOF;
     if (rawcurses_stdio_wy60 && rawcurses_stdio_acs_wy60) return 1;
+    if (rawcurses_stdio_petscii
+        &&
+        rawcurses_stdio_acs_c128
+        &&
+        (rawcurses_w == 80)
+        &&
+        rawcurses_color
+        &&
+        rawcurses_stdio_petscii_shifted)
+    {
+        return fputs("\016", fh) != EOF;
+    }
     if (rawcurses_stdio_kaypro2x || rawcurses_stdio_acs_kaypro2x || rawcurses_stdio_atascii || rawcurses_stdio_petscii) return 1;
     if (rawcurses_stdio_cp437 && ! rawcurses_stdio_adm3a)
     {
@@ -3400,7 +3427,15 @@ static chtype rawcurses_map_acs(chtype ch)
         case RAWCURSES__ACS_LHALF:
             return ch;
         default:
-            if ((! rawcurses_stdio_petscii_shifted)
+            if (((rawcurses_stdio_acs_c128
+                  &&
+                  (rawcurses_w == 80)
+                  &&
+                  rawcurses_color
+                  &&
+                  rawcurses_stdio_petscii_shifted)
+                 ||
+                 (! rawcurses_stdio_petscii_shifted))
                 &&
                 (ch == (chtype) ACS_BULLET))
             {
@@ -5324,6 +5359,20 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
         if (! strncmp(termType, "petscii-unshifted", strlen("petscii-unshifted")))
         {
             rawcurses_stdio_petscii_shifted = 0;
+        }
+    }
+    if (rawcurses_getenv_boolean("RAWCURSES_ACS_C128"))
+    {
+        rawcurses_stdio_acs_c128 = *(rawcurses_getenv_boolean("RAWCURSES_ACS_C128")) ? 1 : 0;
+    }
+    else
+    {
+        rawcurses_stdio_acs_c128 = 0;
+        if (rawcurses_stdio_petscii
+            &&
+            rawcurses_stdio_petscii_shifted)
+        {
+            rawcurses_stdio_acs_c128 = 1;
         }
     }
     if (rawcurses_getenv_boolean("RAWCURSES_IDCHOK"))
@@ -9141,6 +9190,21 @@ static int addch(chtype ch) {
                 }
                 else
                 {
+                    int acs_shifted;
+
+                    acs_shifted = rawcurses_stdio_petscii_shifted;
+                    if (rawcurses_stdio_petscii
+                        &&
+                        rawcurses_stdio_acs_c128
+                        &&
+                        (rawcurses_w == 80)
+                        &&
+                        rawcurses_color
+                        &&
+                        rawcurses_stdio_petscii_shifted)
+                    {
+                        acs_shifted = 0;
+                    }
                     switch (ch)
                     {
                     case '{':
@@ -9175,10 +9239,10 @@ static int addch(chtype ch) {
                         ch = '\140';
                         break;
                     case ACS_LLCORNER:
-                        ch = (int) (unsigned) (unsigned char) (rawcurses_stdio_petscii_shifted ? '\255' : '\152');
+                        ch = (int) (unsigned) (unsigned char) (acs_shifted ? '\255' : '\152');
                         break;
                     case ACS_LRCORNER:
-                        ch = (int) (unsigned) (unsigned char) (rawcurses_stdio_petscii_shifted ? '\275' : '\153');
+                        ch = (int) (unsigned) (unsigned char) (acs_shifted ? '\275' : '\153');
                         break;
                     case ACS_LTEE:
                         ch = ((int) (unsigned) (unsigned char) '\253');
@@ -9193,10 +9257,10 @@ static int addch(chtype ch) {
                         ch = ((int) (unsigned) (unsigned char) '\262');
                         break;
                     case ACS_ULCORNER:
-                        ch = (int) (unsigned) (unsigned char) (rawcurses_stdio_petscii_shifted ? '\260' : '\165');
+                        ch = (int) (unsigned) (unsigned char) (acs_shifted ? '\260' : '\165');
                         break;
                     case ACS_URCORNER:
-                        ch = (int) (unsigned) (unsigned char) (rawcurses_stdio_petscii_shifted ? '\256' : '\151');
+                        ch = (int) (unsigned) (unsigned char) (acs_shifted ? '\256' : '\151');
                         break;
                     case RAWCURSES__ACS_BHALF:
                         ch = ((int) (unsigned) (unsigned char) '\242');
@@ -9205,7 +9269,7 @@ static int addch(chtype ch) {
                         ch = ((int) (unsigned) (unsigned char) '\241');
                         break;
                     default:
-                        if ((! rawcurses_stdio_petscii_shifted)
+                        if ((! acs_shifted)
                             &&
                             (ch == (chtype) ACS_BULLET))
                         {

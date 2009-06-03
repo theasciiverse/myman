@@ -2601,8 +2601,8 @@ static int rawcurses_fput_smcup(FILE *fh)
         if (fprintf(fh,
                     "%s",
                     rawcurses_stdio_petscii_shifted
-                    ? "\216\216\016\016"
-                    : "\016\016\216\216") <= 0)
+                    ? "\011\216\216\011\016\016"
+                    : "\011\016\016\011\216\216") <= 0)
         {
             return 0;
         }
@@ -2635,8 +2635,8 @@ static int rawcurses_fput_rmcup(FILE *fh, int lines)
         fprintf(fh,
                 "%s",
                 strncmp(rawcurses_term_type(), "petscii-unshifted", strlen("petscii-unshifted"))
-                ? "\216\216\016\016"
-                : "\016\016\216\216");
+                ? "\011\216\216\011\016\016"
+                : "\011\016\016\011\216\216");
         fflush(fh);
         usleep(100000UL);
         return 1;

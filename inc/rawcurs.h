@@ -8363,7 +8363,7 @@ static int rawcurses_getch(void)
                     rawcurses_input_state = RAWCURSES_INPUT_STATE_DEFAULT;
                     switch (rawcurses_input_param[0])
                     {
-                    case 'l':
+                    case 'L':
                         if (1)
                         {
                             if (! rawcurses_stdio_old_shortname)
@@ -8385,7 +8385,7 @@ static int rawcurses_getch(void)
                             }
                         }
                         break;
-                    case 'L':
+                    case 'l':
                         if (1)
                         {
                             if (! rawcurses_stdio_old_title)

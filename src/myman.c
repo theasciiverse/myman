@@ -1,4 +1,4 @@
-/*BINFMTC:-lcurses -I../inc utils.c
+/*BINFMTC:-lcurses -I../inc utils.c logic.c
  * myman.c - game logic for the MyMan video game
  * Copyright 1997-2009, Benjamin C. Wiley Sittler <bsittler@gmail.com>
  *

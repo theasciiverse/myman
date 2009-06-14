@@ -505,14 +505,31 @@ static int rawcurses_gettimeofday(struct timeval *tv, void *tz)
         double usecs;
 
         Microseconds(&microTickCount);
-        usecs = (4294967296.0 * microTickCount.hi + microTickCount.lo);
+        usecs = (4294967296.0L * microTickCount.hi + microTickCount.lo);
         tv->tv_sec = (long) (usecs / 1e6);
         tv->tv_usec = (long) (usecs - (1e6 * tv->tv_sec));
 
 #else /* ! defined(macintosh) */
 
-#error no gettimeofday(2) implementation for your platform, sorry
-        return 1;
+        clock_t ticks;
+        time_t elapsed;
+        double secs;
+
+        ticks = clock();
+        if (ticks == (clock_t) -1)
+        {
+            return 1;
+        }
+        elapsed = time(NULL);
+        if (elapsed == (time_t) -1)
+        {
+            return 1;
+        }
+        secs = (1.0L * ticks) / CLOCKS_PER_SEC;
+        tv->tv_sec = (long) secs;
+        tv->tv_usec = (long) (1e6 * (secs - tv->tv_sec));
+        tv->tv_sec = (long) elapsed;
+        return 0;
 
 #endif /* ! defined(macintosh) */
 
@@ -525,6 +542,34 @@ static int rawcurses_gettimeofday(struct timeval *tv, void *tz)
 }
 
 #endif /* ! HAVE_GETTIMEOFDAY */
+
+#ifndef HAVE_ACCESS
+#if defined(macintosh) && ! defined(access)
+#define HAVE_ACCESS 0
+#else
+#define HAVE_ACCESS 1
+#endif
+#endif
+
+#if ! HAVE_ACCESS
+
+#undef access
+#define access(fn,type) rawcurses_access(fn)
+
+static int rawcurses_access(const char *fn)
+{
+    FILE *fp;
+
+    fp = fopen(fn, "rb");
+    if (fp)
+    {
+        fclose(fp);
+        return 0;
+    }
+    return -1;
+}
+
+#endif /* ! HAVE_ACCESS */
 
 #ifndef HAVE_ISATTY
 #ifdef macintosh

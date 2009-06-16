@@ -4906,7 +4906,7 @@ doubletime(void)
 
     tval.tv_sec = 0;
     tval.tv_usec = 0;
-    if (myman_gettimeofday(&tval, 0))
+    if (myman_gettimeofday(&tval, NULL))
     {
         return -1.0L;
     }

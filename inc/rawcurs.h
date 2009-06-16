@@ -443,6 +443,10 @@ struct timeval
 #endif /* ! (defined(macintosh) || defined(WIN16)) */
 #endif /* ! defined(HAVE_GETTIMEOFDAY) */
 
+#ifndef HAVE_TIME
+#define HAVE_TIME 1
+#endif
+
 #if ! HAVE_GETTIMEOFDAY
 
 #undef gettimeofday
@@ -450,6 +454,7 @@ struct timeval
 
 static int rawcurses_gettimeofday(struct timeval *tv, void *tz)
 {
+
 
     if (tv)
     {
@@ -511,6 +516,23 @@ static int rawcurses_gettimeofday(struct timeval *tv, void *tz)
 
 #else /* ! defined(macintosh) */
 
+#if defined(_POSIX_TIMERS) && (_POSIX_TIMERS > 0)
+
+        struct timespec tsp;
+
+        if (clock_gettime(CLOCK_REALTIME, &tsp) == -1)
+        {
+            return 1;
+        }
+        tv->tv_sec = tsp.tv_sec;
+        tv->tv_usec = tsp.tv_nsec / 1000L;
+        return 0;
+
+#else /* ! (defined(_POSIX_TIMERS) && (_POSIX_TIMERS > 0)) */
+
+        /* NOTE: this only works on machines where clock() is
+         * actually system time rather than user time. */
+
         clock_t ticks;
         time_t elapsed;
         double secs;
@@ -520,16 +542,23 @@ static int rawcurses_gettimeofday(struct timeval *tv, void *tz)
         {
             return 1;
         }
+        secs = (1.0L * ticks) / CLOCKS_PER_SEC;
+        elapsed = (time_t) -1;
+#if HAVE_TIME
         elapsed = time(NULL);
+#endif
         if (elapsed == (time_t) -1)
         {
-            return 1;
+            tv->tv_sec = (long) secs;
         }
-        secs = (1.0L * ticks) / CLOCKS_PER_SEC;
-        tv->tv_sec = (long) secs;
+        else
+        {
+            tv->tv_sec = (long) elapsed;
+        }
         tv->tv_usec = (long) (1e6 * (secs - tv->tv_sec));
-        tv->tv_sec = (long) elapsed;
         return 0;
+
+#endif /* ! (defined(_POSIX_TIMERS) && (_POSIX_TIMERS > 0)) */
 
 #endif /* ! defined(macintosh) */
 

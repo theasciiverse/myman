@@ -4034,9 +4034,7 @@ static int rawcurses_win32_console_reg_copy(const WCHAR *name, DWORD type, void 
     texename = GetCommandLine();
     if (texename)
     {
-        if (rawcurses_old_title
-            &&
-            lstrlen(rawcurses_old_title)
+        if (lstrlen(rawcurses_old_title)
             &&
             (lstrlen(rawcurses_old_title) > (lstrlen(RAWCURSES_WIN32_CAPTION_DELIMITER) + lstrlen(texename)))
             &&

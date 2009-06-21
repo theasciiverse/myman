@@ -2015,7 +2015,8 @@ full188 \
 lim \
 jobman \
 quikman \
-bb
+bb \
+pocket
 
 all_sizes = \
 small \
@@ -3826,6 +3827,8 @@ lvl/pman.asc \
 lvl/pman.txt \
 lvl/pman2.asc \
 lvl/pman2.txt \
+lvl/pocket.asc \
+lvl/pocket.txt \
 lvl/portable.asc \
 lvl/portable.txt \
 lvl/psppac.asc \

@@ -2017,7 +2017,8 @@ jobman \
 quikman \
 bb \
 pocket \
-epochman
+epochman \
+board
 
 all_sizes = \
 small \
@@ -3472,6 +3473,8 @@ lvl/blinky.asc \
 lvl/blinky.txt \
 lvl/blobbo.asc \
 lvl/blobbo.txt \
+lvl/board.asc \
+lvl/board.txt \
 lvl/bugman.asc \
 lvl/bugman.txt \
 lvl/byh.asc \

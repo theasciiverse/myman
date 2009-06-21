@@ -884,8 +884,8 @@ static int locale_is_utf8(void)
 #endif /* defined(LC_CTYPE) */
     /* for broken systems that do not yet support UTF-8 locales
      * (Cygwin comes to mind) */
-    my_locale = myman_getenv("LC_CTYPE");
-    if (! my_locale) my_locale = myman_getenv("LC_ALL");
+    my_locale = myman_getenv("LC_ALL");
+    if (! my_locale) my_locale = myman_getenv("LC_CTYPE");
     if (! my_locale) my_locale = myman_getenv("LANG");
     if (my_locale)
     {

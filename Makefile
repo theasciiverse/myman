@@ -2014,7 +2014,9 @@ small188 \
 full188 \
 lim \
 jobman \
-quikman
+quikman \
+bb
+
 all_sizes = \
 small \
 big \
@@ -3462,6 +3464,8 @@ lvl/baby2.asc \
 lvl/baby2.txt \
 lvl/babypac.asc \
 lvl/babypac.txt \
+lvl/bb.asc \
+lvl/bb.txt \
 lvl/blinky.asc \
 lvl/blinky.txt \
 lvl/blobbo.asc \

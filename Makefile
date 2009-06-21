@@ -2016,7 +2016,8 @@ lim \
 jobman \
 quikman \
 bb \
-pocket
+pocket \
+epochman
 
 all_sizes = \
 small \
@@ -3509,6 +3510,8 @@ lvl/eatit.asc \
 lvl/eatit.txt \
 lvl/ebipac.asc \
 lvl/ebipac.txt \
+lvl/epockman.asc \
+lvl/epockman.txt \
 lvl/fhmcpac.asc \
 lvl/fhmcpac.txt \
 lvl/full188.asc \

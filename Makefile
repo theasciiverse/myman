@@ -2020,7 +2020,8 @@ pocket \
 epochman \
 board \
 classic \
-classic2
+classic2 \
+paques
 
 all_sizes = \
 small \
@@ -3815,6 +3816,8 @@ lvl/paczx2.asc \
 lvl/paczx2.txt \
 lvl/pakkman.asc \
 lvl/pakkman.txt \
+lvl/paques.asc \
+lvl/paques.txt \
 lvl/pcman.asc \
 lvl/pcman.txt \
 lvl/pcman2.asc \

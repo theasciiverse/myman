@@ -2018,7 +2018,9 @@ quikman \
 bb \
 pocket \
 epochman \
-board
+board \
+classic \
+classic2
 
 all_sizes = \
 small \
@@ -3491,6 +3493,10 @@ lvl/chomp.asc \
 lvl/chomp.txt \
 lvl/chompman.asc \
 lvl/chompman.txt \
+lvl/classic.asc \
+lvl/classic.txt \
+lvl/classic2.asc \
+lvl/classic2.txt \
 lvl/classmun.asc \
 lvl/classmun.txt \
 lvl/clsweep.asc \

@@ -2021,7 +2021,8 @@ epochman \
 board \
 classic \
 classic2 \
-paques
+paques \
+mspsnes
 
 all_sizes = \
 small \
@@ -3685,6 +3686,8 @@ lvl/msport.txt \
 lvl/mspp.asc \
 lvl/mspp.txt \
 lvl/mspp2.txt \
+lvl/mspsnes.asc \
+lvl/mspsnes.txt \
 lvl/mspwlnx.asc \
 lvl/mspwlnx.txt \
 lvl/mspwlnx2.asc \

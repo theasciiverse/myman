@@ -2022,7 +2022,8 @@ board \
 classic \
 classic2 \
 paques \
-mspsnes
+mspsnes \
+mschamp
 
 all_sizes = \
 small \
@@ -3649,6 +3650,8 @@ lvl/mrpac26.asc \
 lvl/mrpac26.txt \
 lvl/msblitz.asc \
 lvl/msblitz.txt \
+lvl/mschamp.asc \
+lvl/mschamp.txt \
 lvl/mschomp.asc \
 lvl/mschomp.txt \
 lvl/mshack.asc \

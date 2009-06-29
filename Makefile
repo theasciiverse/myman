@@ -2023,7 +2023,8 @@ classic \
 classic2 \
 paques \
 mspsnes \
-mschamp
+mschamp \
+mspacem
 
 all_sizes = \
 small \
@@ -3670,6 +3671,8 @@ lvl/mspaccdi.asc \
 lvl/mspaccdi.txt \
 lvl/mspaccpc.asc \
 lvl/mspaccpc.txt \
+lvl/mspacem.asc \
+lvl/mspacem.txt \
 lvl/mspacgb.asc \
 lvl/mspacgb.txt \
 lvl/mspacgg.asc \

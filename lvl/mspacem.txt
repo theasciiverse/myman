@@ -2,8 +2,8 @@
          RMSG=30 \
         RMSG2=0 \
   WALL_COLORS="\x05\x01\x05\x02\x03\x0C\x02\x08" \
-MORTAR_COLORS="\x06\x09\x0D\x06\x0C\x05\x0E\x0F" \
-   DOT_COLORS="\x03\x0E\x0A\x0A\x02\x04\x0F\x0F" \
+MORTAR_COLORS="\x06\x09\x0D\x06\x0C\x05\x0E\x0E" \
+  DOT_COLORS="\x03\x0E\x0A\x0A\x02\x04\x0F\x0F" \
        ABOUT="Based on CHAMProgramming's CHAMP Ms. Pac-Em (CHAMP mode)"
 ════════════════════════════
  ·························· 

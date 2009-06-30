@@ -435,6 +435,11 @@ struct timeval
 #define USE_SGTTY 0
 #endif
 
+/* compile with USE_STTY=1 to use system("stty ...") for tty setup */
+#ifndef USE_STTY
+#define USE_STTY 0
+#endif
+
 #ifndef HAVE_GETTIMEOFDAY
 #if defined(macintosh) || defined(WIN16)
 #define HAVE_GETTIMEOFDAY 0
@@ -655,6 +660,14 @@ int rawcurses_isatty(int fd)
 #endif
 #endif
 
+#ifndef HAVE_SLEEP
+#ifdef LSI_C
+#define HAVE_SLEEP 0
+#else
+#define HAVE_SLEEP 1
+#endif
+#endif
+
 #if ! HAVE_USLEEP
 
 #if defined(WIN32)
@@ -710,7 +723,7 @@ rawcurses_usleep(unsigned long usecs)
 
         if (myman_gettimeofday(&tv0, NULL)) break;
         ret = 0;
-#ifndef LSI_C
+#if HAVE_SLEEP
 #if ! (defined(__DMC__) || defined(__TURBOC__))
         ret =
 #endif
@@ -1003,6 +1016,28 @@ typedef int rawcurses_wchar_t;
 #define USE_SETVBUF 0
 #endif /* ! defined(USE_SETVBUF) */
 
+#ifndef RAWCURSES_NBIO
+#ifdef O_NONBLOCK
+#define RAWCURSES_NBIO O_NONBLOCK
+#else
+#ifdef O_NDELAY
+#define RAWCURSES_NBIO O_NDELAY
+#else
+#ifdef O_NBIO
+#define RAWCURSES_NBIO O_NBIO
+#endif
+#endif
+#endif
+#endif
+
+#ifndef USE_NBIO
+#if defined(RAWCURSES_NBIO) && defined(F_GETFL) && defined(F_SETFL)
+#define USE_NBIO 1
+#else
+#define USE_NBIO 0
+#endif
+#endif /* ! defined(USE_NBIO) */
+
 #if USE_IOCTL
 #if HAVE_SYS_IOCTL_H
 #include <sys/ioctl.h>
@@ -1031,6 +1066,11 @@ typedef int rawcurses_wchar_t;
 #else
 #define HAVE_SELECT 0
 #endif
+#endif
+
+/* do we have read(2) ? */
+#ifndef HAVE_READ
+#define HAVE_READ 1
 #endif
 
 #ifndef USE_LONG_CHTYPE
@@ -1417,6 +1457,9 @@ RAWCURSES_GLOBAL(void (*rawcurses_old_sigtstp_handler)(int), = NULL);
 RAWCURSES_GLOBAL(volatile int rawcurses_got_sigint, = 0);
 RAWCURSES_GLOBAL(void (*rawcurses_old_sigint_handler)(int), = NULL);
 #endif
+#if USE_NBIO
+RAWCURSES_GLOBAL(int rawcurses_stdio_old_flags, = -1);
+#endif
 
 #define RAWCURSES_INPUT_STATE_DEFAULT 0
 #define RAWCURSES_INPUT_STATE_ESC (RAWCURSES_INPUT_STATE_DEFAULT + 1)
@@ -1467,6 +1510,10 @@ RAWCURSES_GLOBAL0(struct termios rawcurses_old_tty);
 #if USE_SGTTY
 RAWCURSES_GLOBAL0(struct sgttyb rawcurses_sgtty);
 RAWCURSES_GLOBAL0(struct sgttyb rawcurses_old_sgtty);
+#endif
+#if USE_STTY
+RAWCURSES_GLOBAL(const char *rawcurses_stty, = NULL);
+RAWCURSES_GLOBAL(const char *rawcurses_old_stty, = NULL);
 #endif
 
 RAWCURSES_GLOBAL0(chtype rawcurses_pairs[COLOR_PAIRS]);
@@ -2392,6 +2439,123 @@ static const char *RAWCURSES_NOCIVIS =
     "xnuppc-m-f2" "\0"
     "xnuppc-m-f2-acs" "\0"
     "\0\0";
+
+#if USE_STTY
+
+#ifndef RAWCURSES_STTY_PROGRAM
+#define RAWCURSES_STTY_PROGRAM "stty"
+#endif
+
+#ifndef RAWCURSES_STTY_DUMP_FLAG
+#define RAWCURSES_STTY_DUMP_FLAG "-g"
+#endif
+
+#ifndef RAWCURSES_STTY_DUMP_REDIRECT
+#define RAWCURSES_STTY_DUMP_REDIRECT ">"
+#endif
+
+#ifndef RAWCURSES_STTY_OLD_MODE
+#define RAWCURSES_STTY_OLD_MODE "-cbreak echo icanon"
+#endif
+
+#ifndef RAWCURSES_STTY_MODE
+#define RAWCURSES_STTY_MODE "cbreak -echo -icanon"
+#endif
+
+char *rawcurses_stty_get(const char *default_old_mode)
+{
+    char *ret;
+    char sttyfilename[L_tmpnam + 1];
+
+    ret = strdup(default_old_mode);
+    *sttyfilename = '\0';
+    if (tmpnam(sttyfilename)
+        &&
+        (*sttyfilename != '\0'))
+    {
+        char *sttycmd;
+
+        sttycmd = (char *) malloc(strlen(RAWCURSES_STTY_PROGRAM) + strlen(" ") + strlen(RAWCURSES_STTY_DUMP_FLAG) + strlen(" ") + strlen(RAWCURSES_STTY_DUMP_REDIRECT) + strlen(sttyfilename) + 1);
+        if (sttycmd != NULL)
+        {
+            int system_ret;
+
+            sprintf(sttycmd, "%s %s %s%s", RAWCURSES_STTY_PROGRAM, RAWCURSES_STTY_DUMP_FLAG, RAWCURSES_STTY_DUMP_REDIRECT, sttyfilename);
+            system_ret = system(sttycmd);
+            if (system_ret != -1)
+            {
+#if defined(WIFEXITED) && defined(WEXITSTATUS)
+                if (WIFEXITED(system_ret)
+                    &&
+                    (WEXITSTATUS(system_ret) == EXIT_SUCCESS))
+#else
+                    if (system_ret == EXIT_SUCCESS)
+#endif
+                    {
+                        FILE *sttyfile;
+
+                        sttyfile = fopen(sttyfilename, "r");
+                        if (sttyfile)
+                        {
+                            long len = 1024;
+
+                            if (! fseek(sttyfile, 0, SEEK_END))
+                            {
+                                len = ftell(sttyfile);
+                                fseek(sttyfile, 0, SEEK_SET);
+                            }
+                            if (len)
+                            {
+                                char *sttybuf;
+
+                                sttybuf = (void *) malloc(len + 1);
+                                if (sttybuf != NULL)
+                                {
+                                    *sttybuf = '\0';
+                                    fread(sttybuf, 1, len, sttyfile);
+                                    sttybuf[len] = '\0';
+                                    if (strlen(sttybuf) > 0)
+                                    {
+                                        if (ret)
+                                        {
+                                            free((void *) ret);
+                                        }
+                                        ret = sttybuf;
+                                    }
+                                    else
+                                    {
+                                        free((void *) sttybuf);
+                                    }
+                                }
+                            }
+                            fclose(sttyfile);
+                        }
+                    }
+            }
+            free((void *) sttycmd);
+            remove(sttyfilename);
+        }
+    }
+    return ret;
+}
+
+void rawcurses_stty_set(const char *new_mode)
+{
+    char *sttycmd;
+    
+    if (! new_mode)
+    {
+                new_mode = "sane";
+    }
+    sttycmd = (char *) malloc(strlen(RAWCURSES_STTY_PROGRAM) + strlen(" ") + strlen(new_mode) + 1);
+    if (sttycmd != NULL)
+    {
+        sprintf(sttycmd, "%s %s", RAWCURSES_STTY_PROGRAM, new_mode);
+        system(sttycmd);
+    }
+}
+
+#endif /* USE_STTY */
 
 #if USE_VMSCONSOLE
 
@@ -6238,6 +6402,14 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
         setbuf(stdin, NULL);
     }
 #endif /* USE_SGTTY */
+#if USE_STTY
+    {
+        fflush(stdout);
+        rawcurses_old_stty = rawcurses_stty_get(RAWCURSES_STTY_OLD_MODE);
+        rawcurses_stty_set(RAWCURSES_STTY_MODE);
+        rawcurses_stty = rawcurses_stty_get(RAWCURSES_STTY_MODE);
+    }
+#endif /* USE_STTY */
 #if USE_CONIO || USE_CONIO_INPUT
 #if USE_CONIO
     rawcurses_stdio_conio = -1;
@@ -6438,6 +6610,13 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
 #ifdef SIGINT
         rawcurses_got_sigint = 0;
         rawcurses_old_sigint_handler = signal(SIGINT, rawcurses_sigint_handler);
+#endif
+#if USE_NBIO
+        rawcurses_stdio_old_flags = fcntl(fileno(stdin), F_GETFL, 0);
+        if (rawcurses_stdio_old_flags != -1)
+        {
+            fcntl(fileno(stdin), F_SETFL, rawcurses_stdio_old_flags | RAWCURSES_NBIO);
+        }
 #endif
         if (rawcurses_civis == -1)
         {
@@ -7147,6 +7326,19 @@ static void endwin(void)
         SetConsoleMode(rawcurses_stdin, rawcurses_old_mode);
     }
 #endif /* USE_WINCONSOLE */
+#if USE_STTY
+    rawcurses_stty_set(rawcurses_old_stty);
+    if (rawcurses_old_stty)
+    {
+        free((void *) rawcurses_old_stty);
+        rawcurses_old_stty = NULL;
+    }
+    if (rawcurses_stty)
+    {
+        free((void *) rawcurses_stty);
+        rawcurses_stty = NULL;
+    }
+#endif /* USE_STTY */
 #if USE_SGTTY
     ioctl(fileno(stdin), TIOCSETP, &rawcurses_old_sgtty);
 #endif
@@ -7158,6 +7350,13 @@ static void endwin(void)
     {
         SetMode(Input(), rawcurses_stdio_aroscon_oldmode);
     }
+#endif
+#if USE_NBIO
+    if (rawcurses_stdio_old_flags != -1)
+    {
+        fcntl(fileno(stdin), F_SETFL, rawcurses_stdio_old_flags);
+    }
+    rawcurses_stdio_old_flags = -1;
 #endif
 }
 
@@ -7216,6 +7415,9 @@ static int rawcurses_getch(void)
             SetConsoleMode(rawcurses_stdin, rawcurses_old_mode);
         }
 #endif /* USE_WINCONSOLE */
+#if USE_STTY
+        rawcurses_stty_set(rawcurses_old_stty);
+#endif
 #if USE_SGTTY
         ioctl(fileno(stdin), TIOCSETP, &rawcurses_old_sgtty);
 #endif
@@ -7228,6 +7430,12 @@ static int rawcurses_getch(void)
             SetMode(Input(), rawcurses_stdio_aroscon_oldmode);
         }
 #endif
+#if USE_NBIO
+        if (rawcurses_stdio_old_flags != -1)
+        {
+            fcntl(fileno(stdin), F_SETFL, rawcurses_stdio_old_flags);
+        }
+#endif
         raise(SIGTSTP);
 #if USE_WINCONSOLE
         if (rawcurses_old_mode_valid)
@@ -7235,6 +7443,12 @@ static int rawcurses_getch(void)
             SetConsoleMode(rawcurses_stdin, ENABLE_WINDOW_INPUT);
         }
 #endif /* USE_WINCONSOLE */
+#if USE_NBIO
+        if (rawcurses_stdio_old_flags != -1)
+        {
+            fcntl(fileno(stdin), F_SETFL, rawcurses_stdio_old_flags | RAWCURSES_NBIO);
+        }
+#endif
 #if USE_AROSCONSOLE
         if (rawcurses_stdio_aroscon)
         {
@@ -7253,6 +7467,9 @@ static int rawcurses_getch(void)
 #endif
 #if USE_SGTTY
         ioctl(fileno(stdin), TIOCSETP, &rawcurses_sgtty);
+#endif
+#if USE_STTY
+        rawcurses_stty_set(rawcurses_stty);
 #endif
         signal(SIGTSTP, rawcurses_sigtstp_handler);
         if (rawcurses_palette_ever_changed) rawcurses_fput_palette(stdout, rawcurses_palette);
@@ -7285,6 +7502,9 @@ static int rawcurses_getch(void)
             SetConsoleMode(rawcurses_stdin, rawcurses_old_mode);
         }
 #endif /* USE_WINCONSOLE */
+#if USE_STTY
+        rawcurses_stty_set(rawcurses_old_stty);
+#endif
 #if USE_SGTTY
         ioctl(fileno(stdin), TIOCSETP, &rawcurses_old_sgtty);
 #endif
@@ -7297,6 +7517,12 @@ static int rawcurses_getch(void)
             SetMode(Input(), rawcurses_stdio_aroscon_oldmode);
         }
 #endif
+#if USE_NBIO
+        if (rawcurses_stdio_old_flags != -1)
+        {
+            fcntl(fileno(stdin), F_SETFL, rawcurses_stdio_old_flags);
+        }
+#endif
         raise(SIGINT);
 #if USE_WINCONSOLE
         if (rawcurses_old_mode_valid)
@@ -7304,6 +7530,12 @@ static int rawcurses_getch(void)
             SetConsoleMode(rawcurses_stdin, ENABLE_WINDOW_INPUT);
         }
 #endif /* USE_WINCONSOLE */
+#if USE_NBIO
+        if (rawcurses_stdio_old_flags != -1)
+        {
+            fcntl(fileno(stdin), F_SETFL, rawcurses_stdio_old_flags | RAWCURSES_NBIO);
+        }
+#endif
 #if USE_AROSCONSOLE
         if (rawcurses_stdio_aroscon)
         {
@@ -7322,6 +7554,9 @@ static int rawcurses_getch(void)
 #endif
 #if USE_SGTTY
         ioctl(fileno(stdin), TIOCSETP, &rawcurses_sgtty);
+#endif
+#if USE_STTY
+        rawcurses_stty_set(rawcurses_stty);
 #endif
         signal(SIGINT, rawcurses_sigint_handler);
         if (rawcurses_palette_ever_changed) rawcurses_fput_palette(stdout, rawcurses_palette);
@@ -7663,10 +7898,17 @@ static int rawcurses_getch(void)
                     }
                 }
 #endif /* ! USE_WINCONSOLE */
+#if HAVE_READ
                 if (avail && (read(fileno(stdin), (void *) buf, 1) > 0))
                 {
                     ret = buf[0];
                 }
+#else /* ! HAVE_READ */
+                if (avail && (fread((void *) buf, 1, 1, stdin) > 0))
+                {
+                    ret = buf[0];
+                }
+#endif /* ! HAVE_READ */
             }
         }
         soft_ERR = (ret == ERR) ? 0 : 1;

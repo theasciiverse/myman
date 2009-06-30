@@ -1855,6 +1855,10 @@ static const char SPRITEFILE_str[] = SPRITEFILE;
 #define HAVE_ATTRSET 1
 #endif
 
+#ifndef USE_ISATTY
+#define USE_ISATTY 1
+#endif
+
 /* NOTE: while this is actually "char" inside the old BSD libcurses,
  * the old C calling conventions mean we can safely use int instead,
  * and it will eventually get coerced */
@@ -7855,7 +7859,11 @@ parse_myman_args(int argc, char **argv)
            (maze_w + 1) * maze_h * maze_n * sizeof(unsigned char));
 
     CLEAN_ALL();
+#if USE_ISATTY
     paint_walls(isatty(fileno(stderr)));
+#else
+    paint_walls(0);
+#endif
     gamereset();
 
     if (dump_maze)

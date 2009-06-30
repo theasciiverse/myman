@@ -1033,14 +1033,22 @@ typedef int rawcurses_wchar_t;
 #endif
 #endif
 
+#ifndef USE_LONG_CHTYPE
+#if INT_MAX < 0x7ffffffL
+#define USE_LONG_CHTYPE 1
+#else
+#define USE_LONG_CHTYPE 0
+#endif
+#endif
+
+#if USE_LONG_CHTYPE
+typedef long rawcurses_chtype;
+#else
+typedef int rawcurses_chtype;
+#endif
+
 #undef chtype
 #define chtype rawcurses_chtype
-
-#if INT_MAX < 0x7ffffffL
-typedef long chtype;
-#else
-typedef int chtype;
-#endif
 
 #undef attr_t
 #define attr_t rawcurses_attr_t

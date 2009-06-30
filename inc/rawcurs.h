@@ -6611,13 +6611,6 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
         rawcurses_got_sigint = 0;
         rawcurses_old_sigint_handler = signal(SIGINT, rawcurses_sigint_handler);
 #endif
-#if USE_NBIO
-        rawcurses_stdio_old_flags = fcntl(fileno(stdin), F_GETFL, 0);
-        if (rawcurses_stdio_old_flags != -1)
-        {
-            fcntl(fileno(stdin), F_SETFL, rawcurses_stdio_old_flags | RAWCURSES_NBIO);
-        }
-#endif
         if (rawcurses_civis == -1)
         {
             const char *nocivis = RAWCURSES_NOCIVIS;
@@ -7351,13 +7344,6 @@ static void endwin(void)
         SetMode(Input(), rawcurses_stdio_aroscon_oldmode);
     }
 #endif
-#if USE_NBIO
-    if (rawcurses_stdio_old_flags != -1)
-    {
-        fcntl(fileno(stdin), F_SETFL, rawcurses_stdio_old_flags);
-    }
-    rawcurses_stdio_old_flags = -1;
-#endif
 }
 
 static int refresh(void)
@@ -7430,12 +7416,6 @@ static int rawcurses_getch(void)
             SetMode(Input(), rawcurses_stdio_aroscon_oldmode);
         }
 #endif
-#if USE_NBIO
-        if (rawcurses_stdio_old_flags != -1)
-        {
-            fcntl(fileno(stdin), F_SETFL, rawcurses_stdio_old_flags);
-        }
-#endif
         raise(SIGTSTP);
 #if USE_WINCONSOLE
         if (rawcurses_old_mode_valid)
@@ -7443,12 +7423,6 @@ static int rawcurses_getch(void)
             SetConsoleMode(rawcurses_stdin, ENABLE_WINDOW_INPUT);
         }
 #endif /* USE_WINCONSOLE */
-#if USE_NBIO
-        if (rawcurses_stdio_old_flags != -1)
-        {
-            fcntl(fileno(stdin), F_SETFL, rawcurses_stdio_old_flags | RAWCURSES_NBIO);
-        }
-#endif
 #if USE_AROSCONSOLE
         if (rawcurses_stdio_aroscon)
         {
@@ -7517,12 +7491,6 @@ static int rawcurses_getch(void)
             SetMode(Input(), rawcurses_stdio_aroscon_oldmode);
         }
 #endif
-#if USE_NBIO
-        if (rawcurses_stdio_old_flags != -1)
-        {
-            fcntl(fileno(stdin), F_SETFL, rawcurses_stdio_old_flags);
-        }
-#endif
         raise(SIGINT);
 #if USE_WINCONSOLE
         if (rawcurses_old_mode_valid)
@@ -7530,12 +7498,6 @@ static int rawcurses_getch(void)
             SetConsoleMode(rawcurses_stdin, ENABLE_WINDOW_INPUT);
         }
 #endif /* USE_WINCONSOLE */
-#if USE_NBIO
-        if (rawcurses_stdio_old_flags != -1)
-        {
-            fcntl(fileno(stdin), F_SETFL, rawcurses_stdio_old_flags | RAWCURSES_NBIO);
-        }
-#endif
 #if USE_AROSCONSOLE
         if (rawcurses_stdio_aroscon)
         {
@@ -7898,6 +7860,13 @@ static int rawcurses_getch(void)
                     }
                 }
 #endif /* ! USE_WINCONSOLE */
+#if USE_NBIO
+                rawcurses_stdio_old_flags = fcntl(fileno(stdin), F_GETFL, 0);
+                if (rawcurses_stdio_old_flags != -1)
+                {
+                    fcntl(fileno(stdin), F_SETFL, rawcurses_stdio_old_flags | RAWCURSES_NBIO);
+                }
+#endif
 #if HAVE_READ
                 if (avail && (read(fileno(stdin), (void *) buf, 1) > 0))
                 {
@@ -7909,6 +7878,13 @@ static int rawcurses_getch(void)
                     ret = buf[0];
                 }
 #endif /* ! HAVE_READ */
+#if USE_NBIO
+                if (rawcurses_stdio_old_flags != -1)
+                {
+                    fcntl(fileno(stdin), F_SETFL, rawcurses_stdio_old_flags);
+                }
+                rawcurses_stdio_old_flags = -1;
+#endif
             }
         }
         soft_ERR = (ret == ERR) ? 0 : 1;

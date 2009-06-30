@@ -1017,14 +1017,14 @@ typedef int rawcurses_wchar_t;
 #endif /* ! defined(USE_SETVBUF) */
 
 #ifndef RAWCURSES_NBIO
-#ifdef O_NONBLOCK
-#define RAWCURSES_NBIO O_NONBLOCK
+#ifdef O_NBIO
+#define RAWCURSES_NBIO O_NBIO
 #else
 #ifdef O_NDELAY
 #define RAWCURSES_NBIO O_NDELAY
 #else
-#ifdef O_NBIO
-#define RAWCURSES_NBIO O_NBIO
+#ifdef O_NONBLOCK
+#define RAWCURSES_NBIO O_NONBLOCK
 #endif
 #endif
 #endif

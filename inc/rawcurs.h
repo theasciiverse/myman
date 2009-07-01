@@ -427,19 +427,30 @@ struct timeval
 
 #endif /* ! HAVE_STRUCT_TIMEVAL */
 
+/* compile with USE_TERMIO=1 to use SVR2-style <termio.h> for tty setup */
 #ifndef USE_TERMIO
 #define USE_TERMIO 0
 #endif
 
+/* compile with USE_TERMIOS=1 to use POSIX-style <termios.h> for tty setup */
 #ifndef USE_TERMIOS
 #define USE_TERMIOS 0
 #endif
 
+/* compile with USE_SGTTY=1 to use BSD-style <sgtty.h> for tty setup */
 #ifndef USE_SGTTY
 #define USE_SGTTY 0
 #endif
 
 /* compile with USE_STTY=1 to use system("stty ...") for tty setup */
+
+/* FIXME: NOTE: WARNING!!! Enabling this is dangerous! There is a
+ * tmpnam race, and someone could inject harmful data. Only minimal
+ * syntax checking is performed on the contents of the tempfile, but
+ * I'm hoping it will be sufficient to prevent arbitrary command
+ * execution. Still, an attacker could set your terminal to an
+ * arbitrary state. */
+
 #ifndef USE_STTY
 #define USE_STTY 0
 #endif
@@ -2523,10 +2534,104 @@ char *rawcurses_stty_get(const char *default_old_mode)
                                 sttybuf = (void *) malloc(len + 1);
                                 if (sttybuf != NULL)
                                 {
+                                    size_t i;
+                                    int c;
+                                    int state = 0;
+
                                     *sttybuf = '\0';
                                     fread(sttybuf, 1, len, sttyfile);
                                     sttybuf[len] = '\0';
-                                    if (strlen(sttybuf) > 0)
+                                    /* validate this to make sure we don't pass anything fishy to system("stty ...") */
+                                    for (i = 0; (c = sttybuf[i]) != '\0'; i ++)
+                                    {
+                                        if ((c == '\n')
+                                            &&
+                                            (state == 0)
+                                            &&
+                                            (sttybuf[i + 1] == '\0'))
+                                        {
+                                            sttybuf[i] = '\0';
+                                            break;
+                                        }
+                                        if ((c == '\\') && (sttybuf[i + 1] != '\0')
+                                            &&
+                                            ((state == 0) || (state == '\"')))
+                                        {
+                                            i ++;
+                                            c = sttybuf[i];
+                                            if ((c < ' ') || (c > '~'))
+                                            {
+                                                state = c;
+                                                break;
+                                            }
+                                            continue;
+                                        }
+                                        if (((c == '\'') || (c == '\"'))
+                                            &&
+                                            ((state == 0) || (state == c)))
+                                        {
+                                            if (state)
+                                            {
+                                                state = 0;
+                                            }
+                                            else
+                                            {
+                                                state = c;
+                                            }
+                                            continue;
+                                        }
+                                        if (((c == '`') || (c == '$') || (c == '!'))
+                                            &&
+                                            ((state == 0) || (state == '\"')))
+                                        {
+                                            state = c;
+                                            break;
+                                        }
+                                        if (state == 0)
+                                        {
+                                            if ((c == ';')
+                                                ||
+                                                (c == '&')
+                                                ||
+                                                (c == '|')
+                                                ||
+                                                (c == '<')
+                                                ||
+                                                (c == '>')
+                                                ||
+                                                (c == '~')
+                                                ||
+                                                (c == '#')
+                                                ||
+                                                (c == '*')
+                                                ||
+                                                (c == '\?')
+                                                ||
+                                                (c == '(')
+                                                ||
+                                                (c == ')')
+                                                ||
+                                                (c == '{')
+                                                ||
+                                                (c == '}')
+                                                ||
+                                                (c == '\\'))
+                                            {
+                                                state = c;
+                                                break;
+                                            }
+                                        }
+                                        if ((c < ' ') || (c > '~'))
+                                        {
+                                            state = c;
+                                            break;
+                                        }
+                                    }
+                                    if ((state == 0)
+                                        &&
+                                        (strlen(sttybuf) > 0)
+                                        &&
+                                        (sttybuf[i] == '\0'))
                                     {
                                         if (ret)
                                         {

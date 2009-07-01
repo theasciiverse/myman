@@ -2024,7 +2024,8 @@ classic2 \
 paques \
 mspsnes \
 mschamp \
-mspacem
+mspacem \
+vicman
 
 all_sizes = \
 small \
@@ -3937,6 +3938,8 @@ lvl/ultrapac.txt \
 lvl/upacthin.txt \
 lvl/vermin.asc \
 lvl/vermin.txt \
+lvl/vicman.asc \
+lvl/vicman.txt \
 lvl/xensrvng.asc \
 lvl/xensrvng.txt \
 lvl/xfred.asc \

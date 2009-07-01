@@ -2025,7 +2025,8 @@ paques \
 mspsnes \
 mschamp \
 mspacem \
-vicman
+vicman \
+jelly2
 
 all_sizes = \
 small \
@@ -3594,6 +3595,8 @@ lvl/ipac.asc \
 lvl/ipac.txt \
 lvl/javapac.asc \
 lvl/javapac.txt \
+lvl/jelly2.asc \
+lvl/jelly2.txt \
 lvl/jellymon.asc \
 lvl/jellymon.txt \
 lvl/jobman.asc \

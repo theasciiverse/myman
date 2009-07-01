@@ -442,7 +442,7 @@ struct timeval
 #define USE_SGTTY 0
 #endif
 
-/* compile with USE_STTY=1 to use system("stty ...") for tty setup */
+/* compile with USE_SYSTEM_STTY=1 to use system("stty ...") for tty setup */
 
 /* FIXME: NOTE: WARNING!!! Enabling this is dangerous! There is a
  * tmpnam race, and someone could inject harmful data. Only minimal
@@ -451,8 +451,8 @@ struct timeval
  * execution. Still, an attacker could set your terminal to an
  * arbitrary state. */
 
-#ifndef USE_STTY
-#define USE_STTY 0
+#ifndef USE_SYSTEM_STTY
+#define USE_SYSTEM_STTY 0
 #endif
 
 #ifndef HAVE_GETTIMEOFDAY
@@ -1531,12 +1531,12 @@ RAWCURSES_GLOBAL0(struct termios rawcurses_tty);
 RAWCURSES_GLOBAL0(struct termios rawcurses_old_tty);
 #endif
 #if USE_SGTTY
-RAWCURSES_GLOBAL0(struct sgttyb rawcurses_sgtty);
-RAWCURSES_GLOBAL0(struct sgttyb rawcurses_old_sgtty);
+RAWCURSES_GLOBAL0(struct sgttyb rawcurses_tty_sgtty);
+RAWCURSES_GLOBAL0(struct sgttyb rawcurses_old_tty_sgtty);
 #endif
-#if USE_STTY
-RAWCURSES_GLOBAL(const char *rawcurses_stty, = NULL);
-RAWCURSES_GLOBAL(const char *rawcurses_old_stty, = NULL);
+#if USE_SYSTEM_STTY
+RAWCURSES_GLOBAL(const char *rawcurses_tty_system, = NULL);
+RAWCURSES_GLOBAL(const char *rawcurses_old_tty_system, = NULL);
 #endif
 
 RAWCURSES_GLOBAL0(chtype rawcurses_pairs[COLOR_PAIRS]);
@@ -2463,7 +2463,27 @@ static const char *RAWCURSES_NOCIVIS =
     "xnuppc-m-f2-acs" "\0"
     "\0\0";
 
-#if USE_STTY
+#if USE_SGTTY
+
+#ifndef rawcurses_gtty
+#ifdef TIOCGETP
+#define rawcurses_gtty(fd,params) ioctl((fd), TIOCGETP, (params))
+#else
+#define rawcurses_gtty gtty
+#endif
+#endif /* ! defined(rawcurses_gtty) */
+
+#ifndef rawcurses_stty
+#ifdef TIOCSETP
+#define rawcurses_stty(fd,params) ioctl((fd), TIOCSETP, (params))
+#else
+#define rawcurses_stty stty
+#endif
+#endif /* ! defined(rawcurses_stty) */
+
+#endif /* USE_SGTTY */
+
+#if USE_SYSTEM_STTY
 
 #ifndef RAWCURSES_STTY_PROGRAM
 #define RAWCURSES_STTY_PROGRAM "stty"
@@ -2485,7 +2505,7 @@ static const char *RAWCURSES_NOCIVIS =
 #define RAWCURSES_STTY_MODE "cbreak -echo -icanon"
 #endif
 
-char *rawcurses_stty_get(const char *default_old_mode)
+char *rawcurses_gtty_system(const char *default_old_mode)
 {
     char *ret;
     char sttyfilename[L_tmpnam + 1];
@@ -2656,7 +2676,7 @@ char *rawcurses_stty_get(const char *default_old_mode)
     return ret;
 }
 
-void rawcurses_stty_set(const char *new_mode)
+void rawcurses_stty_system(const char *new_mode)
 {
     char *sttycmd;
     
@@ -2672,7 +2692,7 @@ void rawcurses_stty_set(const char *new_mode)
     }
 }
 
-#endif /* USE_STTY */
+#endif /* USE_SYSTEM_STTY */
 
 #if USE_VMSCONSOLE
 
@@ -6535,28 +6555,28 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
 #if USE_SGTTY
     {
         fflush(stdout);
-        ioctl(fileno(stdin), TIOCGETP, &rawcurses_old_sgtty);
-        rawcurses_sgtty = rawcurses_old_sgtty;
-        rawcurses_sgtty.sg_flags |= CBREAK;
-        rawcurses_sgtty.sg_flags &= ~ECHO;
+        rawcurses_gtty(fileno(stdin), &rawcurses_old_tty_sgtty);
+        rawcurses_tty_sgtty = rawcurses_old_tty_sgtty;
+        rawcurses_tty_sgtty.sg_flags |= CBREAK;
+        rawcurses_tty_sgtty.sg_flags &= ~ECHO;
 #ifdef CRMOD
-        rawcurses_sgtty.sg_flags &= ~CRMOD;
+        rawcurses_tty_sgtty.sg_flags &= ~CRMOD;
 #endif
 #ifdef NODELAY
-        rawcurses_sgtty.sg_flags |= NODELAY;
+        rawcurses_tty_sgtty.sg_flags |= NODELAY;
 #endif
-        ioctl(fileno(stdin), TIOCSETP, &rawcurses_sgtty);
+        rawcurses_stty(fileno(stdin), &rawcurses_tty_sgtty);
         setbuf(stdin, NULL);
     }
 #endif /* USE_SGTTY */
-#if USE_STTY
+#if USE_SYSTEM_STTY
     {
         fflush(stdout);
-        rawcurses_old_stty = rawcurses_stty_get(RAWCURSES_STTY_OLD_MODE);
-        rawcurses_stty_set(RAWCURSES_STTY_MODE);
-        rawcurses_stty = rawcurses_stty_get(RAWCURSES_STTY_MODE);
+        rawcurses_old_tty_system = rawcurses_gtty_system(RAWCURSES_STTY_OLD_MODE);
+        rawcurses_stty_system(RAWCURSES_STTY_MODE);
+        rawcurses_tty_system = rawcurses_gtty_system(RAWCURSES_STTY_MODE);
     }
-#endif /* USE_STTY */
+#endif /* USE_SYSTEM_STTY */
 #if USE_CONIO || USE_CONIO_INPUT
 #if USE_CONIO
     rawcurses_stdio_conio = -1;
@@ -7466,21 +7486,21 @@ static void endwin(void)
         SetConsoleMode(rawcurses_stdin, rawcurses_old_mode);
     }
 #endif /* USE_WINCONSOLE */
-#if USE_STTY
-    rawcurses_stty_set(rawcurses_old_stty);
-    if (rawcurses_old_stty)
+#if USE_SYSTEM_STTY
+    rawcurses_stty_system(rawcurses_old_tty_system);
+    if (rawcurses_old_tty_system)
     {
-        free((void *) rawcurses_old_stty);
-        rawcurses_old_stty = NULL;
+        free((void *) rawcurses_old_tty_system);
+        rawcurses_old_tty_system = NULL;
     }
-    if (rawcurses_stty)
+    if (rawcurses_tty_system)
     {
-        free((void *) rawcurses_stty);
-        rawcurses_stty = NULL;
+        free((void *) rawcurses_tty_system);
+        rawcurses_tty_system = NULL;
     }
-#endif /* USE_STTY */
+#endif /* USE_SYSTEM_STTY */
 #if USE_SGTTY
-    ioctl(fileno(stdin), TIOCSETP, &rawcurses_old_sgtty);
+    rawcurses_stty(fileno(stdin), &rawcurses_old_tty_sgtty);
 #endif
 #if USE_TERMIOS
     tcsetattr(fileno(stdin), TCSANOW, &rawcurses_old_tty);
@@ -7551,11 +7571,11 @@ static int rawcurses_getch(void)
             SetConsoleMode(rawcurses_stdin, rawcurses_old_mode);
         }
 #endif /* USE_WINCONSOLE */
-#if USE_STTY
-        rawcurses_stty_set(rawcurses_old_stty);
+#if USE_SYSTEM_STTY
+        rawcurses_stty_system(rawcurses_old_tty_system);
 #endif
 #if USE_SGTTY
-        ioctl(fileno(stdin), TIOCSETP, &rawcurses_old_sgtty);
+        rawcurses_stty(fileno(stdin), &rawcurses_old_tty_sgtty);
 #endif
 #if USE_TERMIOS
         tcsetattr(fileno(stdin), TCSANOW, &rawcurses_old_tty);
@@ -7596,10 +7616,10 @@ static int rawcurses_getch(void)
         tcsetattr(fileno(stdin), TCSANOW, &rawcurses_tty);
 #endif
 #if USE_SGTTY
-        ioctl(fileno(stdin), TIOCSETP, &rawcurses_sgtty);
+        rawcurses_stty(fileno(stdin), &rawcurses_tty_sgtty);
 #endif
-#if USE_STTY
-        rawcurses_stty_set(rawcurses_stty);
+#if USE_SYSTEM_STTY
+        rawcurses_stty_system(rawcurses_tty_system);
 #endif
         signal(SIGTSTP, rawcurses_sigtstp_handler);
         if (rawcurses_palette_ever_changed) rawcurses_fput_palette(stdout, rawcurses_palette);
@@ -7632,11 +7652,11 @@ static int rawcurses_getch(void)
             SetConsoleMode(rawcurses_stdin, rawcurses_old_mode);
         }
 #endif /* USE_WINCONSOLE */
-#if USE_STTY
-        rawcurses_stty_set(rawcurses_old_stty);
+#if USE_SYSTEM_STTY
+        rawcurses_stty_system(rawcurses_old_tty_system);
 #endif
 #if USE_SGTTY
-        ioctl(fileno(stdin), TIOCSETP, &rawcurses_old_sgtty);
+        rawcurses_stty(fileno(stdin), &rawcurses_old_tty_sgtty);
 #endif
 #if USE_TERMIOS
         tcsetattr(fileno(stdin), TCSANOW, &rawcurses_old_tty);
@@ -7677,10 +7697,10 @@ static int rawcurses_getch(void)
         tcsetattr(fileno(stdin), TCSANOW, &rawcurses_tty);
 #endif
 #if USE_SGTTY
-        ioctl(fileno(stdin), TIOCSETP, &rawcurses_sgtty);
+        rawcurses_stty(fileno(stdin), &rawcurses_tty_sgtty);
 #endif
-#if USE_STTY
-        rawcurses_stty_set(rawcurses_stty);
+#if USE_SYSTEM_STTY
+        rawcurses_stty_system(rawcurses_tty_system);
 #endif
         signal(SIGINT, rawcurses_sigint_handler);
         if (rawcurses_palette_ever_changed) rawcurses_fput_palette(stdout, rawcurses_palette);

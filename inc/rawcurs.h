@@ -427,6 +427,10 @@ struct timeval
 
 #endif /* ! HAVE_STRUCT_TIMEVAL */
 
+#ifndef USE_TERMIO
+#define USE_TERMIO 0
+#endif
+
 #ifndef USE_TERMIOS
 #define USE_TERMIOS 0
 #endif
@@ -768,6 +772,10 @@ rawcurses_usleep(unsigned long usecs)
 #if ! HAVE_TTYNAME
 #undef ttyname
 #define ttyname(fd) (isatty(fileno(stdin)) ? "con" : "stdin")
+#endif
+
+#if USE_TERMIO
+#include <termio.h>
 #endif
 
 #if USE_TERMIOS
@@ -1502,6 +1510,10 @@ RAWCURSES_GLOBAL0(CONSOLE_SCREEN_BUFFER_INFO rawcurses_csbi);
 RAWCURSES_GLOBAL0(SMALL_RECT rawcurses_old_size);
 RAWCURSES_GLOBAL0(TCHAR rawcurses_old_title[MAX_PATH]);
 RAWCURSES_GLOBAL(CHAR_INFO *rawcurses_old_screen, = NULL);
+#endif
+#if USE_TERMIO
+RAWCURSES_GLOBAL0(struct termio rawcurses_tty_svr2);
+RAWCURSES_GLOBAL0(struct termio rawcurses_old_tty_svr2);
 #endif
 #if USE_TERMIOS
 RAWCURSES_GLOBAL0(struct termios rawcurses_tty);
@@ -6355,6 +6367,36 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
         }
     }
 #endif
+#if USE_TERMIO
+    {
+        fflush(stdout);
+        ioctl(fileno(stdin), TCGETA, &rawcurses_old_tty_svr2);
+        rawcurses_tty_svr2 = rawcurses_old_tty_svr2;
+        rawcurses_tty_svr2.c_iflag = 0;
+        rawcurses_tty_svr2.c_lflag &= ~ECHO;
+        rawcurses_tty_svr2.c_lflag &= ~ICANON;
+#ifdef ISIG
+        /*rawcurses_tty_svr2.c_lflag &= ~ISIG;*/
+#endif
+#ifdef XCASE
+        rawcurses_tty_svr2.c_lflag &= ~XCASE;
+#endif
+#ifdef OPOST
+        rawcurses_tty_svr2.c_oflag &= ~OPOST;
+#endif
+#ifdef ONLCR
+        rawcurses_tty_svr2.c_oflag &= ~ONLCR;
+#else
+#ifdef CRMOD
+        rawcurses_tty_svr2.c_oflag &= ~CRMOD;
+#endif
+#endif
+        rawcurses_tty_svr2.c_cc[VMIN] = 0;
+        rawcurses_tty_svr2.c_cc[VTIME] = 0;
+        ioctl(fileno(stdin), TCSETAF, &rawcurses_tty_svr2);
+        setbuf(stdin, NULL);
+    }
+#endif /* USE_TERMIO */
 #if USE_TERMIOS
     {
         fflush(stdout);
@@ -7338,6 +7380,9 @@ static void endwin(void)
 #if USE_TERMIOS
     tcsetattr(fileno(stdin), TCSANOW, &rawcurses_old_tty);
 #endif
+#if USE_TERMIO
+    ioctl(fileno(stdin), TCSETAF, &rawcurses_old_tty_svr2);
+#endif
 #if USE_AROSCONSOLE
     if (rawcurses_stdio_aroscon)
     {
@@ -7410,6 +7455,9 @@ static int rawcurses_getch(void)
 #if USE_TERMIOS
         tcsetattr(fileno(stdin), TCSANOW, &rawcurses_old_tty);
 #endif
+#if USE_TERMIO
+        ioctl(fileno(stdin), TCSETAF, &rawcurses_old_tty_svr2);
+#endif
 #if USE_AROSCONSOLE
         if (rawcurses_stdio_aroscon)
         {
@@ -7435,6 +7483,9 @@ static int rawcurses_getch(void)
                 rawcurses_stdio_aroscon_oldmode = 0;
             }
         }
+#endif
+#if USE_TERMIO
+        ioctl(fileno(stdin), TCSETAF, &rawcurses_tty_svr2);
 #endif
 #if USE_TERMIOS
         tcsetattr(fileno(stdin), TCSANOW, &rawcurses_tty);
@@ -7485,6 +7536,9 @@ static int rawcurses_getch(void)
 #if USE_TERMIOS
         tcsetattr(fileno(stdin), TCSANOW, &rawcurses_old_tty);
 #endif
+#if USE_TERMIO
+        ioctl(fileno(stdin), TCSETAF, &rawcurses_old_tty_svr2);
+#endif
 #if USE_AROSCONSOLE
         if (rawcurses_stdio_aroscon)
         {
@@ -7510,6 +7564,9 @@ static int rawcurses_getch(void)
                 rawcurses_stdio_aroscon_oldmode = 0;
             }
         }
+#endif
+#if USE_TERMIO
+        ioctl(fileno(stdin), TCSETAF, &rawcurses_tty_svr2);
 #endif
 #if USE_TERMIOS
         tcsetattr(fileno(stdin), TCSANOW, &rawcurses_tty);

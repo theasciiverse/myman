@@ -2026,7 +2026,17 @@ mspsnes \
 mschamp \
 mspacem \
 vicman \
-jelly2
+jelly2 \
+puck \
+kameari \
+trashman \
+simpel \
+meter \
+chomper \
+chomperm \
+vicmen \
+cruncher \
+dotman
 
 all_sizes = \
 small \
@@ -3497,6 +3507,10 @@ lvl/chicky.asc \
 lvl/chicky.txt \
 lvl/chomp.asc \
 lvl/chomp.txt \
+lvl/chomper.asc \
+lvl/chomper.txt \
+lvl/chomperm.asc \
+lvl/chomperm.txt \
 lvl/chompman.asc \
 lvl/chompman.txt \
 lvl/classic.asc \
@@ -3509,6 +3523,8 @@ lvl/clsweep.asc \
 lvl/clsweep.txt \
 lvl/crazyg.asc \
 lvl/crazyg.txt \
+lvl/cruncher.asc \
+lvl/cruncher.txt \
 lvl/crush.asc \
 lvl/crush.txt \
 lvl/cupcake.asc \
@@ -3521,6 +3537,8 @@ lvl/deluxe2.asc \
 lvl/deluxe2.txt \
 lvl/demon.asc \
 lvl/demon.txt \
+lvl/dotman.asc \
+lvl/dotman.txt \
 lvl/eatit.asc \
 lvl/eatit.txt \
 lvl/ebipac.asc \
@@ -3615,6 +3633,8 @@ lvl/jrtiny.asc \
 lvl/jrtiny.txt \
 lvl/k3.asc \
 lvl/k3.txt \
+lvl/kameari.asc \
+lvl/kameari.txt \
 lvl/kasper.asc \
 lvl/kasper.txt \
 lvl/kcm.asc \
@@ -3637,6 +3657,8 @@ lvl/mazewar.asc \
 lvl/mazewar.txt \
 lvl/mc10.asc \
 lvl/mc10.txt \
+lvl/meter.asc \
+lvl/meter.txt \
 lvl/mini.asc \
 lvl/mini.txt \
 lvl/minipac.asc \
@@ -3863,6 +3885,8 @@ lvl/psppac.asc \
 lvl/psppac.txt \
 lvl/ptmx.asc \
 lvl/ptmx.txt \
+lvl/puck.asc \
+lvl/puck.txt \
 lvl/puckmon.asc \
 lvl/puckmon.txt \
 lvl/puckpock.asc \
@@ -3889,6 +3913,8 @@ lvl/scheme.asc \
 lvl/scheme.txt \
 lvl/sidtool.asc \
 lvl/sidtool.txt \
+lvl/simpel.asc \
+lvl/simpel.txt \
 lvl/simplej.asc \
 lvl/simplej.txt \
 lvl/sir.asc \
@@ -3936,6 +3962,8 @@ lvl/tomyport.asc \
 lvl/tomyport.txt \
 lvl/toyman.asc \
 lvl/toyman.txt \
+lvl/trashman.asc \
+lvl/trashman.txt \
 lvl/ultrapac.asc \
 lvl/ultrapac.txt \
 lvl/upacthin.txt \
@@ -3943,6 +3971,8 @@ lvl/vermin.asc \
 lvl/vermin.txt \
 lvl/vicman.asc \
 lvl/vicman.txt \
+lvl/vicmen.asc \
+lvl/vicmen.txt \
 lvl/xensrvng.asc \
 lvl/xensrvng.txt \
 lvl/xfred.asc \

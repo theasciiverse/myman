@@ -10,7 +10,7 @@ RMSG2=8 CMSG2=5 \
  PLAYER1="PLAYER1" \
  PLAYER2="PLAYER2" \
 GAMEOVER="GOODBYE" \
-ABOUT="Based on Vicman for the VIC-20"
+ABOUT="Based on Vicman/Another Pacman/VIC Puckman for the VIC-20"
 ╔═══════╦═══════╗
 ║·······║·······║
 ║·╥·┌─┐·║·┌─┐·╥·║

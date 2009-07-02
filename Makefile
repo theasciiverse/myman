@@ -2037,7 +2037,8 @@ chomperm \
 vicmen \
 cruncher \
 dotman \
-taxman
+taxman \
+javapac2
 
 all_sizes = \
 small \
@@ -3614,6 +3615,8 @@ lvl/ipac.asc \
 lvl/ipac.txt \
 lvl/javapac.asc \
 lvl/javapac.txt \
+lvl/javapac2.asc \
+lvl/javapac2.txt \
 lvl/jelly2.asc \
 lvl/jelly2.txt \
 lvl/jellymon.asc \

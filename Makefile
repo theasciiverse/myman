@@ -2036,7 +2036,8 @@ chomper \
 chomperm \
 vicmen \
 cruncher \
-dotman
+dotman \
+taxman
 
 all_sizes = \
 small \
@@ -3943,6 +3944,8 @@ lvl/strange.asc \
 lvl/strange.txt \
 lvl/sympac.asc \
 lvl/sympac.txt \
+lvl/taxman.asc \
+lvl/taxman.txt \
 lvl/thief.asc \
 lvl/thief.txt \
 lvl/tiny.asc \

@@ -9,7 +9,7 @@
  PLAYER1="PLAYER1" \
  PLAYER2="PLAYER2" \
 GAMEOVER="GOODBYE" \
-   ABOUT="Inspired by Star Craft's Puck Man game for the Apple II"
+   ABOUT="Inspired by Jun Wada/Star Craft's Puck Man game for the Apple II"
 ╔═════════╦═════════╗
 ║·········║·········║
 ║·┌─┐·┌─┐·║·┌─┐·┌─┐·║

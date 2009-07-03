@@ -2038,7 +2038,12 @@ vicmen \
 cruncher \
 dotman \
 taxman \
-javapac2
+javapac2 \
+macman \
+smallmac \
+tinymac \
+smalltax \
+tinykame
 
 all_sizes = \
 small \
@@ -3649,6 +3654,8 @@ lvl/lim.asc \
 lvl/lim.txt \
 lvl/lives.asc \
 lvl/lives.txt \
+lvl/macman.asc \
+lvl/macman.txt \
 lvl/makman.asc \
 lvl/makman.txt \
 lvl/mania.asc \
@@ -3927,8 +3934,12 @@ lvl/small.asc \
 lvl/small.txt \
 lvl/small188.asc \
 lvl/small188.txt \
+lvl/smallmac.asc \
+lvl/smallmac.txt \
 lvl/smallpac.asc \
 lvl/smallpac.txt \
+lvl/smalltax.asc \
+lvl/smalltax.txt \
 lvl/smartpac.asc \
 lvl/smartpac.txt \
 lvl/snail.asc \
@@ -3953,6 +3964,10 @@ lvl/thief.asc \
 lvl/thief.txt \
 lvl/tiny.asc \
 lvl/tiny.txt \
+lvl/tinykame.asc \
+lvl/tinykame.txt \
+lvl/tinymac.asc \
+lvl/tinymac.txt \
 lvl/tinypac.asc \
 lvl/tinypac.txt \
 lvl/tinypac2.asc \

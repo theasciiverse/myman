@@ -3368,7 +3368,7 @@ static int location_is_suspect = 0;
 static int last_valid_line = 0;
 static int last_valid_col = -1;
 
-static int
+static void
 my_erase(void)
 {
     if (snapshot || snapshot_txt)
@@ -3512,20 +3512,11 @@ my_erase(void)
     {
         last_valid_line = 0;
         last_valid_col = -1;
-#ifdef OK
-        return OK;
-#else
-        return ! ERR;
-#endif
+        return;
     }
     last_valid_line = LINES - 1;
     last_valid_col = COLS - 1;
-    {
-        int ret;
-
-        ret = erase();
-        return ret;
-    }
+    erase();
 }
 
 int

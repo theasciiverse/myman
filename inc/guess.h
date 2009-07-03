@@ -79,6 +79,13 @@
 #endif /* ! defined(WIN16) */
 #endif /* ! defined(WIN32) */
 
+/* some Atari ST compilers define atarist but not __atarist__ */
+#ifndef __atarist__
+#ifdef atarist
+#define __atarist__ atarist
+#endif
+#endif
+
 /* Do we have <winsock.h>? */
 #ifndef HAVE_WINSOCK_H
 #if defined(WIN16) || defined(WIN32)
@@ -136,7 +143,7 @@
 /* HAVE_LANGINFO_H: do we have <langinfo.h>? */
 
 #ifndef HAVE_LANGINFO_H
-#if ! (defined(WIN32) || defined(CPM) || defined(macintosh) || defined(__MSDOS__) || defined(atarist) || defined(__atarist__) || defined(__DMC__) || defined(__HAIKU__) || defined(__WATCOMC__) || defined(__EFI__) || defined(__AROS__))
+#if ! (defined(WIN32) || defined(CPM) || defined(macintosh) || defined(__MSDOS__) || defined(__atarist__) || defined(__DMC__) || defined(__HAIKU__) || defined(__WATCOMC__) || defined(__EFI__) || defined(__AROS__))
 #define HAVE_LANGINFO_H 1
 #endif
 #endif
@@ -374,7 +381,7 @@
 #endif
 #endif /* defined(macintosh) */
 
-#if (defined(WIN32) && ! defined(__WINE__)) || defined(__MSDOS__) || defined(__DMC__) || defined(macintosh) || defined(__EFI__) || defined(__AROS__)
+#if (defined(WIN32) && ! defined(__WINE__)) || defined(__MSDOS__) || defined(__DMC__) || defined(macintosh) || defined(__EFI__) || defined(__AROS__) || (defined(__atarist__) && defined(__GNUC__) && (__GNUC__ == 2))
 #ifndef HAVE_SETENV
 #define HAVE_SETENV 0
 #endif

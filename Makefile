@@ -2043,7 +2043,8 @@ macman \
 smallmac \
 tinymac \
 smalltax \
-tinykame
+tinykame \
+bigpac
 
 all_sizes = \
 small \
@@ -3494,6 +3495,8 @@ lvl/babypac.asc \
 lvl/babypac.txt \
 lvl/bb.asc \
 lvl/bb.txt \
+lvl/bigpac.asc \
+lvl/bigpac.txt \
 lvl/blinky.asc \
 lvl/blinky.txt \
 lvl/blobbo.asc \

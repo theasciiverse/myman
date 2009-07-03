@@ -3553,8 +3553,8 @@ lvl/eatit.asc \
 lvl/eatit.txt \
 lvl/ebipac.asc \
 lvl/ebipac.txt \
-lvl/epockman.asc \
-lvl/epockman.txt \
+lvl/epochman.asc \
+lvl/epochman.txt \
 lvl/fhmcpac.asc \
 lvl/fhmcpac.txt \
 lvl/full188.asc \

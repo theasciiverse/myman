@@ -566,7 +566,7 @@ for size in {all_sizes}
                     # Classic 68K + PowerPC "fat" toolbox QuickDraw Text MPW tool
                     set HOSTFLAGS "{{HOSTFLAGS}} ``quote {PPCLIBS} {LIBS}`` -fat -model far -tool"
                 else if ":{{host}}" == ":mpw-68k"
-                    # Classic 68k toolbox QuickDraw Text MPW tool (seems to work in Mac OS 9.0 but bombs with an "unimplemented trap" in System 7.5.5)
+                    # Classic 68k toolbox QuickDraw Text MPW tool
                     set HOSTFLAGS "{{HOSTFLAGS}} ``quote {LIBS}`` -68k -model far -tool"
                 else if ":{{host}}" == ":mpw-ppc"
                     # Classic PowerPC toolbox QuickDraw Text MPW tool

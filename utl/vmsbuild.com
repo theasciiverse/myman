@@ -33,6 +33,9 @@ $!
 $! If you would like to build with the built-in (color) TTY driver:
 $! $ @[.utl]vmsbuild "/define=RAWCURSES"
 $!
+$! Same as above, but with Unicode support:
+$! $ @[.utl]vmsbuild "/define=RAWCURSES" "/define=UNICODE"
+$!
 $ write sys$output "$! cleaning"
 $ if f$search("myman.obj") .nes. "" then delete myman.obj;*
 $ if f$search("mygetopt.obj") .nes. "" then delete mygetopt.obj;*

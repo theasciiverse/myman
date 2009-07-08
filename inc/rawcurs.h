@@ -222,6 +222,12 @@
 
 #endif /* defined(__BORLANDC__) */
 
+#ifdef __WINE__
+#ifndef HAVE_WCWIDTH
+#define HAVE_WCWIDTH 1
+#endif
+#endif /* defined(__WINE__) */
+
 #ifndef HAVE_WCWIDTH
 #define HAVE_WCWIDTH 0
 #endif

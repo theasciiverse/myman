@@ -1189,7 +1189,9 @@ ifeq ($(subst default,undefined,$(origin REZ)),undefined)
 REZ = /Developer/Tools/Rez
 endif
 ifeq ($(subst default,undefined,$(origin PROD_FINDER)),undefined)
-PROD_FINDER = prod_finder() { dir=`dirname "$$1"`; base=`basename "$$1"`; cd "$$dir" && ${OSASCRIPT} -e $(call q,on run argv${char_newline}tell application "Finder" to update item 1 of argv as POSIX file${char_newline}end run) "`pwd`/$$base"; }; prod_finder
+PROD_FINDER = prod_finder() { \
+        char_newline=`echo ;echo :` && char_newline="$${char_newline%:}" && export char_newline && \
+        dir=`dirname "$$1"`; base=`basename "$$1"`; cd "$$dir" && ${OSASCRIPT} -e $(call q,on run argv${char_newline}tell application "Finder" to update item 1 of argv as POSIX file${char_newline}end run) "`pwd`/$$base"; }; prod_finder
 endif
 ifeq ($(subst default,undefined,$(origin set_mac_icon)),undefined)
 set_mac_icon = set_mac_icon() { \
@@ -4350,15 +4352,19 @@ genscript-${script_stage}_${script_target}: $(call mw,${src})configure $(call mw
 	@${SED} ${SEDFLAGS} -n -e '/START_ECHOLINE_LIBRARY/,/END_ECHOLINE_LIBRARY/ p' < \
             $(call q,$<)
 	@echo $(call q,${NORMAL_UNPACK})
-	@${MAKE} ${MAKELOOP} -n -s \
-            ${script_target} \
-            ECHOLINE=echoline \
-            ECHOLINEX=echolinex \
-            PRE_$(call ucase,${script_target})=pre_${script_target} \
-            POST_$(call ucase,${script_target})=post_${script_target} \
-            NORMAL_$(call ucase,${script_target})=normal_${script_target} \
-            | \
-                ${SED} ${SEDFLAGS} -n -e '1 {;x;s/^$$/normal_${script_target}/;x;};/^\(normal\|pre\|post\)_${script_target}$$/ {;h;b;};G;s/\(.*\)'$(call q,${char_reverse_solidus}${char_newline})'${script_stage}_${script_target}$$/\1/p'
+	@( \
+          char_newline=`echo ;echo :` && char_newline="$${char_newline%:}" && export char_newline && \
+          ${MAKE} ${MAKELOOP} -n -s \
+              ${script_target} \
+              ECHOLINE=echoline \
+              ECHOLINEX=echolinex \
+              PRE_$(call ucase,${script_target})=pre_${script_target} \
+              POST_$(call ucase,${script_target})=post_${script_target} \
+              NORMAL_$(call ucase,${script_target})=normal_${script_target} \
+              | \
+                  ${SED} ${SEDFLAGS} -n -e '1 {;x;s/^$$/normal_${script_target}/;x;};/^\(normal\|pre\|post\)_${script_target}$$/ {;h;b;};G;s/\(.*\)'$(call q,${char_reverse_solidus}${char_newline})'${script_stage}_${script_target}$$/\1/p' ; \
+          exit $$? \
+        )
 	@echo $(call q,${POST_UNPACK})
 	@echo "## ${script_stage}_${script_target} end"
 	@echo $(call q,${NORMAL_UNPACK})
@@ -4512,18 +4518,22 @@ endif
             genscript-pre_${script_target} \
             script_stage=pre
 ifeq (install,${script_target})
-	@${MAKE} ${MAKELOOP} \
-            genscript-normal_${script_target} \
-            script_stage=normal \
-            INSTALL_PROGRAM=bindist_install_program \
-            INSTALL_DATA=bindist_install_data \
-            INSTALL_DIR=bindist_install_dir \
-            INSTALL_MANLINK=bindist_install_data \
-            PRE_UNPACK=pre_unpack \
-            NORMAL_UNPACK=normal_unpack \
-            POST_UNPACK=post_unpack \
-            | \
-                ${SED} ${SEDFLAGS} -n -e '1 {;x;s/^$$/normal_unpack/;x;};/^\(normal\|pre\|post\)_unpack$$/ {;h;b;};G;s/\(.*\)'$(call q,${char_reverse_solidus}${char_newline})'post_unpack$$/\1/p'
+	@( \
+          char_newline=`echo ;echo :` && char_newline="$${char_newline%:}" && export char_newline && \
+          ${MAKE} ${MAKELOOP} \
+              genscript-normal_${script_target} \
+              script_stage=normal \
+              INSTALL_PROGRAM=bindist_install_program \
+              INSTALL_DATA=bindist_install_data \
+              INSTALL_DIR=bindist_install_dir \
+              INSTALL_MANLINK=bindist_install_data \
+              PRE_UNPACK=pre_unpack \
+              NORMAL_UNPACK=normal_unpack \
+              POST_UNPACK=post_unpack \
+              | \
+                  ${SED} ${SEDFLAGS} -n -e '1 {;x;s/^$$/normal_unpack/;x;};/^\(normal\|pre\|post\)_unpack$$/ {;h;b;};G;s/\(.*\)'$(call q,${char_reverse_solidus}${char_newline})'post_unpack$$/\1/p' ; \
+          exit $$? \
+        )
 else
 	@${MAKE} ${MAKELOOP} \
             genscript-normal_${script_target} \
@@ -4654,7 +4664,9 @@ all:: $(call mw,${obj}winicon.res)
 
 ${obj}winicon.rc: $(call mw,${MAKEFILE})
 	@${ECHOLINEX} creating $(call q,$@) && \
-        ${ECHOLINE} $(call q,${char_number_sign}include <windows.h>${char_newline}\
+        ( \
+          char_newline=`echo ;echo :` && char_newline="$${char_newline%:}" && export char_newline && \
+          ${ECHOLINE} $(call q,${char_number_sign}include <windows.h>${char_newline}\
 IDI_APPLICATION ICON "$(call cq,${obj}myman.ico)"${char_newline}\
 1 VERSIONINFO${char_newline}\
     FILEVERSION $(subst .,${char_comma},${MYMANVERSION}${char_comma}0)${char_newline}\
@@ -4679,10 +4691,12 @@ BEGIN${char_newline}\
         END${char_newline}\
     END${char_newline}\
 END) > $@ || \
-            ( \
-                ${REMOVE} $(call q,$@) ; \
-                exit 1 \
-            )
+              ( \
+                  ${REMOVE} $(call q,$@) ; \
+                  exit 1 \
+              ) ; \
+          exit $$? \
+        )
 
 ${obj}winicon.res: $(call mw,${obj}winicon.rc) $(call mw,${obj}myman.ico)
 	@${HOSTCOMPILE_RESOURCE}

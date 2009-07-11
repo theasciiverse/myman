@@ -8033,6 +8033,26 @@ static int rawcurses_getch(void)
 #if USE_WINCONSOLE
                 if (avail == -1)
                 {
+                    DWORD bytes_avail = (DWORD) -1;
+
+                    if (PeekNamedPipe(
+                            rawcurses_stdin,
+                            NULL,
+                            0,
+                            NULL,
+                            &bytes_avail,
+                            NULL))
+                    {
+                        if ((bytes_avail != (DWORD) -1)
+                            &&
+                            (((int) bytes_avail) >= 0))
+                        {
+                            avail = (int) bytes_avail;
+                        }
+                    }
+                }
+                if (avail == -1)
+                {
                     DWORD nbytes;
                     struct stat st;
 

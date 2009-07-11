@@ -3454,7 +3454,7 @@ static int rawcurses_fput_sgr(FILE *fh, attr_t a, attr_t a_rgb)
                 "\005\005\005\005\233"  /* white */
             };
 
-#define RAWCURSES__PETSCII_PALETTE_ENTRY(s) (*((s) + ((rawcurses_stdio_petscii_palette < strlen(s)) ? rawcurses_stdio_petscii_palette : 0)))
+#define RAWCURSES__PETSCII_PALETTE_ENTRY(s) (*((s) + (((rawcurses_stdio_petscii_palette >= 0) && (rawcurses_stdio_petscii_palette < (int) strlen(s))) ? rawcurses_stdio_petscii_palette : 0)))
 
             int petscii_color;
             const char *petscii_palette_entries;

@@ -481,7 +481,6 @@ struct timeval
 static int rawcurses_gettimeofday(struct timeval *tv, void *tz)
 {
 
-
     if (tv)
     {
 #if defined(WIN32) || defined(WIN16)
@@ -1547,7 +1546,8 @@ RAWCURSES_GLOBAL(const char *rawcurses_old_tty_system, = NULL);
 
 RAWCURSES_GLOBAL0(chtype rawcurses_pairs[COLOR_PAIRS]);
 
-typedef struct {
+typedef struct
+{
     short r, g, b;
 } rawcurses_rgb_t;
 
@@ -4178,7 +4178,8 @@ typedef struct
 #pragma pack(push, 1)
 
 /* this is called CONSOLE_SCREEN_BUFFER_INFOEX in official docs */
-typedef struct {
+typedef struct
+{
     ULONG cbSize;
     COORD dwSize;
     COORD dwCursorPosition;
@@ -4683,12 +4684,16 @@ static int rawcurses_win32_get_palette(rawcurses_rgb_t *palette)
     for (i = 0; i < 16; i ++)
     {
         WCHAR buf[MAX_PATH];
+        char hbuf[MAX_PATH];
+        int j;
 
-        swprintf(buf,
-#if ! (defined(__MSVCRT__) || defined(__BORLANDC__))
-                 MAX_PATH - 1,
-#endif /* ! (defined(__MSVCRT__) || defined(__BORLANDC__)) */
-                 L"ColorTable%2.2d", i);
+        sprintf(hbuf,
+                "ColorTable%2.2d", i);
+        for (j = 0; hbuf[j]; j ++)
+        {
+            buf[j] = (WCHAR) hbuf[j];
+        }
+        buf[j] = L'\0';
         if (i == 6) ColorTable[i] = RGB(126, 63, 0);
         else ColorTable[i] = RGB(((i & 4) ? 126 : 0) + ((i & 8) ? 63 : 0), \
                                  ((i & 2) ? 126 : 0) + ((i & 8) ? 63 : 0), \
@@ -7300,6 +7305,7 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
             ? 0
             : 1;
     }
+    fflush(stderr); /* FIXME: this prevents a crash when compiled with winegcc on Mac OS X; figure out why! */
     refresh();
     rawcurses_after_endwin = 0;
 }
@@ -9115,7 +9121,8 @@ static void standend(void)
     attrset(0);
 }
 
-static int move(int y, int x) {
+static int move(int y, int x)
+{
     if ((rawcurses_x != x)
         ||
         (rawcurses_y != y))
@@ -9453,7 +9460,8 @@ static int rawcurses_wcwidth(wchar_t wc)
 #undef wcwidth
 #define wcwidth(wc) rawcurses_wcwidth(wc)
 
-static int addch(chtype ch) {
+static int addch(chtype ch)
+{
     int wcw;
 
     rawcurses_palette_snoop();
@@ -10023,7 +10031,8 @@ static int clrtoeol(void)
 
 #undef clrtobot
 #define clrtobot rawcurses_clrtobot
-static int clrtobot(void) {
+static int clrtobot(void)
+{
     if (rawcurses_stdio)
     {
         if ((rawcurses_fput_clrtobot(stdout) > 0)
@@ -10049,7 +10058,8 @@ static int clrtobot(void) {
     return OK;
 }
 
-static int addstr(const char *s) {
+static int addstr(const char *s)
+{
     while (*s)
     {
         addch((chtype) (int) (unsigned char) *s++);
@@ -10059,7 +10069,8 @@ static int addstr(const char *s) {
 
 #undef mvprintw
 #define mvprintw rawcurses_mvprintw
-static int mvprintw(int y, int x, const char *s) {
+static int mvprintw(int y, int x, const char *s)
+{
     move(y, x);
     return addstr(s);
 }
@@ -10184,7 +10195,8 @@ static int erase(void)
 
 #undef clear
 #define clear rawcurses_clear
-static int clear(void) {
+static int clear(void)
+{
     if (rawcurses_stdio && (! rawcurses_after_endwin) && (! rawcurses_winsize_pending) && rawcurses_got_winsize && rawcurses_winsize_on_clear)
     {
         rawcurses_fput_request_winsize(stdout);

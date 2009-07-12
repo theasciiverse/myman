@@ -1275,7 +1275,7 @@ ifeq ($(subst default,undefined,$(origin HDRROOT)),undefined)
 HDRROOT = ${EFIROOT}/include/efi
 endif
 
-HOSTCINCLUDES += -I$(call q,${HDRROOT}) -I$(call q,${HDRROOT}/${ARCH}) -I$(call q,${HDRROOT}/protocol) -I$(call q,${src}efilibc) -I$(call q,$(call shell,${HOSTCC} -print-file-name="")include)
+HOSTCINCLUDES += -I$(call q,${HDRROOT}) -I$(call q,${HDRROOT}/${ARCH}) -I$(call q,${HDRROOT}/protocol) -I$(call q,${src}efilibc) -I$(call q,$(call shell,${HOSTCC} -print-file-name="")include) -I$(call q,$(call shell,${HOSTCC} -print-file-name="")include-fixed)
 
 ifeq ($(subst default,undefined,$(origin HOSTCRTOBJS)),undefined)
 HOSTCRTOBJS = $(call q,${EFIROOT}/lib/crt0-efi-${ARCH}.o) $(call q,${obj}efilibc$o)
@@ -1284,7 +1284,7 @@ endif
 HOSTCPPFLAGS += -D$(call q,CONFIG_${ARCH}) -D__EFI__ -D_LIBC_LIMITS_H_
 
 ifeq ($(subst default,undefined,$(origin HOSTCFLAGS)),undefined)
-HOSTCFLAGS = -nostdinc -O2 -fpic -Wall -fshort-wchar -fno-strict-aliasing -fno-merge-constants
+HOSTCFLAGS = -nostdinc -O2 -fpic -Wall -fshort-wchar -fno-strict-aliasing -fno-merge-constants -fno-stack-protector ${EXTRAHOSTCFLAGS}
 endif
 
 ifeq ($(subst default,undefined,$(origin HOSTLD)),undefined)
@@ -1758,12 +1758,12 @@ endif
 ifeq ($(subst default,undefined,$(origin HOSTLINK)),undefined)
 ifeq ($(subst default,undefined,$(origin HOSTLD)),undefined)
 ifneq (,$(findstring dmc,${HOSTCC}))
-HOSTLINK = ${HOSTCC} ${HOSTCFLAGS} ${EXTRAHOSTCFLAGS} -o$(call q,$@) $(call q,$<)
+HOSTLINK = ${HOSTCC} ${HOSTCFLAGS} -o$(call q,$@) $(call q,$<)
 else
 ifneq (,$(findstring bcc32,${HOSTCC}))
-HOSTLINK = ${HOSTCC} ${HOSTCFLAGS} ${EXTRAHOSTCFLAGS} -e$(call q,$@) $(call q,$<)
+HOSTLINK = ${HOSTCC} ${HOSTCFLAGS} -e$(call q,$@) $(call q,$<)
 else
-HOSTLINK = ${HOSTCC} ${HOSTCFLAGS} ${EXTRAHOSTCFLAGS} -o $(call q,$@) $(call q,$<)
+HOSTLINK = ${HOSTCC} ${HOSTCFLAGS} -o $(call q,$@) $(call q,$<)
 endif
 endif
 else

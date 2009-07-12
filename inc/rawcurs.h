@@ -2557,7 +2557,7 @@ char *rawcurses_gtty_system(const char *default_old_mode)
                             {
                                 char *sttybuf;
 
-                                sttybuf = (void *) malloc(len + 1);
+                                sttybuf = (char *) malloc(len + 1);
                                 if (sttybuf != NULL)
                                 {
                                     size_t i;

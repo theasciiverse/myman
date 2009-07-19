@@ -2758,7 +2758,13 @@ pen_pal[16][3] =
 #define COLOR_PAIRS ((COLORS) * (COLORS))
 #endif
 
-#define trans_color(i) \
+static int swap_rb = 0;
+
+#define trans_color(i) (swap_rb \
+    ? real_trans_color((((i) & 1) ? 4 : 0) | (((i) & 4) ? 1 : 0) | ((i) & ~(1 | 4))) \
+    : real_trans_color(i))
+
+#define real_trans_color(i) \
 (((i) == 0) ? COLOR_BLACK \
 : ((i) == 1) ? COLOR_BLUE \
 : ((i) == 2) ? COLOR_GREEN \
@@ -2808,7 +2814,7 @@ destroy_pen(void)
 #if USE_PALETTE
     if (can_change_color() && (COLORS >= 16) && (COLOR_PAIRS >= 16)) {
         for (i = 0; i < 16; i ++)
-            init_color(i, old_pal[i][0], old_pal[i][1], old_pal[i][2]);
+            init_color(i, old_pal[i][swap_rb ? 2 : 0], old_pal[i][1], old_pal[i][swap_rb ? 0 : 2]);
     }
 #endif
     for (i = 0; i < 256; i ++)
@@ -2895,9 +2901,9 @@ init_pen(void)
             color_content(i, old_pal[i], old_pal[i] + 1, old_pal[i] + 2);
         for (i = 0; i < 16; i ++) {
             init_color(trans_dynamic_color[i],
-                       pen_pal[i][0],
+                       pen_pal[i][swap_rb ? 2 : 0],
                        pen_pal[i][1],
-                       pen_pal[i][2]);
+                       pen_pal[i][swap_rb ? 0 : 2]);
             if ((! i) || (my_init_pair(i, trans_dynamic_color[i], trans_dynamic_color[0]) == ERR))
             {
                 pen[i] = COLOR_PAIR(0);
@@ -7677,6 +7683,12 @@ parse_myman_args(int argc, char **argv)
         debug = atoi(myman_getenv("MYMAN_DEBUG"));
         debug = debug ? debug : 1;
     }
+#if USE_COLOR
+    if (myman_getenv("MYMAN_SWAP_RB") && *(myman_getenv("MYMAN_SWAP_RB")))
+    {
+        swap_rb = atoi(myman_getenv("MYMAN_SWAP_RB"));
+    }
+#endif
 #ifdef XCURSES
     argv[optind - 1] = progname;
     argc -= optind;

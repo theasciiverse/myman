@@ -2047,7 +2047,8 @@ smallmac \
 tinymac \
 smalltax \
 tinykame \
-bigpac
+bigpac \
+pacmaine
 
 all_sizes = \
 small \
@@ -3820,6 +3821,8 @@ lvl/packman.asc \
 lvl/packman.txt \
 lvl/packri.asc \
 lvl/packri.txt \
+lvl/pacmaine.asc \
+lvl/pacmaine.txt \
 lvl/pacman2.asc \
 lvl/pacman2.txt \
 lvl/pacman89.asc \

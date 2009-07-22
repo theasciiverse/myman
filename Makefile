@@ -2049,7 +2049,8 @@ smalltax \
 tinykame \
 bigpac \
 pacmaine \
-mazeman2
+mazeman2 \
+pakus
 
 all_sizes = \
 small \
@@ -3874,6 +3875,8 @@ lvl/paczx2.asc \
 lvl/paczx2.txt \
 lvl/pakkman.asc \
 lvl/pakkman.txt \
+lvl/pakus.asc \
+lvl/pakus.txt \
 lvl/paques.asc \
 lvl/paques.txt \
 lvl/pcman.asc \

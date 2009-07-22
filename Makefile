@@ -2048,7 +2048,8 @@ tinymac \
 smalltax \
 tinykame \
 bigpac \
-pacmaine
+pacmaine \
+mazeman2
 
 all_sizes = \
 small \
@@ -3671,6 +3672,8 @@ lvl/maze.asc \
 lvl/maze.txt \
 lvl/mazeman.asc \
 lvl/mazeman.txt \
+lvl/mazeman2.asc \
+lvl/mazeman2.txt \
 lvl/mazewar.asc \
 lvl/mazewar.txt \
 lvl/mc10.asc \

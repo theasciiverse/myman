@@ -70,11 +70,18 @@ feature()
     eval "${1}"'="${2}"'
 }
 
+uname_m="`uname -m 2>/dev/null || echo unknown`"
+uname_o="`uname -o 2>/dev/null || echo unknown`"
+uname_p="`uname -p 2>/dev/null || echo unknown`"
+uname_s="`uname -s 2>/dev/null || echo unknown`"
+
 export cputype
 
 cputype="${cputype:-`
-    uname -p 2>/dev/null ||
-        uname -m 2>/dev/null
+    if [ :"${uname_p:-unknown}" = :unknown ]
+    then echo "${uname_m:-unknown}"
+    else echo "${uname_p:-unknown}"
+    fi
 `}"
 
 export vendor
@@ -84,8 +91,10 @@ vendor="${vendor:-unknown}"
 export ostype
 
 ostype="${ostype:-`
-    uname -o 2>/dev/null ||
-        uname -s 2>/dev/null
+    if [ :"${uname_o:-unknown}" = :unknown ]
+    then echo "${uname_s:-unknown}"
+    else echo "${uname_o:-unknown}"
+    fi
 `}"
 
 srcdir=

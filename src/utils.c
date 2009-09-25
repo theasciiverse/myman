@@ -5057,9 +5057,12 @@ char *myman_strrstr(const char *haystack, const char *needle)
     char *ret, *probe;
 
     ret = strstr(haystack, needle);
-    while ((ret != NULL) && ((probe = strstr(ret, needle)) != NULL))
+    probe = ret;
+    while ((probe != NULL) && ((probe = strstr(probe, needle)) != NULL))
     {
         ret = probe;
+        if (! *ret) break;
+        probe ++;
     }
     return ret;
 }

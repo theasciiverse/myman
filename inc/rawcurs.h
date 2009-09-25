@@ -1433,6 +1433,7 @@ RAWCURSES_GLOBAL(int rawcurses_stdio_cp437, = 0);
 RAWCURSES_GLOBAL(int rawcurses_stdio_acs_nobullet, = 0);
 RAWCURSES_GLOBAL(int rawcurses_stdio_vwmterm, = 0);
 RAWCURSES_GLOBAL(int rawcurses_stdio_nocolorbold, = 0);
+RAWCURSES_GLOBAL(int rawcurses_stdio_bterm, = 0);
 RAWCURSES_GLOBAL(int rawcurses_stdio_vt52, = 0);
 RAWCURSES_GLOBAL(int rawcurses_stdio_st52, = 0);
 RAWCURSES_GLOBAL(int rawcurses_stdio_wide, = 0);
@@ -1771,6 +1772,13 @@ static const char *RAWCURSES_ACS_KAYPRO2XLIKE =
  * sequences */
 static const char *RAWCURSES_KAYPRO2XLIKE =
     "kaypro2x" "\0"
+    "\0\0";
+
+/* list of terminals which need their SGR sequences split out with one
+ * attribute change per sequence, and which need explicit off
+ * sequences for basic attributes (i.e. SGR0 is broken) */
+static const char *RAWCURSES_BTERMLIKE =
+    "bterm" "\0"
     "\0\0";
 
 /* list of terminals for which we assume an H19-style alternate
@@ -3372,6 +3380,10 @@ static int can_change_color(void);
 
 static int rawcurses_fput_sgr(FILE *fh, attr_t a, attr_t a_rgb)
 {
+    const char *more_sgr;
+
+    more_sgr = ";";
+    if (rawcurses_stdio_bterm) more_sgr = "m" CSI("");
 #if USE_CONIO
     if (rawcurses_stdio_conio)
     {
@@ -3676,12 +3688,16 @@ static int rawcurses_fput_sgr(FILE *fh, attr_t a, attr_t a_rgb)
         if (a_rgb & BACKGROUND_BLUE) tmp |= FOREGROUND_BLUE;
         if (a_rgb & BACKGROUND_INTENSITY) tmp |= FOREGROUND_INTENSITY;
         a_rgb = tmp;
-        fputs(";7", fh);
+        fprintf(fh, "%s7", more_sgr);
     }
-    if ((a & A_BOLD) || ((a_rgb & FOREGROUND_INTENSITY) && ! rawcurses_stdio_nocolorbold)) fputs(";1", fh);
-    if ((a_rgb & BACKGROUND_INTENSITY) && rawcurses_stdio_blink) fputs(";5", fh);
-    if (a & A_DIM) fputs(";2", fh);
-    if (a & A_UNDERLINE) fputs(";4", fh);
+    if ((a & A_BOLD) || ((a_rgb & FOREGROUND_INTENSITY) && ! rawcurses_stdio_nocolorbold)) fprintf(fh, "%s1", more_sgr);
+    else if ((rawcurses_stdio_bterm) && ! rawcurses_stdio_nocolorbold) fprintf(fh, "%s21", more_sgr);
+    if ((a_rgb & BACKGROUND_INTENSITY) && rawcurses_stdio_blink) fprintf(fh, "%s5", more_sgr);
+    else if ((rawcurses_stdio_bterm) && rawcurses_stdio_blink) fprintf(fh, "%s25", more_sgr);
+    if (a & A_DIM) fprintf(fh, "%s2", more_sgr);
+    else if (rawcurses_stdio_bterm) fprintf(fh, "%s22", more_sgr);
+    if (a & A_UNDERLINE) fprintf(fh, "%s4", more_sgr);
+    else if (rawcurses_stdio_bterm) fprintf(fh, "%s24", more_sgr);
     if (a & RAWCURSES__A_COLOR)
     {
         int ansifg, ansibg;
@@ -3761,19 +3777,23 @@ static int rawcurses_fput_sgr(FILE *fh, attr_t a, attr_t a_rgb)
         }
         else
         {
-            fprintf(fh, ";%d;%d",
+            fprintf(fh, "%s%d%s%d",
+                    more_sgr,
                     30 + ansifg % 8,
+                    more_sgr,
                     40 + ansibg % 8);
             if (rawcurses_16color)
             {
                 if (a_rgb & FOREGROUND_INTENSITY)
                 {
-                    fprintf(fh, ";%d",
+                    fprintf(fh, "%s%d",
+                            more_sgr,
                             90 + ansifg % 8);
                 }
                 if (a_rgb & BACKGROUND_INTENSITY)
                 {
-                    fprintf(fh, ";%d",
+                    fprintf(fh, "%s%d",
+                            more_sgr,
                             100 + ansibg % 8);
                 }
             }
@@ -3781,8 +3801,8 @@ static int rawcurses_fput_sgr(FILE *fh, attr_t a, attr_t a_rgb)
     }
     else
     {
-        /*if (a & (A_REVERSE | A_STANDOUT)) fputs(";3", fh);*/
-        if (a & (A_REVERSE | A_STANDOUT)) fputs(";7", fh);
+        /*if (a & (A_REVERSE | A_STANDOUT)) fprintf(fh, "%s3", more_sgr);*/
+        if (a & (A_REVERSE | A_STANDOUT)) fprintf(fh, "%s7", more_sgr);
     }
     return fputc('m', fh) != EOF;
 }
@@ -5964,6 +5984,25 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
             (! strncmp(termType, "xnuppc", strlen("xnuppc"))))
         {
             rawcurses_stdio_nocolorbold = 1;
+        }
+    }
+    if (rawcurses_getenv_boolean("RAWCURSES_BTERM"))
+    {
+        rawcurses_stdio_bterm = *(rawcurses_getenv_boolean("RAWCURSES_BTERM")) ? 1 : 0;
+    }
+    else
+    {
+        const char *btermlike = RAWCURSES_BTERMLIKE;
+
+        rawcurses_stdio_bterm = 0;
+        while (strlen(btermlike))
+        {
+            if (! strcmp(termType, btermlike))
+            {
+                rawcurses_stdio_bterm = 1;
+                break;
+            }
+            btermlike += strlen(btermlike) + 1;
         }
     }
     if (rawcurses_getenv_boolean("RAWCURSES_H19"))

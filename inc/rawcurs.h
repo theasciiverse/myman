@@ -1913,6 +1913,7 @@ static const char *RAWCURSES_CP437LIKE =
     "LFT-PC850" "\0"
     "lft-pc850" "\0"
     "linux" "\0"
+    "linux-16color" "\0"
     "linux-basic" "\0"
     "linux-c" "\0"
     "linux-c-nc" "\0"
@@ -5528,6 +5529,8 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
             (! strcmp(termType, "linux-koi8r"))
             ||
             (! strcmp(termType, "linux-vt"))
+            ||
+            (! strcmp(termType, "linux-16color"))
             ||
             (! strcmp(termType, "putty")))
         {

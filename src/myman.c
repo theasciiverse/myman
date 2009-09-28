@@ -2750,6 +2750,10 @@ pen_pal[16][3] =
 
 #if USE_COLOR
 
+/* FIXME: COLORS and COLOR_PAIRS used to be macros, but in modern
+ * ncurses they are externs. */
+#if 0
+
 #ifndef COLORS
 #define COLORS 8
 #endif
@@ -2757,6 +2761,8 @@ pen_pal[16][3] =
 #ifndef COLOR_PAIRS
 #define COLOR_PAIRS ((COLORS) * (COLORS))
 #endif
+
+#endif /* 0 */
 
 static int swap_rb = 0;
 

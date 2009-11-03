@@ -1,7 +1,7 @@
 #!/bin/bash --
 # aztecc.sh - compile MyMan for DOS using Aztec C
 #
-# This calls aztec.bat inside DOSBox to do the dirty work.
+# This calls aztecc.bat inside DOSBox to do the dirty work.
 
 # override DOSBOX to point to your DOSBox binary and possibly some arguments
 DOSBOX="${DOSBOX:-dosbox}"

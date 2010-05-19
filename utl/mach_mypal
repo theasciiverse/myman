@@ -1,5 +1,5 @@
 #!/bin/bash
-# $Id: mach_mypal,v 1.2 2010/05/19 03:28:46 bsittler Exp $
+# $Id: mach_mypal,v 1.3 2010/05/19 03:59:33 bsittler Exp $
 #
 # WARNING: This script modifies your running operating system kernel.
 # This is potentially very risky, as the kernel is what allows everything
@@ -372,6 +372,9 @@ exit 0
 
 #
 # $Log: mach_mypal,v $
+# Revision 1.3  2010/05/19 03:59:33  bsittler
+# enable missing executable bits
+#
 # Revision 1.2  2010/05/19 03:28:46  bsittler
 # update bundled mach_acs and mach_mypal to match the latest unbundled versions
 #

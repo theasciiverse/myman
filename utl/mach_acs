@@ -1,5 +1,5 @@
-#!/bin/bash
-# $Id: mach_acs,v 1.1 2009/04/12 23:45:14 bsittler Exp $
+#!/bin/bash --
+# $Id: mach_acs,v 1.2 2010/05/19 03:28:46 bsittler Exp $
 #
 # WARNING: This script modifies your running operating system kernel.
 # This is potentially very risky, as the kernel is what allows everything
@@ -23,6 +23,10 @@
 #
 #    sudo /bin/bash mach_acs --install
 #
+# Get terminfo for TERM=xnuppc-acs here:
+#
+#    http://xent.com/~bsittler/xnuppc.ti
+#
 # On Intel and PowerPC platforms, Apple's Darwin operating system and
 # Mac OS X use a full-screen system console derived from a NetBSD
 # framebuffer console. It is an ANSI-style terminal, and is not really
@@ -43,6 +47,15 @@
 # Options panel by disabling the "Automatically log in as" option and
 # setting the "Display login window as" option to "Name and password"
 #
+# NOTE: Under Mac OS X version 10.4 (and possibly other versions) the
+# console is only usable when the "Apple Remote Desktop" service is
+# disabled in System Preferences | Sharing | Services.
+#
+# NOTE: Alternate boot loaders such as rEFIt may interfere with the
+# boot arguments needed to enable /dev/kmem -- if you have problems
+# consider disabling or reconfiguring the alternate boot loader to
+# send the boot-args kmem=1 to the Darwin kernel.
+#
 # NOTE: This script requires access to kernel memory. By default it
 # enables the built-in /dev/kmem by adding the kmem=1 option to the
 # nvram boot-args -- however, it may be possible to use it with Amit
@@ -54,7 +67,7 @@
 # NOTE: This script needs the 'nm' utility; get it from Xcode or
 # odcctools
 
-export KERNEL_FILE="/mach"
+export KERNEL_FILE="$(test -f /mach_kernel && echo /mach_kernel || echo /mach)"
 
 export KERNEL_FONT_SYMBOL="_iso_font"
 
@@ -77,6 +90,96 @@ if test $((${KERNEL_FONT_SIZE} / 256)) != 16
 then
     echo "Kernel is not using 8x16 font, exiting" >&2
     exit 1
+fi
+on_console=0
+if test -t
+then
+    if test :"${TTY:-`tty 2>/dev/null`}" = :"/dev/console"
+    then
+        on_console=1
+    fi
+fi
+if test :"$*" = :"--test"
+then
+    ret=0
+    if test $on_console != 1
+    then
+        echo "Error: Not connected to tty /dev/console" >&2
+        ret=1
+    fi
+    if test ! -x /usr/sbin/mach_acs
+    then
+        echo "Error: /usr/sbin/mach_acs is not executable" >&2
+        ret=1
+    fi
+    if test ! -e /dev/kmem
+    then
+        echo "Error: /dev/kmem does not exist" >&2
+        ret=1
+    fi
+    sgr ()
+    {
+        printf '\x1b[%dm' "$1"
+    }
+    setaf ()
+    {
+        sgr $(( 30 + $1 ))
+    }
+    setab ()
+    {
+        sgr $(( 40 + $1 ))
+    }
+    enacs="$(printf '\x1b)0')"
+    smacs="$(printf '\x0e')"
+    rmacs="$(printf '\x0f')"
+    sgr0="$(sgr 0)"
+    s=" "
+    h="a"
+    rs="$(sgr 7)${s}$(sgr 27)"
+    if test :"${TERM-unknown}" != :"" -a -t
+    then
+        tput_enacs="$(tput enacs 2>/dev/null)"
+        tput_smacs="$(tput smacs 2>/dev/null)"
+        tput_rmacs="$(tput rmacs 2>/dev/null)"
+        if test \
+            :"${tput_enacs/${enacs}/}" = :"${tput_enacs}" -o \
+            :"${tput_smacs/${smacs}/}" = :"${tput_smacs}" -o \
+            :"${tput_rmacs/${rmacs}/}" = :"${tput_rmacs}"
+        then
+            echo "Error: terminfo does not know how to use the altcharset for TERM=${TERM}" >&2
+            ret=1
+        fi
+    fi
+    echo ""
+    echo -n "${enacs}"
+    for fg in 0 1 2 3 4 5 6 7
+    do
+        for bg in 0 1 2 3 4 5 6 7
+        do
+            for cell in s h
+            do
+                eval "${cell}${fg}${bg}"'="$(setaf $fg; setab $bg)${!cell}${!cell}${sgr0}"'
+            done
+        done
+    done
+    wheel0="$s70$s70$h10$h30$h20$s70$s70"
+    wheel1="$s70$h10$h13$s03$h23$h20$s70"
+    wheel2="$h01$s01$h17$h37$h27$s02$h02"
+    wheel3="$h51$h51$h57$s07$h67$h62$h62"
+    wheel4="$h50$s05$h57$s07$h67$s06$h60"
+    wheel5="$s70$h05$h45$h47$h46$h06$s70"
+    wheel6="$s70$s70$h40$s04$h40$s70$s70"
+    echo " "             "  VT100  "           " "     "  ASCII  "   " "         "                                   "         "${smacs}${wheel0}${rmacs}"
+    echo " " "${smacs}"'lqqqwq''q''qk'"${rmacs}" " " "+---+-""-""-+" " "         "Other VT100 graphics:              "         "${smacs}${wheel1}${rmacs}"
+    echo " " "${smacs}"'x ` x ''f'' x'"${rmacs}" " " "| * | ""'"" |" " " "${smacs}g  y  z  |  {  }  b  c  d  e  h  i ${rmacs}" "${smacs}${wheel2}${rmacs}"
+    echo " " "${smacs}"'trsrnp''o''pu'"${rmacs}" " " "+-_-+-""^""-+" " "         "                                   "         "${smacs}${wheel3}${rmacs}"
+    echo " " "${smacs}""x ~ xa${rs}ax""${rmacs}" " " "| . |#${rs}#|" " "         "ASCII approximations:              "         "${smacs}${wheel4}${rmacs}"
+    echo " " "${smacs}"'mqqqvq''q''qj'"${rmacs}" " " "+---+-""-""-+" " "         "+- <= >= != pi L- HT FF CR LF NL VT"         "${smacs}${wheel5}${rmacs}"
+    echo " "             "  VT100  "           " "     "  ASCII  "   " "         "                                   "         "${smacs}${wheel6}${rmacs}"
+    echo ""
+    echo "You should see two grids, one using the VT100 altcharset and one using ASCII"
+    echo ""
+    exit $ret
 fi
 if test :"$*" = :"--uninstall"
 then
@@ -105,7 +208,7 @@ then
     echo "" >&2
     echo "After the next reboot your Darwin console should" >&2
     echo "support the VT-100 alternate character set." >&2
-    if test -d /System/Library/CoreServices/loginwindow.app; then
+    if test -d /System/Library/CoreServices/loginwindow.app -a $on_console != 1; then
         echo "" >&2
         echo "Type \">console\" at the Mac OS X login window to get to the Darwin console." >&2
         echo "" >&2
@@ -113,7 +216,27 @@ then
         echo "password dialog inside the System Preferences | Accounts | Login" >&2
         echo "Options panel by disabling the \"Automatically log in as\" option and" >&2
         echo "setting the \"Display login window as\" option to \"Name and password\"" >&2
+        echo "" >&2
+        echo "NOTE: Under Mac OS X version 10.4 (and possibly other versions) the" >&2
+        echo "console is only usable when the \"Apple Remote Desktop\" service is" >&2
+        echo "disabled in System Preferences | Sharing | Services." >&2
     fi
+    if test -d /efi/refit -a ! -e /dev/kmem; then
+        echo "" >&2
+        echo "NOTE: Alternate boot loaders such as rEFIt may interfere with the" >&2
+        echo "boot arguments needed to enable /dev/kmem -- if you have problems" >&2
+        echo "consider disabling or reconfiguring the alternate boot loader to" >&2
+        echo "send the boot-args kmem=1 to the Darwin kernel." >&2
+    fi
+    if ! TERM=xnuppc-acs infocmp 2>/dev/null > /dev/null
+    then
+        echo "" >&2
+        echo "Get terminfo for TERM=xnuppc-acs here:" >&2
+        echo "    http://xent.com/~bsittler/xnuppc.ti" >&2
+    fi
+    echo "" >&2
+    echo "To test, run the following on the console:" >&2
+    echo "   /bin/bash /usr/sbin/mach_acs --test" >&2
     echo "" >&2
     echo "To uninstall, type the following command:" >&2
     echo "   sudo /bin/bash /usr/sbin/mach_acs --uninstall" >&2
@@ -693,14 +816,90 @@ EOF
     echo "   sudo /bin/bash $0 --install" >&2
     echo "To uninstall, type the following command:" >&2
     echo "   sudo /bin/bash $0 --uninstall" >&2
+    echo "To test, run the following on the console:" >&2
+    echo "   /bin/bash $0 --test" >&2
+    if ! TERM=xnuppc-acs infocmp 2>/dev/null > /dev/null
+    then
+        echo "Get terminfo for TERM=xnuppc-acs here:" >&2
+        echo "    http://xent.com/~bsittler/xnuppc.ti" >&2
+    fi
     exit 1
 }
 exit 0
 
 #
 # $Log: mach_acs,v $
-# Revision 1.1  2009/04/12 23:45:14  bsittler
-# add mach_acs and mach_mypal, which were previously distributed separately
+# Revision 1.2  2010/05/19 03:28:46  bsittler
+# update bundled mach_acs and mach_mypal to match the latest unbundled versions
+#
+# Revision 1.71  2009/05/15 21:51:53  bsittler
+# work-around for some artifacts from misaligned adjacent stipples
+#
+# Revision 1.70  2009/05/15 18:10:43  bsittler
+# add a color wheel "splat"
+#
+# Revision 1.69  2009/05/14 19:19:49  bsittler
+# better test
+#
+# Revision 1.68  2009/05/14 18:57:21  bsittler
+# better all-in-one test
+#
+# Revision 1.67  2009/05/14 18:36:40  bsittler
+# use installed version for --test example
+#
+# Revision 1.66  2009/05/14 18:34:53  bsittler
+# test entire ACS
+#
+# Revision 1.65  2009/05/14 18:10:23  bsittler
+# add blank lines before and after the sample
+#
+# Revision 1.64  2009/05/14 17:55:42  bsittler
+# link to terminfo when installing too
+#
+# Revision 1.63  2009/05/14 17:53:34  bsittler
+# link to terminfo if it's not installed
+#
+# Revision 1.62  2009/05/14 17:49:21  bsittler
+# clean up console checks and link to terminfo
+#
+# Revision 1.61  2009/05/14 14:53:47  bsittler
+# note that rEFIt may cause problems
+#
+# Revision 1.60  2009/05/14 01:02:04  bsittler
+# note that Apple Remote Desktop needs to be disabled
+#
+# Revision 1.59  2009/05/14 00:52:49  bsittler
+# clearer wording
+#
+# Revision 1.58  2009/05/14 00:45:45  bsittler
+# test, not [
+#
+# Revision 1.57  2009/05/14 00:45:30  bsittler
+# typo
+#
+# Revision 1.56  2009/05/14 00:45:04  bsittler
+# test terminfo too
+#
+# Revision 1.55  2009/05/14 00:37:53  bsittler
+# fix typo: plus is k
+#
+# Revision 1.54  2009/05/14 00:34:53  bsittler
+# ooops!
+#
+# Revision 1.53  2009/05/14 00:34:03  bsittler
+# warn if stuff does not line up
+#
+# Revision 1.52  2009/05/14 00:12:55  bsittler
+# clearer wording, and no sudo needed for --test
+#
+# Revision 1.51  2009/05/14 00:07:24  bsittler
+# better caption
+#
+# Revision 1.50  2009/05/14 00:06:12  bsittler
+# added --test
+#
+# Revision 1.49  2009/04/15 18:21:18  bsittler
+# newer kernels are /mach_kernel with no /mach symlink
 #
 # Revision 1.48  2008/01/24 04:30:20  bsittler
 # more whitespace

@@ -1,5 +1,5 @@
 #!/bin/bash
-# $Id: mach_mypal,v 1.1 2009/04/12 23:45:14 bsittler Exp $
+# $Id: mach_mypal,v 1.2 2010/05/19 03:28:46 bsittler Exp $
 #
 # WARNING: This script modifies your running operating system kernel.
 # This is potentially very risky, as the kernel is what allows everything
@@ -27,6 +27,14 @@
 #
 #    sudo /bin/bash mach_mypal --install
 #
+# Get the MyMan video game here:
+#
+#    http://myman.sf.net/
+#
+# Get terminfo for TERM=xnuppc here:
+#
+#    http://xent.com/~bsittler/xnuppc.ti
+#
 # On Intel and PowerPC platforms, Apple's Darwin operating system and
 # Mac OS X use a full-screen system console derived from a NetBSD
 # framebuffer console. It is an ANSI-style terminal, and is not really
@@ -42,6 +50,15 @@
 # Options panel by disabling the "Automatically log in as" option and
 # setting the "Display login window as" option to "Name and password"
 #
+# NOTE: Under Mac OS X version 10.4 (and possibly other versions) the
+# console is only usable when the "Apple Remote Desktop" service is
+# disabled in System Preferences | Sharing | Services.
+#
+# NOTE: Alternate boot loaders such as rEFIt may interfere with the
+# boot arguments needed to enable /dev/kmem -- if you have problems
+# consider disabling or reconfiguring the alternate boot loader to
+# send the boot-args kmem=1 to the Darwin kernel.
+#
 # NOTE: This script requires access to kernel memory. By default it
 # enables the built-in /dev/kmem by adding the kmem=1 option to the
 # nvram boot-args -- however, it may be possible to use it with Amit
@@ -53,7 +70,7 @@
 # NOTE: This script needs the 'nm' utility; get it from Xcode or
 # odcctools
 
-export KERNEL_FILE="/mach"
+export KERNEL_FILE="$(test -f /mach_kernel && echo /mach_kernel || echo /mach)"
 
 export KERNEL_MEMORY="/dev/kmem"
 
@@ -88,6 +105,92 @@ test :"$(uname -s)" = :"Darwin" || {
     echo "$0: this is not Darwin, exiting" >&2
     exit 1
 }
+on_console=0
+if test -t
+then
+    if test :"${TTY:-`tty 2>/dev/null`}" = :"/dev/console"
+    then
+        on_console=1
+    fi
+fi
+if test :"$*" = :"--test"
+then
+    ret=0
+    if test $on_console != 1
+    then
+        echo "Error: Not connected to tty /dev/console" >&2
+        ret=1
+    fi
+    if test ! -x /usr/sbin/mach_mypal
+    then
+        echo "Error: /usr/sbin/mach_mypal is not executable" >&2
+        ret=1
+    fi
+    if test ! -e /dev/kmem
+    then
+        echo "Error: /dev/kmem does not exist" >&2
+        ret=1
+    fi
+    sgr ()
+    {
+        printf '\x1b[%dm' "$1"
+    }
+    setaf ()
+    {
+        sgr $(( 30 + $1 ))
+    }
+    setaf_7="$(setaf 7)"
+    setab ()
+    {
+        sgr $(( 40 + $1 ))
+    }
+    setab_0="$(setab 0)"
+    sgr0="$(sgr 0)"
+    tput_setaf_7="$(tput setaf 7 2>/dev/null)"
+    tput_setab_0="$(tput setab 0 2>/dev/null)"
+    tput_sgr0="$(tput sgr0 2>/dev/null)"
+    if test \
+        :"${tput_setaf_7/${setaf_7}/}" = :"${tput_setaf_7}" -o \
+        :"${tput_setab_0/${setab_0}/}" = :"${tput_setab_0}"
+    then
+        echo "Error: terminfo does not know how to use color for TERM=${TERM}" >&2
+        ret=1
+    fi
+    fg=0
+    bg=7
+    echo ""
+    echo -n " ANSI color #"
+    echo -n " Color Sample"
+    echo -n "  R1   G1   B1    R2   G2   B2 "
+    echo ""
+    echo -n " ------------"
+    echo -n " ------------"
+    echo -n " ---- ---- ----  ---- ---- ----"
+    echo ""
+    while [ $fg -le 7 ]
+    do
+      sgr 0
+      echo -n " ANSI color $fg"
+      echo -n " "
+      setaf $fg
+      setab $bg
+      echo -n " .:*#@"
+      setaf $bg
+      setab $fg
+      echo -n "@#*:. "
+      sgr 0
+      KERNEL_PALETTE_fg="KERNEL_PALETTE_${fg}"
+      echo -n " ${!KERNEL_PALETTE_fg}"
+      echo ""
+      fg=$(( $fg + 1 ))
+      bg=0
+    done
+    echo ""
+    echo "You should see $fg color samples corresponding to the mille-scale RGB values given."
+    echo "When a color has two RGB triples, the perceived color should be their average."
+    echo ""
+    exit $ret
+fi
 if test :"$*" = :"--uninstall"
 then
     chmod 644 /usr/sbin/mach_mypal || exit $?
@@ -115,7 +218,7 @@ then
     echo "" >&2
     echo "After the next reboot your Darwin console should" >&2
     echo "use a custom color palette." >&2
-    if test -d /System/Library/CoreServices/loginwindow.app; then
+    if test -d /System/Library/CoreServices/loginwindow.app -a $on_console != 1; then
         echo "" >&2
         echo "Type \">console\" at the Mac OS X login window to get to the Darwin console." >&2
         echo "" >&2
@@ -123,7 +226,27 @@ then
         echo "password dialog inside the System Preferences | Accounts | Login" >&2
         echo "Options panel by disabling the \"Automatically log in as\" option and" >&2
         echo "setting the \"Display login window as\" option to \"Name and password\"" >&2
+        echo "" >&2
+        echo "NOTE: Under Mac OS X version 10.4 (and possibly other versions) the" >&2
+        echo "console is only usable when the \"Apple Remote Desktop\" service is" >&2
+        echo "disabled in System Preferences | Sharing | Services." >&2
     fi
+    if test -d /efi/refit -a ! -e /dev/kmem; then
+        echo "" >&2
+        echo "NOTE: Alternate boot loaders such as rEFIt may interfere with the" >&2
+        echo "boot arguments needed to enable /dev/kmem -- if you have problems" >&2
+        echo "consider disabling or reconfiguring the alternate boot loader to" >&2
+        echo "send the boot-args kmem=1 to the Darwin kernel." >&2
+    fi
+    if ! TERM=xnuppc infocmp 2>/dev/null > /dev/null
+    then
+        echo "" >&2
+        echo "Get terminfo for TERM=xnuppc here:" >&2
+        echo "    http://xent.com/~bsittler/xnuppc.ti" >&2
+    fi
+    echo "" >&2
+    echo "To test, run the following on the console:" >&2
+    echo "   /bin/bash /usr/sbin/mach_mypal --test" >&2
     echo "" >&2
     echo "To uninstall, type the following command:" >&2
     echo "   sudo /bin/bash /usr/sbin/mach_mypal --uninstall" >&2
@@ -232,16 +355,61 @@ dd if=<(
 "$(blend ${KERNEL_PALETTE_7})"\
 ''
 ) of="${KERNEL_MEMORY}" bs=1 seek=$(( 0x$(nm "${KERNEL_FILE}"  | grep ' '"${KERNEL_PALETTE_SYMBOL}"'$' | awk '{print $1}') + ${KERNEL_PALETTE_OFFSET})) count=$((8*4*3)) conv=notrunc || {
-    echo "To use this, type the following command:" >&2
+    echo "To install this, type the following command:" >&2
     echo "   sudo /bin/bash $0 --install" >&2
+    echo "To uninstall, type the following command:" >&2
+    echo "   sudo /bin/bash $0 --uninstall" >&2
+    echo "To test, run the following on the console:" >&2
+    echo "   /bin/bash $0 --test" >&2
+    if ! TERM=xnuppc infocmp 2>/dev/null > /dev/null
+    then
+        echo "Get terminfo for TERM=xnuppc here:" >&2
+        echo "    http://xent.com/~bsittler/xnuppc.ti" >&2
+    fi
     exit 1
 }
 exit 0
 
 #
 # $Log: mach_mypal,v $
-# Revision 1.1  2009/04/12 23:45:14  bsittler
-# add mach_acs and mach_mypal, which were previously distributed separately
+# Revision 1.2  2010/05/19 03:28:46  bsittler
+# update bundled mach_acs and mach_mypal to match the latest unbundled versions
+#
+# Revision 1.48  2009/05/15 16:59:52  bsittler
+# better gradient bar
+#
+# Revision 1.47  2009/05/14 18:37:23  bsittler
+# another blank line
+#
+# Revision 1.46  2009/05/14 18:36:13  bsittler
+# use installed version for --test example
+#
+# Revision 1.45  2009/05/14 18:11:22  bsittler
+# add another blank line
+#
+# Revision 1.44  2009/05/14 18:11:13  bsittler
+# fix sample
+#
+# Revision 1.43  2009/05/14 17:57:16  bsittler
+# fixed a stray mach_acs -> mach_mypal
+#
+# Revision 1.42  2009/05/14 17:55:32  bsittler
+# link to terminfo when installing too
+#
+# Revision 1.41  2009/05/14 17:53:47  bsittler
+# link to terminfo if it's not installed
+#
+# Revision 1.40  2009/05/14 17:45:01  bsittler
+# link to terminfo
+#
+# Revision 1.39  2009/05/14 17:21:39  bsittler
+# link to myman
+#
+# Revision 1.38  2009/05/14 17:14:32  bsittler
+# updates from mach_acs
+#
+# Revision 1.37  2009/04/15 18:20:50  bsittler
+# newer mach kernels are /mach_kernel with no /mach
 #
 # Revision 1.36  2008/03/01 20:20:31  bsittler
 # works on ppc now

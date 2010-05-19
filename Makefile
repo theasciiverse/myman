@@ -3339,6 +3339,7 @@ utl/macbuild.txt \
 utl/mach_acs \
 utl/mach_mypal \
 utl/vmsbuild.com \
+utl/tccwin32.bat \
 utl/myman.ct \
 utl/pacificc.sh \
 utl/turboc.sh \

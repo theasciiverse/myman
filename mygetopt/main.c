@@ -1,5 +1,4 @@
-/*
- * copy - test program for my getopt() re-implementation
+/* main.c - test program "copy" for my getopt() re-implementation
  *
  * This program is in the public domain.
  */
@@ -17,7 +16,11 @@
 #include <string.h>
 
 /* for my getopt() re-implementation */
+#ifdef MYGETOPT_H
+#include MYGETOPT_H
+#else
 #include "getopt.h"
+#endif
 
 /* the default verbosity level is 0 (no verbose reporting) */
 static unsigned verbose = 0;

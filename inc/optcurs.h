@@ -59,7 +59,7 @@ OPTCURSES_GLOBAL(const char *optcurses_bitmap_braille, = NULL);
 /*
  * NOTE: this is actually an array of dimensionality optcurses_h where
  * each element contains an array of optcurses_cell_t of
- * dimensionality [2][optcurses_w] followed by an unsigned char; the
+ * dimensionality [2][optcurses_w] followed by an my_uchar; the
  * first part is an application buffer at [0] followed by a screen
  * buffer at [1], and the second part is a clean-flag for the
  * application buffer where a 0xFF entry indicates no change to the
@@ -67,7 +67,7 @@ OPTCURSES_GLOBAL(const char *optcurses_bitmap_braille, = NULL);
  */
 typedef struct {
     optcurses_cell_t *backing[2];
-    unsigned char clean;
+    my_uchar clean;
 } optcurses_row_t;
 OPTCURSES_GLOBAL(optcurses_row_t *optcurses_backing, = NULL);
 
@@ -490,7 +490,7 @@ static int optcurses_addstr(const char *s) {
     {
         while (*s)
         {
-            optcurses_addch((unsigned char) *s++);
+            optcurses_addch((my_uchar) *s++);
         }
         return OK;
     }
@@ -889,8 +889,8 @@ static attr_t optcurses__combine_bitmap_attr(attr_t fgattr, attr_t bgattr)
 #ifdef CACA_API_VERSION_1
     if (has_colors())
     {
-        unsigned char fg, bg;
-        unsigned long oattr;
+        my_uchar fg, bg;
+        my_ulong oattr;
 
         fg = cucul_attr_to_ansi_fg(fgattr) | ((fgattr & A_BOLD) ? 8 : 0);
         bg = cucul_attr_to_ansi_fg(bgattr) | ((bgattr & A_BOLD) ? 8 : 0);

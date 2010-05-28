@@ -160,6 +160,23 @@
 #define USE_WINCONSOLE 0
 #endif
 
+#if defined(__WATCOMC__) && defined(__SW_BW)
+#ifndef USE_WDEFWIN
+#define USE_WDEFWIN 1
+#endif
+#endif
+
+#ifndef USE_WDEFWIN
+#define USE_WDEFWIN 0
+#endif
+
+#if USE_WDEFWIN
+#ifndef USE_CONIO_INPUT
+#define USE_CONIO_INPUT 1
+#endif
+#include <wdefwin.h>
+#endif
+
 #ifdef macintosh
 #ifdef TARGET_API_MAC_CARBON
 #include <Carbon.h>
@@ -475,7 +492,9 @@ struct timeval
 
 #if ! HAVE_GETTIMEOFDAY
 
+#ifdef gettimeofday
 #undef gettimeofday
+#endif
 #define gettimeofday rawcurses_gettimeofday
 
 static int rawcurses_gettimeofday(struct timeval *tv, void *tz)
@@ -515,12 +534,8 @@ static int rawcurses_gettimeofday(struct timeval *tv, void *tz)
 
 /* originally from http://www.lightner.net/lightner/bruce/photopc/msdos/patch/usleep.c */
 
-        static unsigned long
-#ifndef __BCC__
-            far
-#endif
-            *p;
-        unsigned long ticks;
+        static my_ulong my_far *p;
+        my_ulong ticks;
 
         if (!p) p = MK_FP(0, 0x46c);
         ticks = *p;
@@ -607,7 +622,9 @@ static int rawcurses_gettimeofday(struct timeval *tv, void *tz)
 
 #if ! HAVE_ACCESS
 
+#ifdef access
 #undef access
+#endif
 #define access(fn,type) rawcurses_access(fn)
 
 static int rawcurses_access(const char *fn)
@@ -635,7 +652,9 @@ static int rawcurses_access(const char *fn)
 
 #if ! HAVE_ISATTY
 
+#ifdef isatty
 #undef isatty
+#endif
 #define isatty(fd) rawcurses_isatty(fd)
 
 int rawcurses_isatty(int fd)
@@ -689,10 +708,34 @@ int rawcurses_isatty(int fd)
 #endif
 
 #if ! HAVE_USLEEP
+#if defined(_POSIX_TIMERS) && (_POSIX_TIMERS > 0)
+
+#undef usleep
+#define usleep rawcurses_usleep
+
+static int
+rawcurses_usleep(unsigned long usecs)
+{
+  struct timespec tsp;
+
+  tsp.tv_sec = usecs / 1000000UL;
+  tsp.tv_nsec = (usecs % 1000000UL) * 1000;
+  return nanosleep(&tsp, NULL);
+}
+
+#undef HAVE_USLEEP
+#define HAVE_USLEEP 1
+
+#endif /* defined(_POSIX_TIMERS) && (_POSIX_TIMERS > 0) */
+#endif /* ! HAVE_USLEEP */
+
+#if ! HAVE_USLEEP
 
 #if defined(WIN32)
 
+#ifdef usleep
 #undef usleep
+#endif
 
 /* originally from http://wyw.dcweb.cn/sleep.h.txt by Wu Yongwei */
 
@@ -700,11 +743,14 @@ int rawcurses_isatty(int fd)
 
 #else /* ! defined(WIN32) */
 
+#ifdef usleep
 #undef usleep
+#endif
+
 #define usleep rawcurses_usleep
 
 static int
-rawcurses_usleep(unsigned long usecs)
+rawcurses_usleep(my_ulong usecs)
 {
 #ifdef macintosh
     EventRecord er;
@@ -743,6 +789,9 @@ rawcurses_usleep(unsigned long usecs)
 
         if (myman_gettimeofday(&tv0, NULL)) break;
         ret = 0;
+#if USE_WDEFWIN
+	_dwYield();
+#endif
 #if HAVE_SLEEP
 #if ! (defined(__DMC__) || defined(__TURBOC__))
         ret =
@@ -786,7 +835,9 @@ rawcurses_usleep(unsigned long usecs)
 #endif
 
 #if ! HAVE_TTYNAME
+#ifdef ttyname
 #undef ttyname
+#endif
 #define ttyname(fd) (isatty(fileno(stdin)) ? "con" : "stdin")
 #endif
 
@@ -849,8 +900,8 @@ rawcurses_usleep(unsigned long usecs)
 
 struct _iosb
 {
-    unsigned short iosb$w_status;
-    unsigned short iosb$w_bcnt;
+    my_ushort iosb$w_status;
+    my_ushort iosb$w_bcnt;
     unsigned iosb$l_dev_depend;
 };
 
@@ -865,11 +916,11 @@ struct _iosb
 
 typedef struct
 {
-    unsigned short vmscon_iotrm__unused_zeros;
-    unsigned short vmscon_iotrm_masksize;
+    my_ushort vmscon_iotrm__unused_zeros;
+    my_ushort vmscon_iotrm_masksize;
     union
     {
-        unsigned long vmscon_iotrm_mask_bits;
+        my_ulong vmscon_iotrm_mask_bits;
         void *vmscon_iotrm_mask_ptr;
     } vmscon_iotrm_mask;
 } rawcurses_stdio_vmscon_iotrm_t;
@@ -878,9 +929,9 @@ typedef struct
 {
     char vmscon_tt_mode_class;
     char vmscon_tt_mode_type;
-    unsigned short vmscon_tt_mode_width;
+    my_ushort vmscon_tt_mode_width;
     char vmscon_tt_mode_basic[3];
-    unsigned char vmscon_tt_mode_length;
+    my_uchar vmscon_tt_mode_length;
     int vmscon_tt_mode_extended;
 } rawcurses_stdio_vmscon_tt_mode_t;
 
@@ -946,7 +997,7 @@ typedef struct
 #endif
 
 #ifndef HAVE_WCHAR_T
-#if defined(wchar_t) || (! (defined(LSI_C) || defined(__TURBOC__)))
+#if defined(wchar_t) || (! (defined(LSI_C) || defined(__TURBOC__) || defined(__DESMET__)))
 #define HAVE_WCHAR_T 1
 #endif
 #endif
@@ -970,10 +1021,18 @@ typedef int rawcurses_wchar_t;
 
 #ifdef _INCLUDED_TURBOC_H
 /* recover from serious braindamage in TurboC.h */
+#ifdef short
 #undef short
+#endif
+#ifdef int
 #undef int
+#endif
+#ifdef unsigned
 #undef unsigned
+#endif
+#ifdef long
 #undef long
+#endif
 #endif /* defined(_INCLUDED_TURBOC_H) */
 
 #endif /* USE_CONIO || USE_CONIO_INPUT */
@@ -1111,10 +1170,14 @@ typedef long rawcurses_chtype;
 typedef int rawcurses_chtype;
 #endif
 
+#ifdef chtype
 #undef chtype
+#endif
 #define chtype rawcurses_chtype
 
+#ifdef attr_t
 #undef attr_t
+#endif
 #define attr_t rawcurses_attr_t
 
 typedef chtype attr_t;
@@ -1141,7 +1204,8 @@ typedef chtype attr_t;
 
 #define CSI8(s) ("\x9B" s)
 
-#define ST ESCAPE("\\")
+/* '\x5c' == '\\'; the latter notation in a macro confuses the DeSmet CPP */
+#define ST ESCAPE("\x5C")
 
 #define OSC(s) ESCAPE("]" s)
 
@@ -1163,22 +1227,34 @@ typedef chtype attr_t;
 
 #define leaveok(stdscr, x)
 
+#ifdef getyx
 #undef getyx
+#endif
 #define getyx(stdscr, y, x) (rawcurses_getyx(&rawcurses_y, &rawcurses_x), (x) = rawcurses_x, (y) = rawcurses_y)
 
+#ifdef wrefresh
 #undef wrefresh
+#endif
 #define wrefresh(stdscr) rawcurses_refresh()
 
+#ifdef beep
 #undef beep
+#endif
 #define beep() rawcurses_addch('\7')
 
+#ifdef echo
 #undef echo
+#endif
 #define echo()
 
+#ifdef use_env
 #undef use_env
+#endif
 #define use_env(x)
 
+#ifdef keypad
 #undef keypad
+#endif
 #define keypad(stdscr, x)
 
 #define LINES rawcurses_h
@@ -1187,31 +1263,49 @@ typedef chtype attr_t;
 
 #define _PAIR_SHIFT 21
 
+#ifdef COLOR_PAIR
 #undef COLOR_PAIR
+#endif
 #define COLOR_PAIR(p) (((chtype) p) << _PAIR_SHIFT)
 
+#ifdef PAIR_NUMBER
 #undef PAIR_NUMBER
+#endif
 #define PAIR_NUMBER(a) (((a) & RAWCURSES__A_COLOR) >> _PAIR_SHIFT)
 
+#ifdef A_CHARTEXT
 #undef A_CHARTEXT
+#endif
 #define A_CHARTEXT ((chtype) 0x1fffffL)
 
+#ifdef RAWCURSES__A_COLOR
 #undef RAWCURSES__A_COLOR
+#endif
 #define RAWCURSES__A_COLOR 0x0fe00000L
 
+#ifdef A_DIM
 #undef A_DIM
+#endif
 #define A_DIM ((chtype) 0x10000000UL)
 
+#ifdef A_BOLD
 #undef A_BOLD
+#endif
 #define A_BOLD ((chtype) 0x20000000UL)
 
+#ifdef A_REVERSE
 #undef A_REVERSE
+#endif
 #define A_REVERSE ((chtype) 0x40000000UL)
 
+#ifdef A_UNDERLINE
 #undef A_UNDERLINE
+#endif
 #define A_UNDERLINE ((chtype) 0x80000000UL)
 
+#ifdef A_STANDOUT
 #undef A_STANDOUT
+#endif
 #define A_STANDOUT A_REVERSE
 
 #ifndef FOREGROUND_BLUE
@@ -1246,19 +1340,45 @@ typedef chtype attr_t;
 #define BACKGROUND_INTENSITY 128
 #endif
 
+#ifdef ACS_LRCORNER
 #undef ACS_LRCORNER
+#endif
+#ifdef ACS_URCORNER
 #undef ACS_URCORNER
+#endif
+#ifdef ACS_ULCORNER
 #undef ACS_ULCORNER
+#endif
+#ifdef ACS_LLCORNER
 #undef ACS_LLCORNER
+#endif
+#ifdef ACS_PLUS
 #undef ACS_PLUS
+#endif
+#ifdef ACS_HLINE
 #undef ACS_HLINE
+#endif
+#ifdef ACS_LTEE
 #undef ACS_LTEE
+#endif
+#ifdef ACS_RTEE
 #undef ACS_RTEE
+#endif
+#ifdef ACS_BTEE
 #undef ACS_BTEE
+#endif
+#ifdef ACS_TTEE
 #undef ACS_TTEE
+#endif
+#ifdef ACS_VLINE
 #undef ACS_VLINE
+#endif
+#ifdef ACS_BULLET
 #undef ACS_BULLET
+#endif
+#ifdef ACS_BLOCK
 #undef ACS_BLOCK
+#endif
 
 #ifdef UNICODE
 
@@ -1334,49 +1454,79 @@ typedef chtype attr_t;
 
 #endif
 
+#ifdef KEY_RESIZE
 #undef KEY_RESIZE
+#endif
 #define KEY_RESIZE 0xef00
 
+#ifdef KEY_UP
 #undef KEY_UP
+#endif
 #define KEY_UP 0x0f01
 
+#ifdef KEY_DOWN
 #undef KEY_DOWN
+#endif
 #define KEY_DOWN 0xef02
 
+#ifdef KEY_LEFT
 #undef KEY_LEFT
+#endif
 #define KEY_LEFT 0xef03
 
+#ifdef KEY_RIGHT
 #undef KEY_RIGHT
+#endif
 #define KEY_RIGHT 0xef04
 
+#ifdef COLORS
 #undef COLORS
+#endif
 #define COLORS ((rawcurses_16color || (rawcurses_stdio && (rawcurses_stdio_88color || rawcurses_stdio_256color))) ? 16 : 8)
 
+#ifdef COLOR_PAIRS
 #undef COLOR_PAIRS
+#endif
 #define COLOR_PAIRS (16 * 16 / 2)
 
+#ifdef COLOR_BLACK
 #undef COLOR_BLACK
+#endif
 #define COLOR_BLACK 0
 
+#ifdef COLOR_BLUE
 #undef COLOR_BLUE
+#endif
 #define COLOR_BLUE 4
 
+#ifdef COLOR_GREEN
 #undef COLOR_GREEN
+#endif
 #define COLOR_GREEN 2
 
+#ifdef COLOR_CYAN
 #undef COLOR_CYAN
+#endif
 #define COLOR_CYAN (COLOR_BLUE | COLOR_GREEN)
 
+#ifdef COLOR_RED
 #undef COLOR_RED
+#endif
 #define COLOR_RED 1
 
+#ifdef COLOR_MAGENTA
 #undef COLOR_MAGENTA
+#endif
 #define COLOR_MAGENTA (COLOR_RED | COLOR_BLUE)
 
+#ifdef COLOR_YELLOW
 #undef COLOR_YELLOW
+#endif
 #define COLOR_YELLOW (COLOR_RED | COLOR_GREEN)
 
+#ifdef COLOR_WHITE
 #undef COLOR_WHITE
+#endif
 #define COLOR_WHITE (COLOR_RED | COLOR_GREEN | COLOR_BLUE)
 
 #define PEN_BRIGHT 8
@@ -2864,11 +3014,30 @@ static int rawcurses_fput_palette(FILE *fh, rawcurses_rgb_t *palette)
     if ((! rawcurses_stdio_ccc_linux) && (fputs(OSC("4"), fh) == EOF)) ret = 0;
     for (i = 0; i < COLORS; i ++)
     {
-        if (fprintf(fh,
-                    (rawcurses_stdio_ccc_linux ? (OSC("P%x%2.2x%2.2x%2.2x") ST) : ";%d;#%2.2x%2.2x%2.2x"),
-                    i, 255 * palette[i].r / 1000, 255 * palette[i].g / 1000, 255 * palette[i].b / 1000) <= 0)
+        if (rawcurses_stdio_ccc_linux)
         {
-            ret = 0;
+            if (fprintf(fh,
+                        OSC("P%x%2.2x%2.2x%2.2x%s"),
+                        i,
+                        255 * palette[i].r / 1000,
+                        255 * palette[i].g / 1000,
+                        255 * palette[i].b / 1000,
+                        ST) <= 0)
+            {
+                ret = 0;
+            }
+        }
+        else
+        {
+            if (fprintf(fh,
+                        ";%d;#%2.2x%2.2x%2.2x",
+                        i,
+                        255 * palette[i].r / 1000,
+                        255 * palette[i].g / 1000,
+                        255 * palette[i].b / 1000) <= 0)
+            {
+                ret = 0;
+            }
         }
     }
     if ((! rawcurses_stdio_ccc_linux) && (fputs("\7", fh) == EOF)) ret = 0;
@@ -3375,7 +3544,9 @@ static int rawcurses_fput_cup(FILE *fh, int y, int x)
     return (fprintf(fh, CSI("%d;%dH"), (y) + 1, (x) + 1) > 0);
 }
 
+#ifdef can_change_color
 #undef can_change_color
+#endif
 #define can_change_color rawcurses_can_change_color
 static int can_change_color(void);
 
@@ -4277,10 +4448,10 @@ static HWND rawcurses_win32_get_console_window(void)
             char newtitle[MAX_PATH + 1];
             LARGE_INTEGER count;
 
-            sprintf(newtitle, "tty%lu", (unsigned long) GetCurrentProcessId());
+            sprintf(newtitle, "tty%lu", (my_ulong) GetCurrentProcessId());
             if (QueryPerformanceCounter(&count))
             {
-                sprintf(newtitle + strlen(newtitle), "_%lu_%lu", (unsigned long) count.u.LowPart, (unsigned long) count.u.HighPart);
+                sprintf(newtitle + strlen(newtitle), "_%lu_%lu", (my_ulong) count.u.LowPart, (my_ulong) count.u.HighPart);
             }
             SetConsoleTitleA(newtitle);
             usleep(RAWCURSES_TITLE_QUIESCE_USECS);
@@ -4303,7 +4474,7 @@ static HWND rawcurses_win32_get_console_window(void)
 static int rawcurses_win32_console_reg_copy(const WCHAR *name, DWORD type, void *out, DWORD *size)
 {
     HKEY keys[2];
-    unsigned int i;
+    my_uint i;
     int read;
     HANDLE hConsoleWindow;
     TCHAR texenamebuf[MAX_PATH + 1];
@@ -4415,6 +4586,7 @@ static int rawcurses_win32_console_reg_copy(const WCHAR *name, DWORD type, void 
                     rawcurses_kernel32_QueryFullProcessImageNameW_t rawcurses_QueryFullProcessImageNameW;
                     rawcurses_kernel32_QueryFullProcessImageNameA_t rawcurses_QueryFullProcessImageNameA;
                     DWORD imagenamesize;
+                    HKEY hkWine;
 
 #ifdef UNICODE
 #define rawcurses_QueryFullProcessImageName rawcurses_QueryFullProcessImageNameW
@@ -4426,6 +4598,16 @@ static int rawcurses_win32_console_reg_copy(const WCHAR *name, DWORD type, void 
                     rawcurses_QueryFullProcessImageNameA = (rawcurses_kernel32_QueryFullProcessImageNameA_t) GetProcAddress(kernel32, "QueryFullProcessImageNameA");
                     texename = texenamebuf;
                     imagenamesize = MAX_PATH;
+                    if (ERROR_SUCCESS == RegOpenKeyExA(HKEY_CURRENT_USER, "Software\\Wine", 0, KEY_READ, &hkWine)) {
+                        /*
+
+                          Do not use QueryFullProcessImageNameA in Wine to avoid
+                          http://bugs.winehq.org/show_bug.cgi?id=18573
+
+                         */
+                        RegCloseKey(hkWine);
+                        rawcurses_QueryFullProcessImageNameA = NULL;
+                    }
                     if (rawcurses_QueryFullProcessImageName
                         &&
                         rawcurses_QueryFullProcessImageName(hConsoleProcess, 0, texename, &imagenamesize)
@@ -5011,46 +5193,64 @@ static int rawcurses_win32_set_palette(rawcurses_rgb_t *palette)
 
 #endif
 
+#ifdef attrset
 #undef attrset
+#endif
 #define attrset rawcurses_attrset
 static int attrset(attr_t a);
 
+#ifdef move
 #undef move
+#endif
 #define move rawcurses_move
 static int move(int y, int x);
 
+#ifdef addch
 #undef addch
+#endif
 #define addch rawcurses_addch
 static int addch(chtype ch);
 
+#ifdef addstr
 #undef addstr
+#endif
 #define addstr rawcurses_addstr
 static int addstr(const char *s);
 
 static void rawcurses_getyx(int *y, int *x);
 
+#ifdef erase
 #undef erase
+#endif
 #define erase rawcurses_erase
 static int erase(void);
 
+#ifdef has_colors
 #undef has_colors
+#endif
 #define has_colors() (rawcurses_color != 0)
 
+#ifdef can_change_color
 #undef can_change_color
+#endif
 #define can_change_color rawcurses_can_change_color
 static int can_change_color(void)
 {
     return has_colors() && (! rawcurses_fixedpal) && (rawcurses_stdio ? ((rawcurses_stdio_ccc || rawcurses_stdio_ccc_linux) || rawcurses_stdio_256color || rawcurses_stdio_88color) : 1);
 }
 
+#ifdef start_color
 #undef start_color
+#endif
 #define start_color rawcurses_start_color
 static int start_color(void)
 {
     return OK;
 }
 
+#ifdef color_content
 #undef color_content
+#endif
 #define color_content rawcurses_color_content
 static int color_content(short i, short *r, short *g, short *b)
 {
@@ -5062,7 +5262,9 @@ static int color_content(short i, short *r, short *g, short *b)
     return OK;
 }
 
+#ifdef init_color
 #undef init_color
+#endif
 #define init_color rawcurses_init_color
 static int init_color(short i, short r, short g, short b)
 {
@@ -5084,11 +5286,15 @@ static int init_color(short i, short r, short g, short b)
     return OK;
 }
 
+#ifdef refresh
 #undef refresh
+#endif
 #define refresh rawcurses_refresh
 static int refresh(void);
 
+#ifdef curs_set
 #undef curs_set
+#endif
 #define curs_set rawcurses_curs_set
 static int curs_set(int visibility)
 {
@@ -5122,7 +5328,9 @@ static int curs_set(int visibility)
     return old_visibility;
 }
 
+#ifdef init_pair
 #undef init_pair
+#endif
 #define init_pair rawcurses_init_pair
 static int init_pair(short i, short fg, short bg)
 {
@@ -5139,7 +5347,9 @@ static int init_pair(short i, short fg, short bg)
     return OK;
 }
 
+#ifdef pair_content
 #undef pair_content
+#endif
 #define pair_content rawcurses_pair_content
 static int pair_content(short i, short *fg, short *bg)
 {
@@ -5383,6 +5593,11 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
 
 #endif /* USE_VMSCONSOLE */
 
+#if USE_WDEFWIN
+    _dwSetAppTitle(shortname);
+    _dwSetConTitle(fileno(stdout), title);
+    _dwSetAboutDlg(shortname, title);
+#endif
     termType = rawcurses_term_type();
     rawcurses_stdio_tw52 = 0;
     if (termType
@@ -6492,11 +6707,11 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
             {
                 if (vmscon_tt_mode.vmscon_tt_mode_class == DC$_TERM)
                 {
-                    if ((int) (unsigned char) vmscon_tt_mode.vmscon_tt_mode_length)
+                    if ((int) (my_uchar) vmscon_tt_mode.vmscon_tt_mode_length)
                     {
                         rawcurses_h = vmscon_tt_mode.vmscon_tt_mode_length;
                     }
-                    if ((int) (unsigned short) vmscon_tt_mode.vmscon_tt_mode_width)
+                    if ((int) (my_ushort) vmscon_tt_mode.vmscon_tt_mode_width)
                     {
                         rawcurses_w = vmscon_tt_mode.vmscon_tt_mode_width;
                     }
@@ -7435,7 +7650,9 @@ static void rawcurses_palette_reset(void)
     }
 }
 
+#ifdef endwin
 #undef endwin
+#endif
 #define endwin rawcurses_endwin
 static void endwin(void)
 {
@@ -7572,6 +7789,9 @@ static void endwin(void)
 
 static int refresh(void)
 {
+#if USE_WDEFWIN
+    _dwYield();
+#endif
     rawcurses_palette_snoop();
     if (rawcurses_stdio)
     {
@@ -7771,7 +7991,7 @@ static int rawcurses_getch(void)
     soft_ERR = 0;
     do
     {
-        unsigned char buf[2];
+        my_uchar buf[2];
         int avail;
 
         avail = -1;
@@ -7818,9 +8038,9 @@ static int rawcurses_getch(void)
                                     return ERR;
                                 }
 #ifdef UNICODE
-                                ret = (unsigned short) irec.Event.KeyEvent.uChar.UnicodeChar;
+                                ret = (my_ushort) irec.Event.KeyEvent.uChar.UnicodeChar;
 #else
-                                ret = (unsigned char) irec.Event.KeyEvent.uChar.AsciiChar;
+                                ret = (my_uchar) irec.Event.KeyEvent.uChar.AsciiChar;
 #endif
                             }
                             break;
@@ -7956,9 +8176,9 @@ static int rawcurses_getch(void)
             {
                 if (avail)
                 {
-                    unsigned long kcode;
+                    my_ulong kcode;
 
-                    kcode = (unsigned long) Crawcin();
+                    kcode = (my_ulong) Crawcin();
                     if (kcode & 0xffU)
                     {
                         ret = (int) (kcode & 0xffU);
@@ -7972,7 +8192,7 @@ static int rawcurses_getch(void)
                          * alternate (8)
                          * caps lock (16)
                          */
-                        unsigned char kmod;
+                        my_uchar kmod;
 
                         kcode >>= 16;
                         kmod = kcode >> 8;
@@ -7980,11 +8200,11 @@ static int rawcurses_getch(void)
                         switch (kcode)
                         {
                         case K_ESC:
-                            return (int) (unsigned char) '\x1b';
+                            return (int) (my_uchar) '\x1b';
                         case K_RET:
-                            return (int) (unsigned char) '\r';
+                            return (int) (my_uchar) '\r';
                         case K_DEL:
-                            return (int) (unsigned char) '\x7f';
+                            return (int) (my_uchar) '\x7f';
                         case CURS_UP:
                             return KEY_UP;
                         case CURS_DN:
@@ -7994,41 +8214,41 @@ static int rawcurses_getch(void)
                         case CURS_LF:
                             return KEY_LEFT;
                         case KP_MINUS:
-                            return (int) (unsigned char) '-';
+                            return (int) (my_uchar) '-';
                         case KP_PLUS:
-                            return (int) (unsigned char) '+';
+                            return (int) (my_uchar) '+';
                         case KP_LP:
-                            return (int) (unsigned char) '(';
+                            return (int) (my_uchar) '(';
                         case KP_RP:
-                            return (int) (unsigned char) ')';
+                            return (int) (my_uchar) ')';
                         case KP_SLASH:
-                            return (int) (unsigned char) '/';
+                            return (int) (my_uchar) '/';
                         case KP_STAR:
-                            return (int) (unsigned char) '*';
+                            return (int) (my_uchar) '*';
                         case KP_0:
-                            return (int) (unsigned char) '0';
+                            return (int) (my_uchar) '0';
                         case KP_1:
-                            return (int) (unsigned char) '1';
+                            return (int) (my_uchar) '1';
                         case KP_2:
-                            return (int) (unsigned char) '2';
+                            return (int) (my_uchar) '2';
                         case KP_3:
-                            return (int) (unsigned char) '3';
+                            return (int) (my_uchar) '3';
                         case KP_4:
-                            return (int) (unsigned char) '4';
+                            return (int) (my_uchar) '4';
                         case KP_5:
-                            return (int) (unsigned char) '5';
+                            return (int) (my_uchar) '5';
                         case KP_6:
-                            return (int) (unsigned char) '6';
+                            return (int) (my_uchar) '6';
                         case KP_7:
-                            return (int) (unsigned char) '7';
+                            return (int) (my_uchar) '7';
                         case KP_8:
-                            return (int) (unsigned char) '8';
+                            return (int) (my_uchar) '8';
                         case KP_9:
-                            return (int) (unsigned char) '9';
+                            return (int) (my_uchar) '9';
                         case KP_DOT:
-                            return (int) (unsigned char) '.';
+                            return (int) (my_uchar) '.';
                         case KP_ENTER:
-                            return (int) (unsigned char) '\n';
+                            return (int) (my_uchar) '\n';
                         default:
                             ret = ERR;
                             soft_ERR = 1;
@@ -8063,8 +8283,8 @@ static int rawcurses_getch(void)
                              &vmscon_iosb, 0, 0,
                              &vmscon_retchr, sizeof(vmscon_retchr), 0, &vmscon_iotrm, 0, 0))
                 {
-                    if (! (int) (unsigned short) vmscon_iosb.iosb$w_bcnt) ret = ERR;
-                    else ret = (int) (unsigned char) vmscon_retchr;
+                    if (! (int) (my_ushort) vmscon_iosb.iosb$w_bcnt) ret = ERR;
+                    else ret = (int) (my_uchar) vmscon_retchr;
                 }
             }
             else
@@ -9027,7 +9247,7 @@ static int rawcurses_getch(void)
 
 static int attrset(attr_t a)
 {
-    attr_t a_rgb;
+    rawcurses_attr_t a_rgb;
     attr_t a_rgb_old;
 
     rawcurses_palette_snoop();
@@ -9149,14 +9369,18 @@ static int attrset(attr_t a)
     return OK;
 }
 
+#ifdef standout
 #undef standout
+#endif
 #define standout rawcurses_standout
 static void standout(void)
 {
     attrset(rawcurses_attr | A_STANDOUT);
 }
 
+#ifdef standend
 #undef standend
+#endif
 #define standend rawcurses_standend
 static void standend(void)
 {
@@ -9213,7 +9437,7 @@ static int wctoa(chtype ch)
             ||
             rawcurses_stdio_utf8
             ||
-            (ch == (chtype) (0xff & (int) (unsigned char) ch)))
+            (ch == (chtype) (0xff & (int) (my_uchar) ch)))
 #endif
         {
             return ch;
@@ -9268,7 +9492,7 @@ static int wctoa(chtype ch)
     if (! rawcurses_stdio) return ch;
 #endif
 #else /* ! defined(UNICODE) */
-    ch = (int) (unsigned char) (char) ch;
+    ch = (int) (my_uchar) (char) ch;
 #if USE_WINCONSOLE
     if ((! rawcurses_stdio) && (GetConsoleOutputCP() == 437)) return ch;
 #endif
@@ -9499,7 +9723,9 @@ static int rawcurses_wcwidth(wchar_t wc)
 #endif /* ! defined(unicode) */
 }
 
+#ifdef wcwidth
 #undef wcwidth
+#endif
 #define wcwidth(wc) rawcurses_wcwidth(wc)
 
 static int addch(chtype ch)
@@ -9767,13 +9993,13 @@ static int addch(chtype ch)
                         ch = '[';
                         break;
                     case '~':
-                        ch = (int) (unsigned) (unsigned char) (rawcurses_stdio_petscii_shifted ? '\243' : '\176');
+                        ch = (int) (unsigned) (my_uchar) (rawcurses_stdio_petscii_shifted ? '\243' : '\176');
                         break;
                     case '^':
-                        ch = ((int) (unsigned) (unsigned char) '\243');
+                        ch = ((int) (unsigned) (my_uchar) '\243');
                         break;
                     case '_':
-                        ch = ((int) (unsigned) (unsigned char) '\244');
+                        ch = ((int) (unsigned) (my_uchar) '\244');
                         break;
                     case '}':
                         ch = ']';
@@ -9786,43 +10012,43 @@ static int addch(chtype ch)
                         ch = '\175';
                         break;
                     case '\\':
-                        ch = (int) (unsigned) (unsigned char) (rawcurses_stdio_petscii_shifted ? '\277' : '\155');
+                        ch = (int) (unsigned) (my_uchar) (rawcurses_stdio_petscii_shifted ? '\277' : '\155');
                         break;
                     case ACS_BTEE:
-                        ch = ((int) (unsigned) (unsigned char) '\261');
+                        ch = ((int) (unsigned) (my_uchar) '\261');
                         break;
                     case ACS_HLINE:
                         ch = '\140';
                         break;
                     case ACS_LLCORNER:
-                        ch = (int) (unsigned) (unsigned char) (acs_shifted ? '\255' : '\152');
+                        ch = (int) (unsigned) (my_uchar) (acs_shifted ? '\255' : '\152');
                         break;
                     case ACS_LRCORNER:
-                        ch = (int) (unsigned) (unsigned char) (acs_shifted ? '\275' : '\153');
+                        ch = (int) (unsigned) (my_uchar) (acs_shifted ? '\275' : '\153');
                         break;
                     case ACS_LTEE:
-                        ch = ((int) (unsigned) (unsigned char) '\253');
+                        ch = ((int) (unsigned) (my_uchar) '\253');
                         break;
                     case ACS_PLUS:
                         ch = '\173';
                         break;
                     case ACS_RTEE:
-                        ch = ((int) (unsigned) (unsigned char) '\263');
+                        ch = ((int) (unsigned) (my_uchar) '\263');
                         break;
                     case ACS_TTEE:
-                        ch = ((int) (unsigned) (unsigned char) '\262');
+                        ch = ((int) (unsigned) (my_uchar) '\262');
                         break;
                     case ACS_ULCORNER:
-                        ch = (int) (unsigned) (unsigned char) (acs_shifted ? '\260' : '\165');
+                        ch = (int) (unsigned) (my_uchar) (acs_shifted ? '\260' : '\165');
                         break;
                     case ACS_URCORNER:
-                        ch = (int) (unsigned) (unsigned char) (acs_shifted ? '\256' : '\151');
+                        ch = (int) (unsigned) (my_uchar) (acs_shifted ? '\256' : '\151');
                         break;
                     case RAWCURSES__ACS_BHALF:
-                        ch = ((int) (unsigned) (unsigned char) '\242');
+                        ch = ((int) (unsigned) (my_uchar) '\242');
                         break;
                     case RAWCURSES__ACS_LHALF:
-                        ch = ((int) (unsigned) (unsigned char) '\241');
+                        ch = ((int) (unsigned) (my_uchar) '\241');
                         break;
                     default:
                         if ((! acs_shifted)
@@ -9917,16 +10143,16 @@ static int addch(chtype ch)
 #if USE_CONIO
             if (rawcurses_stdio_conio)
             {
-                if (ch != (chtype) (0xff & (int) (unsigned char) ch))
+                if (ch != (chtype) (0xff & (int) (my_uchar) ch))
                 {
                     ch = RAWCURSES_ASCII_REPLACEMENT_CHARACTER;
                 }
-                putch((int) (unsigned char) ch);
+                putch((int) (my_uchar) ch);
                 wcw --;
             }
             else
 #endif
-                if ((rawcurses_raw) && (ch != (chtype) (0x7f & (int) (unsigned char) ch)))
+                if ((rawcurses_raw) && (ch != (chtype) (0x7f & (int) (my_uchar) ch)))
             {
 #ifdef UNICODE
                 if (rawcurses_stdio_utf8 && ! (switch_to_acs && rawcurses_stdio_cp437))
@@ -9944,23 +10170,23 @@ static int addch(chtype ch)
                 {
                     if (rawcurses_stdio_utf8)
                     {
-                        fputc_utf8_cp437(0x100 | (int) (unsigned char) ch, stdout);
+                        fputc_utf8_cp437(0x100 | (int) (my_uchar) ch, stdout);
                         wcw --;
                     }
                     else
                     {
-                        if (ch != (chtype) (0xff & (int) (unsigned char) ch))
+                        if (ch != (chtype) (0xff & (int) (my_uchar) ch))
                         {
                             ch = RAWCURSES_ASCII_REPLACEMENT_CHARACTER;
                         }
-                        fputc((int) (unsigned char) ch, stdout);
+                        fputc((int) (my_uchar) ch, stdout);
                         wcw --;
                     }
                 }
             }
             else
             {
-                fputc((int) (unsigned char) ch, stdout);
+                fputc((int) (my_uchar) ch, stdout);
                 wcw --;
             }
             if (switch_to_acs) rawcurses_fput_rmacs(stdout);
@@ -9995,7 +10221,9 @@ static int addch(chtype ch)
     return OK;
 }
 
+#ifdef insch
 #undef insch
+#endif
 #define insch rawcurses_insch
 static int insch(chtype ch)
 {
@@ -10017,7 +10245,9 @@ static int insch(chtype ch)
     return ERR;
 }
 
+#ifdef delch
 #undef delch
+#endif
 #define delch rawcurses_delch
 static int delch(void)
 {
@@ -10033,7 +10263,9 @@ static int delch(void)
     return ERR;
 }
 
+#ifdef clrtoeol
 #undef clrtoeol
+#endif
 #define clrtoeol rawcurses_clrtoeol
 static int clrtoeol(void)
 {
@@ -10071,7 +10303,9 @@ static int clrtoeol(void)
     return OK;
 }
 
+#ifdef clrtobot
 #undef clrtobot
+#endif
 #define clrtobot rawcurses_clrtobot
 static int clrtobot(void)
 {
@@ -10104,12 +10338,14 @@ static int addstr(const char *s)
 {
     while (*s)
     {
-        addch((chtype) (int) (unsigned char) *s++);
+        addch((chtype) (int) (my_uchar) *s++);
     }
     return OK;
 }
 
+#ifdef mvprintw
 #undef mvprintw
+#endif
 #define mvprintw rawcurses_mvprintw
 static int mvprintw(int y, int x, const char *s)
 {
@@ -10117,7 +10353,9 @@ static int mvprintw(int y, int x, const char *s)
     return addstr(s);
 }
 
+#ifdef resizeterm
 #undef resizeterm
+#endif
 #define resizeterm rawcurses_resizeterm
 static int resizeterm(int y, int x)
 {
@@ -10192,7 +10430,9 @@ static void rawcurses_getyx(int *y, int *x)
     *x = rawcurses_x;
 }
 
+#ifdef getch
 #undef getch
+#endif
 #define getch rawcurses_getch
 
 static int erase(void)
@@ -10235,7 +10475,9 @@ static int erase(void)
     return OK;
 }
 
+#ifdef clear
 #undef clear
+#endif
 #define clear rawcurses_clear
 static int clear(void)
 {

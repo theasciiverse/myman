@@ -38,8 +38,12 @@
 #if HAVE_UNISTD_H
 #include <unistd.h>
 #endif
+#if HAVE_ERRNO_H
 #include <errno.h>
+#endif
+#if HAVE_LIMITS_H
 #include <limits.h>
+#endif
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -277,7 +281,7 @@ ignore_bom_utf8(FILE *stream)
 
 /* UCS/Unicode mapping for CP437 (used in HTML snapshots) */
 
-const unsigned long
+const my_ulong
 uni_cp437_halfwidth[256] =
 {
 /* 0x00 */
@@ -332,7 +336,7 @@ uni_cp437_halfwidth[256] =
 
 /* alternate UCS/Unicode mapping used in CJK fullwidth mode */
 
-const unsigned long
+const my_ulong
 uni_cp437_fullwidth[256] =
 {
 /* 0x00 */
@@ -385,7 +389,7 @@ uni_cp437_fullwidth[256] =
     0x00B0, 0x30FB, 0x30FB, 0x221A, 0xFF4E, 0xFF12, 0x25CF, 0x3000
 };
 
-const unsigned char cp437_fullwidth_rhs[256] =
+const my_uchar cp437_fullwidth_rhs[256] =
 {
 /*00*/
     0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20,
@@ -421,9 +425,9 @@ const unsigned char cp437_fullwidth_rhs[256] =
     0xf0, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20
 };
 
-const unsigned long *uni_cp437 = uni_cp437_halfwidth;
+const my_ulong *uni_cp437 = uni_cp437_halfwidth;
 
-unsigned char reflect_sprite[256] = {
+my_uchar reflect_sprite[256] = {
     /* 0x00 */
     /*%8*/0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
     0x08, 0x09, /*"^*/0x0b, /*"<*/0x0a, /*"v*/0x0d, /*">*/0x0c, /*m2*/0x0e, 0x0f,
@@ -477,7 +481,7 @@ unsigned char reflect_sprite[256] = {
     0xf8, 0xf9, 0xfa, 0xfb, 0xfc, 0xfd, 0xfe, 0xff
 };
 
-unsigned char cp437_sprite[256] = {
+my_uchar cp437_sprite[256] = {
     /* 0x00 */
     /*%8*/'%', 'v', '@', '@', '@', 'Y', 'A', 'F',
     'A', 'A', /*"^*/'\"', /*"<*/'\"', /*"v*/'\"', /*">*/'\"', /*m2*/'m', 'm',
@@ -532,7 +536,7 @@ unsigned char cp437_sprite[256] = {
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
 };
 
-const unsigned char
+const my_uchar
 udlr[256] = {
 /*00*/
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -568,7 +572,7 @@ udlr[256] = {
     0x0f, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
 };
 
-unsigned char fallback_cp437[256] = {
+my_uchar fallback_cp437[256] = {
 /* 0x00 */
     0x00, '@', '@', '*', '+', '%', '&', 'o',
     '#', 'o', '#', 'd', 'q', 'l', 'H', '*',
@@ -619,7 +623,7 @@ unsigned char fallback_cp437[256] = {
     0x09, '.', 0x07, 'V', 'n', '2', 0xfa, ' '
 };
 
-unsigned char reflect_cp437[256] = {
+my_uchar reflect_cp437[256] = {
 /* 0x00 */
     0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
     0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f,
@@ -707,7 +711,7 @@ static const char MYMAN_LINEARSCALE[] =
 
 short mille_to_scale(short n, short scale)
 {
-    return (short) (((long) (scale - 1)) * ((long) (unsigned char) MYMAN_LINEARSCALE[n * 511L / 1000]) / 255);
+    return (short) (((long) (scale - 1)) * ((long) (my_uchar) MYMAN_LINEARSCALE[n * 511L / 1000]) / 255);
 }
 
 /* read a utf-8 sequence from stream, convert it to cp437, and return
@@ -715,7 +719,7 @@ short mille_to_scale(short n, short scale)
  * theoretically works with U+0000 .. U+D7FF and U+E000 .. U+10FFFF */
 
 #if 0
-int fputc_utf8(unsigned long u, FILE *stream);
+int fputc_utf8(my_ulong u, FILE *stream);
 #endif
 
 int
@@ -726,7 +730,7 @@ fgetc_cp437_utf8(FILE *stream)
     c = fgetc(stream);
     if (c >= 0x80)
     {
-        unsigned long u;
+        my_ulong u;
         int i;
 
         u = 0x20;
@@ -737,7 +741,7 @@ fgetc_cp437_utf8(FILE *stream)
             c1 = fgetc(stream);
             if ((c1 >= 0x80) && (c1 <= 0xbf))
             {
-                u = ((((unsigned long) c) & 0x1f) << 6) | (((unsigned long) c1) & 0x3f);
+                u = ((((my_ulong) c) & 0x1f) << 6) | (((my_ulong) c1) & 0x3f);
             }
             else if (c1 != EOF)
             {
@@ -756,7 +760,7 @@ fgetc_cp437_utf8(FILE *stream)
                 c2 = fgetc(stream);
                 if ((c2 >= 0x80) && (c2 <= 0xbf))
                 {
-                    u = ((((unsigned long) c) & 0x0f) << 12) | ((((unsigned long) c1) & 0x3f) << 6) | (((unsigned long) c2) & 0x3f);
+                    u = ((((my_ulong) c) & 0x0f) << 12) | ((((my_ulong) c1) & 0x3f) << 6) | (((my_ulong) c2) & 0x3f);
                 }
                 else if (c2 != EOF)
                 {
@@ -785,7 +789,7 @@ fgetc_cp437_utf8(FILE *stream)
                     c3 = fgetc(stream);
                     if ((c3 >= 0x80) && (c3 <= 0xbf))
                     {
-                        u = ((((unsigned long) c) & 0x07) << 18) | ((((unsigned long) c1) & 0x3f) << 12) | ((((unsigned long) c2) & 0x3f) << 6) | (((unsigned long) c3) & 0x3f);
+                        u = ((((my_ulong) c) & 0x07) << 18) | ((((my_ulong) c1) & 0x3f) << 12) | ((((my_ulong) c2) & 0x3f) << 6) | (((my_ulong) c3) & 0x3f);
                     }
                     else if (c3 != EOF)
                     {
@@ -840,7 +844,7 @@ fgetc_cp437_utf8(FILE *stream)
         }
     }
 #if 0
-    fputc_utf8(((c == '\v') || (c == '\f') || (c == '\n') || (c == '\r')) ? c : uni_cp437[(unsigned int) (unsigned char) c], stderr);
+    fputc_utf8(((c == '\v') || (c == '\f') || (c == '\n') || (c == '\r')) ? c : uni_cp437[(my_uint) (my_uchar) c], stderr);
 #endif
     return c;
 }
@@ -850,7 +854,7 @@ fgetc_cp437_utf8(FILE *stream)
  * note that the return value is a bit different -- EOF for failure, 0
  * for success */
 
-int fputc_utf8(unsigned long u, FILE *stream)
+int fputc_utf8(my_ulong u, FILE *stream)
 {
     if (u <= 0x7f)
     {
@@ -917,14 +921,14 @@ int fputc_utf8(unsigned long u, FILE *stream)
 
 int fputc_utf8_cp437(int c, FILE *stream)
 {
-    unsigned long u;
+    my_ulong u;
 
     u = 0;
     if ((c < 0) || (c > 0x1ff))
     {
         return EOF;
     }
-    u = (c & 0x100) ? uni_cp437_halfwidth[((int) (unsigned char) c) & 0xff] : uni_cp437[c];
+    u = (c & 0x100) ? uni_cp437_halfwidth[((int) (my_uchar) c) & 0xff] : uni_cp437[c];
     if (fputc_utf8(u, stream) == EOF)
     {
         return EOF;
@@ -938,7 +942,7 @@ int fputc_utf8_cp437(int c, FILE *stream)
 
 int ungetc_cp437_utf8(int c, FILE *stream)
 {
-    unsigned long u;
+    my_ulong u;
 
     u = 0;
     if ((c < 0) || (c > 0xff))
@@ -1022,7 +1026,7 @@ strword(const char *from, const char **endp, size_t *lenp)
     size_t wordlen = 0;
     int quotes = 0;
     int escape = 0;
-    unsigned long numeric = 0;
+    my_ulong numeric = 0;
     int numeric_len = 0;
     char c;
 
@@ -1527,14 +1531,14 @@ mymanescape(const char *s, int len)
     int i;
 
     for (i = 0; i < len; i ++)
-        if (MYMAN_ISPRINT((c = (int) (unsigned char) s[i]))) {
+        if (MYMAN_ISPRINT((c = (int) (my_uchar) s[i]))) {
             if ((c == '\"') || (c == '\\') || (c == '\'') || (c == '\?'))
                 putchar('\\');
             putchar(c);
         }
         else
         {
-            if (((i + 1 == len) || ! isdigit((int) (unsigned char) s[i + 1])) && (c == '\0'))
+            if (((i + 1 == len) || ! isdigit((int) (my_uchar) s[i + 1])) && (c == '\0'))
                 printf("\\0");
             else
                 printf("\\%3.3o", c);
@@ -1679,7 +1683,7 @@ static FILE *fopen_datafile(const char *path, const char *mode)
             {
                 sep = buf;
             }
-#if defined(WIN32) || defined(__MSDOS__)
+#if defined(WIN32) || defined(__MSDOS__) || defined(__EFI__)
             if (strrchr(sep, '\\'))
             {
                 sep = strrchr(sep, '\\');
@@ -1709,7 +1713,7 @@ static FILE *fopen_datafile(const char *path, const char *mode)
                         sep += strlen(".app");
                         sep[0] = '\0';
                     }
-#if defined(WIN32) || defined(__MSDOS__)
+#if defined(WIN32) || defined(__MSDOS__) || defined(__EFI__)
                     if (strstr(buf, ".app\\"))
                     {
                         sep = strstr(buf, ".app\\");
@@ -1732,7 +1736,7 @@ static FILE *fopen_datafile(const char *path, const char *mode)
                         {
                             sep = buf;
                         }
-#if defined(WIN32) || defined(__MSDOS__)
+#if defined(WIN32) || defined(__MSDOS__) || defined(__EFI__)
                         if (strrchr(sep, '\\'))
                         {
                             sep = strrchr(sep, '\\');
@@ -1974,7 +1978,7 @@ readfont(const char *fontfile,
 
                 offset = ftell(infile);
                 fprintf(stderr, "%s: can't find an index at byte %ld near \'\\u%4.4lx\' or equivalent\n",
-                        fontfile, offset, uni_cp437[(unsigned int) (unsigned char) fgetc_cp437_utf8(infile)]);
+                        fontfile, offset, uni_cp437[(my_uint) (my_uchar) fgetc_cp437_utf8(infile)]);
                 return 1;
             }
             continue;
@@ -2485,13 +2489,13 @@ readmaze(const char *mazefile,
                 } else if ((c == '\r') || (c == '\n') || (c == '\f') || (c == '\v'))
                     j --;
                 else
-                    (*maze)[(n * *h+i) * (*w + 1)+j] = (char) (unsigned char) c;
+                    (*maze)[(n * *h+i) * (*w + 1)+j] = (char) (my_uchar) c;
             }
             if (ISPELLET(c) || ISDOT(c))
             {
                 c = ' ';
             }
-            (*maze)[(n * *h+i) * (*w + 1)+*w] = (char) (unsigned char) c;
+            (*maze)[(n * *h+i) * (*w + 1)+*w] = (char) (my_uchar) c;
         }
     }
     fclose(infile);
@@ -2957,7 +2961,7 @@ char *maze = NULL;
 char *maze_color = NULL;
 char *blank_maze = NULL;
 char *blank_maze_color = NULL;
-unsigned char *dirty_cell = NULL;
+my_uchar *dirty_cell = NULL;
 int all_dirty;
 
 int nogame = 0;
@@ -3038,7 +3042,7 @@ mark_cell(int x, int y)
         dirty_cell[idx] =
             (1U << ((x)&7))
             |
-            (unsigned) (unsigned char) dirty_cell[idx];
+            (unsigned) (my_uchar) dirty_cell[idx];
     }
 }
 
@@ -3046,16 +3050,16 @@ void
 maze_puts(int y, int x, int color, const char *s)
 {
     int i;
-    unsigned char c;
+    my_uchar c;
 
     if (y < 0) return;
     if (y >= maze_h) return;
-    for (i = 0; 0 != (int) (unsigned char) (c = (unsigned) (unsigned char) (s)[i]); i ++)
+    for (i = 0; 0 != (int) (my_uchar) (c = (unsigned) (my_uchar) (s)[i]); i ++)
     {
         if (((x + i) >= 0) && ((x + i) < maze_w))
         {
             maze[(maze_level*maze_h+YWRAP(y)) * (maze_w + 1)+XWRAP(x + i)] = c;
-            maze_color[(maze_level*maze_h+YWRAP(y)) * (maze_w + 1)+XWRAP(x + i)] = (char) (unsigned char) color;
+            maze_color[(maze_level*maze_h+YWRAP(y)) * (maze_w + 1)+XWRAP(x + i)] = (char) (my_uchar) color;
             mark_cell(XWRAP(x + i), YWRAP(y));
         }
     }
@@ -3065,11 +3069,11 @@ void
 maze_putsn_nonblank(int y, int x, int color, const char *s, int n)
 {
     int i;
-    unsigned char c;
+    my_uchar c;
 
     if (y < 0) return;
     if (y >= maze_h) return;
-    for (i = 0; (i < (n)) && (0 != (int) (unsigned char) (c = (unsigned) (unsigned char) (s)[i])); i ++)
+    for (i = 0; (i < (n)) && (0 != (int) (my_uchar) (c = (unsigned) (my_uchar) (s)[i])); i ++)
     {
         int cc;
                 
@@ -3082,13 +3086,13 @@ maze_putsn_nonblank(int y, int x, int color, const char *s, int n)
                 cc = blank_maze_color[(maze_level*maze_h+YWRAP(y)) * (maze_w + 1)+XWRAP(x + i)];
             }
             maze[(maze_level*maze_h+YWRAP(y)) * (maze_w + 1)+XWRAP(x + i)] = c;
-            maze_color[(maze_level*maze_h+YWRAP(y)) * (maze_w + 1)+XWRAP(x + i)] = (char) (unsigned char) cc;
+            maze_color[(maze_level*maze_h+YWRAP(y)) * (maze_w + 1)+XWRAP(x + i)] = (char) (my_uchar) cc;
             mark_cell(XWRAP(x + i), YWRAP(y));
         }
     }
 }
 
-unsigned char sprite_register[SPRITE_REGISTERS];
+my_uchar sprite_register[SPRITE_REGISTERS];
 int sprite_register_frame[SPRITE_REGISTERS];
 int sprite_register_x[SPRITE_REGISTERS], sprite_register_y[SPRITE_REGISTERS];
 int sprite_register_used[SPRITE_REGISTERS];
@@ -3109,33 +3113,33 @@ mark_sprite_register(int s)
 }
 
 int ghost_dir[MAXGHOSTS], ghost_mem[MAXGHOSTS], ghost_man[MAXGHOSTS], ghost_timer[MAXGHOSTS];
-unsigned char *home_dir = NULL;
+my_uchar *home_dir = NULL;
 
-unsigned char
-gfx2(unsigned char c)
+my_uchar
+gfx2(my_uchar c)
 {
-    return (((reflect ^ gfx_reflect) && ! REFLECT_LARGE) ? ((unsigned) reflect_cp437[(unsigned long) (unsigned char) (c)]) : (unsigned) (c));
+    return (((reflect ^ gfx_reflect) && ! REFLECT_LARGE) ? ((unsigned) reflect_cp437[(my_ulong) (my_uchar) (c)]) : (unsigned) (c));
 }
 
 size_t
-gfx1(const char **font, unsigned char c, int y, int x, int w)
+gfx1(const char **font, my_uchar c, int y, int x, int w)
 {
     return (reflect ^ ((reflect ^ gfx_reflect) && ! REFLECT_LARGE)) ?
-        font[(unsigned) (unsigned char) c][x * w + y] :
-        font[(unsigned) (unsigned char) c][y * w + x];
+        font[(unsigned) (my_uchar) c][x * w + y] :
+        font[(unsigned) (my_uchar) c][y * w + x];
 }
 
-unsigned char
-gfx0(unsigned char c, unsigned char *m)
+my_uchar
+gfx0(my_uchar c, my_uchar *m)
 {
-    return (REFLECT_LARGE | gfx_reflect) ? ((unsigned) (unsigned char) ((m)[(unsigned long) (unsigned char) (c)])) : ((unsigned) (unsigned char) (c));
+    return (REFLECT_LARGE | gfx_reflect) ? ((unsigned) (my_uchar) ((m)[(my_ulong) (my_uchar) (c)])) : ((unsigned) (my_uchar) (c));
 }
 
 int reflect = 0;
 int gfx_reflect = 0;
 long myman_intro = 1;
-unsigned long myman_start = 0;
-unsigned long myman_demo = 0;
+my_ulong myman_start = 0;
+my_ulong myman_demo = 0;
 int munched = HERO;
 int old_lines, old_cols, old_score, old_showlives, old_level;
 int ignore_delay = 0;
@@ -3143,12 +3147,12 @@ long frameskip = 0, frameskip0 = 0, frameskip1 = 0;
 long scrolling = 0;
 long frames = 0;
 long winning = 1;
-unsigned long mymandelay = MYMANDELAY;
-unsigned long mindelay = MYMANDELAY / 2;
+my_ulong mymandelay = MYMANDELAY;
+my_ulong mindelay = MYMANDELAY / 2;
 int ghost_eaten_timer = 0;
 int paused = 0;
 long intermission_running = 0;
-unsigned long myman_demo_setup = 0;
+my_ulong myman_demo_setup = 0;
 int need_reset = 0;
 int level = 0,
     intermission = 0,
@@ -3617,11 +3621,11 @@ gamedemo(void)
     {
         if (! (frames % ((TWOSECS / 20) + 1)))
         {
-            unsigned char mleft, mdown, mright, mup;
-            mleft = (unsigned) (unsigned char) maze[(maze_level*maze_h+ytile) * (maze_w + 1)+XWRAP(xtile - NOTRIGHT(x_off))];
-            mdown = (unsigned) (unsigned char) maze[(maze_level*maze_h+YWRAP(ytile + NOTTOP(y_off))) * (maze_w + 1)+xtile];
-            mright = (unsigned) (unsigned char) maze[(maze_level*maze_h+ytile) * (maze_w + 1)+XWRAP(xtile + NOTLEFT(x_off))];
-            mup = (unsigned) (unsigned char) maze[(maze_level*maze_h+YWRAP(ytile - NOTBOTTOM(y_off))) * (maze_w + 1)+xtile];
+            my_uchar mleft, mdown, mright, mup;
+            mleft = (unsigned) (my_uchar) maze[(maze_level*maze_h+ytile) * (maze_w + 1)+XWRAP(xtile - NOTRIGHT(x_off))];
+            mdown = (unsigned) (my_uchar) maze[(maze_level*maze_h+YWRAP(ytile + NOTTOP(y_off))) * (maze_w + 1)+xtile];
+            mright = (unsigned) (my_uchar) maze[(maze_level*maze_h+ytile) * (maze_w + 1)+XWRAP(xtile + NOTLEFT(x_off))];
+            mup = (unsigned) (my_uchar) maze[(maze_level*maze_h+YWRAP(ytile - NOTBOTTOM(y_off))) * (maze_w + 1)+xtile];
             if (ISOPEN((unsigned) mleft)
                 &&
                 ISPELLET((unsigned) mleft))
@@ -4038,7 +4042,7 @@ int *pellets = NULL;
 long flip_to = 0;
 int debug = 0;
 int ghosts_p = 0;
-unsigned long myman_sfx = 0UL;
+my_ulong myman_sfx = 0UL;
 int showlives;
 int visible_frame;
 
@@ -4108,7 +4112,7 @@ maze_visual(int n, int i, int j)
 {
     int c;
 
-    c = (int) (unsigned char) maze[(n*maze_h+i) * (maze_w + 1)+j];
+    c = (int) (my_uchar) maze[(n*maze_h+i) * (maze_w + 1)+j];
     switch (c)
     {
     case 0xb5:
@@ -4230,7 +4234,7 @@ gamecycle(int lines, int cols)
         ! ((frames + frameskip) % (frameskip ? frameskip : 1)))
     {
         double td2;
-        unsigned long actual_delay;
+        my_ulong actual_delay;
 
         do
         {
@@ -4252,7 +4256,7 @@ gamecycle(int lines, int cols)
             {
                 if (td2 > td)
                 {
-                    unsigned long delta;
+                    my_ulong delta;
                     double nframeskip;
                     size_t kfr;
                     int use_buffer;
@@ -4266,7 +4270,7 @@ gamecycle(int lines, int cols)
                     }
                     nframeskip /= kfr;
                     use_buffer = (frameskip == (nframeskip + 0.5));
-                    delta = (unsigned long int) (1e6L * (td2 - td));
+                    delta = (my_ulong int) (1e6L * (td2 - td));
                     nframeskip = ((frameskip ? frameskip : 1) * delta) / (actual_delay ? actual_delay : 1);
                     if (nframeskip > MAXFRAMESKIP)
                     {
@@ -4284,7 +4288,7 @@ gamecycle(int lines, int cols)
                     if (use_buffer) nframeskip /= kfr;
                     if (! ignore_delay)
                     {
-                        frameskip = (unsigned long) (nframeskip + 0.5);
+                        frameskip = (my_ulong) (nframeskip + 0.5);
                     }
                     actual_delay = (myman_demo ? ((mymandelay + mindelay) / 2) : mymandelay) * (frameskip ? frameskip : 1);
                     if (delta <= actual_delay)
@@ -4299,7 +4303,7 @@ gamecycle(int lines, int cols)
             }
             if (actual_delay)
             {
-                unsigned long secs;
+                my_ulong secs;
 
                 secs = actual_delay / 999999L;
                 while (secs --)
@@ -5033,21 +5037,20 @@ int myman_setenv(const char *name, const char *value)
 
 char *myman_getenv(const char *name)
 {
-    char *ret;
+    char *ret = NULL;
+    struct myman_environ_ent *ent;
 
-    ret = getenv(name);
+    for (ent = myman_environ; ent; ent = ent->next)
+    {
+        if (! strcmp(name, ent->name))
+        {
+            ret = ent->value;
+            break;
+        }
+    }
     if (! ret)
     {
-        struct myman_environ_ent *ent;
-
-        for (ent = myman_environ; ent; ent = ent->next)
-        {
-            if (! strcmp(name, ent->name))
-            {
-                ret = ent->value;
-                break;
-            }
-        }
+        ret = getenv(name);
     }
     return ret;
 }

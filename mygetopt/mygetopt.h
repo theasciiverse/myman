@@ -1,6 +1,5 @@
-/*
- *  mygetopt.h - interface to my re-implementation of getopt.
- *  Copyright 1997, 2000, 2001, 2002, 2006, 2008, Benjamin C. Wiley Sittler
+/*  mygetopt.h - interface to my re-implementation of getopt.
+ *  Copyright 1997, 2000, 2001, 2002, 2006, 2008, 2009, Benjamin C. Wiley Sittler
  *
  *  Permission is hereby granted, free of charge, to any person
  *  obtaining a copy of this software and associated documentation
@@ -47,11 +46,17 @@ struct option {
 };
 
 /* human-readable values for has_arg */
+#ifdef no_argument
 #undef no_argument
+#endif
 #define no_argument 0
+#ifdef required_argument
 #undef required_argument
+#endif
 #define required_argument 1
+#ifdef optional_argument
 #undef optional_argument
+#endif
 #define optional_argument 2
 
 /* GNU-style long-argument parsers */

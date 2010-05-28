@@ -35,8 +35,12 @@
 #endif
 
 #include <ctype.h>
+#if HAVE_ERRNO_H
 #include <errno.h>
+#endif
+#if HAVE_LIMITS_H
 #include <limits.h>
+#endif
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -153,10 +157,10 @@ check_level_transition(void)
         reset = 1;
         memcpy((void *)maze,
                (void *)blank_maze,
-               (maze_w + 1) * maze_h * maze_n * sizeof(unsigned char));
+               (maze_w + 1) * maze_h * maze_n * sizeof(my_uchar));
         memcpy((void *)maze_color,
                (void *)blank_maze_color,
-               (maze_w + 1) * maze_h * maze_n * sizeof(unsigned char));
+               (maze_w + 1) * maze_h * maze_n * sizeof(my_uchar));
         DIRTY_ALL();
         ignore_delay = 1;
         frameskip = 0;
@@ -367,7 +371,7 @@ gamelogic(void)
                 earned ++;
             }
         }
-        if (ISPELLET((c = (long) (unsigned char) maze[(maze_level*maze_h+ytile) * (maze_w + 1)+xtile]))
+        if (ISPELLET((c = (long) (my_uchar) maze[(maze_level*maze_h+ytile) * (maze_w + 1)+xtile]))
             || ISDOT(c)) {
             maze[(maze_level*maze_h+ytile) * (maze_w + 1)+xtile] = ' ';
             sprite_register_frame[HERO] = 0;
@@ -440,7 +444,7 @@ gamelogic(void)
                 sprite_register_y[HERO] = (1 + 2 * ytile) * gfx_h / 2;
             else if (hero_dir)
                 sprite_register_x[HERO] = (1 + 2 * xtile) * gfx_w / 2;
-            if (ISZAPLEFT((unsigned) (unsigned char) maze[(maze_level*maze_h+ytile) * (maze_w + 1)+xtile])
+            if (ISZAPLEFT((unsigned) (my_uchar) maze[(maze_level*maze_h+ytile) * (maze_w + 1)+xtile])
                 &&
                 (! YDIR(hero_dir))
                 &&
@@ -449,14 +453,14 @@ gamelogic(void)
 
                 for (ii = 1; ii < maze_w; ii ++)
                 {
-                    if (ISZAPRIGHT((unsigned) (unsigned char) maze[(maze_level*maze_h+ytile) * (maze_w + 1)+XWRAP(xtile - ii)]))
+                    if (ISZAPRIGHT((unsigned) (my_uchar) maze[(maze_level*maze_h+ytile) * (maze_w + 1)+XWRAP(xtile - ii)]))
                     {
                         break;
                     }
                 }
                 sprite_register_x[HERO] = (1 + 2 * XWRAP(xtile - ii)) * gfx_w / 2;
             }
-            else if (ISZAPRIGHT((unsigned) (unsigned char) maze[(maze_level*maze_h+ytile) * (maze_w + 1)+xtile])
+            else if (ISZAPRIGHT((unsigned) (my_uchar) maze[(maze_level*maze_h+ytile) * (maze_w + 1)+xtile])
                      &&
                      (! YDIR(hero_dir))
                      &&
@@ -465,14 +469,14 @@ gamelogic(void)
 
                 for (ii = 1; ii < maze_w; ii ++)
                 {
-                    if (ISZAPLEFT((unsigned) (unsigned char) maze[(maze_level*maze_h+ytile) * (maze_w + 1)+XWRAP(xtile + ii)]))
+                    if (ISZAPLEFT((unsigned) (my_uchar) maze[(maze_level*maze_h+ytile) * (maze_w + 1)+XWRAP(xtile + ii)]))
                     {
                         break;
                     }
                 }
                 sprite_register_x[HERO] = (1 + 2 * XWRAP(xtile + ii)) * gfx_w / 2;
             }
-            else if (ISZAPUP((unsigned) (unsigned char) maze[(maze_level*maze_h+ytile) * (maze_w + 1)+xtile])
+            else if (ISZAPUP((unsigned) (my_uchar) maze[(maze_level*maze_h+ytile) * (maze_w + 1)+xtile])
                      &&
                      (! XDIR(hero_dir))
                      &&
@@ -481,14 +485,14 @@ gamelogic(void)
 
                 for (ii = 1; ii < maze_h; ii ++)
                 {
-                    if (ISZAPDOWN((unsigned) (unsigned char) maze[(maze_level*maze_h+YWRAP(ytile - ii)) * (maze_w + 1)+xtile]))
+                    if (ISZAPDOWN((unsigned) (my_uchar) maze[(maze_level*maze_h+YWRAP(ytile - ii)) * (maze_w + 1)+xtile]))
                     {
                         break;
                     }
                 }
                 sprite_register_y[HERO] = (1 + 2 * YWRAP(ytile - ii)) * gfx_h / 2;
             }
-            else if (ISZAPDOWN((unsigned) (unsigned char) maze[(maze_level*maze_h+ytile) * (maze_w + 1)+xtile])
+            else if (ISZAPDOWN((unsigned) (my_uchar) maze[(maze_level*maze_h+ytile) * (maze_w + 1)+xtile])
                      &&
                      (! XDIR(hero_dir))
                      &&
@@ -497,7 +501,7 @@ gamelogic(void)
 
                 for (ii = 1; ii < maze_h; ii ++)
                 {
-                    if (ISZAPUP((unsigned) (unsigned char) maze[(maze_level*maze_h+YWRAP(ytile + ii)) * (maze_w + 1)+xtile]))
+                    if (ISZAPUP((unsigned) (my_uchar) maze[(maze_level*maze_h+YWRAP(ytile + ii)) * (maze_w + 1)+xtile]))
                     {
                         break;
                     }
@@ -506,12 +510,12 @@ gamelogic(void)
             }
             else
             {
-                unsigned char m3;
+                my_uchar m3;
                 int x3, y3;
 
                 x3 = xtile + XLEAVING(hero_dir, x_off + XDIR(hero_dir));
                 y3 = ytile + YLEAVING(hero_dir, y_off + YDIR(hero_dir));
-                m3 = (unsigned char)
+                m3 = (my_uchar)
                     maze[(maze_level * maze_h
                           +
                           YWRAP(y3))
@@ -552,7 +556,7 @@ gamelogic(void)
             else
             {
                 int dir0, dir1, dir2, o0, o1, o2, x, y, i1, j1, i2, j2;
-                unsigned char mcell;
+                my_uchar mcell;
 
                 dir1 = DIRWRAP(ghost_dir[s]);
                 dir0 = DIRWRAP(dir1 + (s != GHOST2) - (s == GHOST2));
@@ -571,7 +575,7 @@ gamelogic(void)
                         if ((i1 == i2) && (j1 <= j2)) {
                             for (j = j1; j <= j2; j ++)
                             {
-                                mcell = (unsigned char) maze[(maze_level*maze_h+j) * (maze_w + 1)+i1];
+                                mcell = (my_uchar) maze[(maze_level*maze_h+j) * (maze_w + 1)+i1];
                                 if (! ISOPEN((unsigned) mcell))
                                     break;
                             }
@@ -582,7 +586,7 @@ gamelogic(void)
                         } else if ((i1 == i2) && (j1 >= j2)) {
                             for (j = j2; j <= j1; j ++)
                             {
-                                mcell = (unsigned char) maze[(maze_level*maze_h+j) * (maze_w + 1)+i1];
+                                mcell = (my_uchar) maze[(maze_level*maze_h+j) * (maze_w + 1)+i1];
                                 if (! ISOPEN((unsigned) mcell))
                                     break;
                             }
@@ -593,7 +597,7 @@ gamelogic(void)
                         } else if ((j1 == j2) && (i1 <= i2)) {
                             for (i = i1; i <= i2; i ++)
                             {
-                                mcell = (unsigned char) maze[(maze_level*maze_h+j1) * (maze_w + 1)+i];
+                                mcell = (my_uchar) maze[(maze_level*maze_h+j1) * (maze_w + 1)+i];
                                 if (! ISOPEN((unsigned) mcell))
                                     break;
                             }
@@ -604,7 +608,7 @@ gamelogic(void)
                         } else if ((j1 == j2) && (i1 >= i2)) {
                             for (i = i2; i <= i1; i ++)
                             {
-                                mcell = (unsigned char) maze[(maze_level*maze_h+j1) * (maze_w + 1)+i];
+                                mcell = (my_uchar) maze[(maze_level*maze_h+j1) * (maze_w + 1)+i];
                                 if (! ISOPEN((unsigned) mcell))
                                     break;
                             }
@@ -613,11 +617,11 @@ gamelogic(void)
                                 ghost_timer[s] = (int) MEMDELAY(s);
                             }
                         }
-                        mcell = (unsigned char) maze[(maze_level*maze_h+YWRAP(j1 + YDIR(dir0))) * (maze_w + 1)+XWRAP(i1 + XDIR(dir0))];
+                        mcell = (my_uchar) maze[(maze_level*maze_h+YWRAP(j1 + YDIR(dir0))) * (maze_w + 1)+XWRAP(i1 + XDIR(dir0))];
                         o0 = ISOPEN((unsigned) mcell);
-                        mcell = (unsigned char) maze[(maze_level*maze_h+YWRAP(j1 + YDIR(dir1))) * (maze_w + 1)+XWRAP(i1 + XDIR(dir1))];
+                        mcell = (my_uchar) maze[(maze_level*maze_h+YWRAP(j1 + YDIR(dir1))) * (maze_w + 1)+XWRAP(i1 + XDIR(dir1))];
                         o1 = ISOPEN((unsigned) mcell);
-                        mcell = (unsigned char) maze[(maze_level*maze_h+YWRAP(j1 + YDIR(dir2))) * (maze_w + 1)+XWRAP(i1 + XDIR(dir2))];
+                        mcell = (my_uchar) maze[(maze_level*maze_h+YWRAP(j1 + YDIR(dir2))) * (maze_w + 1)+XWRAP(i1 + XDIR(dir2))];
                         o2 = ISOPEN((unsigned) mcell);
                         if (((gfx_w / 2 == x % gfx_w) && XDIR(dir1))
                             || ((gfx_h / 2 == y % gfx_h) && YDIR(dir1))) {
@@ -671,7 +675,7 @@ gamelogic(void)
                     if ((i1 == i2) && (j1 <= j2)) {
                         for (j = j1; j <= j2; j ++)
                         {
-                            mcell = (unsigned char) maze[(maze_level*maze_h+j) * (maze_w + 1)+i1];
+                            mcell = (my_uchar) maze[(maze_level*maze_h+j) * (maze_w + 1)+i1];
                             if (! ISOPEN((unsigned) mcell))
                                 break;
                         }
@@ -682,7 +686,7 @@ gamelogic(void)
                     } else if ((i1 == i2) && (j1 >= j2)) {
                         for (j = j2; j <= j1; j ++)
                         {
-                            mcell = (unsigned char) maze[(maze_level*maze_h+j) * (maze_w + 1)+i1];
+                            mcell = (my_uchar) maze[(maze_level*maze_h+j) * (maze_w + 1)+i1];
                             if (! ISOPEN((unsigned) mcell))
                                 break;
                         }
@@ -693,7 +697,7 @@ gamelogic(void)
                     } else if ((j1 == j2) && (i1 <= i2)) {
                         for (i = i1; i <= i2; i ++)
                         {
-                            mcell = (unsigned char) maze[(maze_level*maze_h+j1) * (maze_w + 1)+i];
+                            mcell = (my_uchar) maze[(maze_level*maze_h+j1) * (maze_w + 1)+i];
                             if (! ISOPEN((unsigned) mcell))
                                 break;
                         }
@@ -704,7 +708,7 @@ gamelogic(void)
                     } else if ((j1 == j2) && (i1 >= i2)) {
                         for (i = i2; i <= i1; i ++)
                         {
-                            mcell = (unsigned char) maze[(maze_level*maze_h+j1) * (maze_w + 1)+i];
+                            mcell = (my_uchar) maze[(maze_level*maze_h+j1) * (maze_w + 1)+i];
                             if (! ISOPEN((unsigned) mcell))
                                 break;
                         }
@@ -713,21 +717,21 @@ gamelogic(void)
                             ghost_timer[s] = (int) MEMDELAY(s);
                         }
                     }
-                    mcell = (unsigned char) maze[(maze_level*maze_h+YWRAP(j1 + YDIR(dir0))) * (maze_w + 1)+XWRAP(i1 + XDIR(dir0))];
+                    mcell = (my_uchar) maze[(maze_level*maze_h+YWRAP(j1 + YDIR(dir0))) * (maze_w + 1)+XWRAP(i1 + XDIR(dir0))];
                     o0 = ISOPEN((unsigned) mcell);
-                    mcell = (unsigned char) maze[(maze_level*maze_h+YWRAP(j1 + YDIR(dir1))) * (maze_w + 1)+XWRAP(i1 + XDIR(dir1))];
+                    mcell = (my_uchar) maze[(maze_level*maze_h+YWRAP(j1 + YDIR(dir1))) * (maze_w + 1)+XWRAP(i1 + XDIR(dir1))];
                     o1 = ISOPEN((unsigned) mcell);
-                    mcell = (unsigned char) maze[(maze_level*maze_h+YWRAP(j1 + YDIR(dir2))) * (maze_w + 1)+XWRAP(i1 + XDIR(dir2))];
+                    mcell = (my_uchar) maze[(maze_level*maze_h+YWRAP(j1 + YDIR(dir2))) * (maze_w + 1)+XWRAP(i1 + XDIR(dir2))];
                     o2 = ISOPEN((unsigned) mcell);
                     d0 = d2 = 0;
-                    mcell = (unsigned char) maze[(maze_level*maze_h+YWRAP(j1 + YDIR(dir1))) * (maze_w + 1)+XWRAP(i1 + XDIR(dir1))];
+                    mcell = (my_uchar) maze[(maze_level*maze_h+YWRAP(j1 + YDIR(dir1))) * (maze_w + 1)+XWRAP(i1 + XDIR(dir1))];
                     d1 = ISDOOR((unsigned) mcell);
-                    mcell = (unsigned char) maze[(maze_level*maze_h+j1) * (maze_w + 1)+i1];
+                    mcell = (my_uchar) maze[(maze_level*maze_h+j1) * (maze_w + 1)+i1];
                     if (! ISDOOR((unsigned) mcell))
                     {
-                        mcell = (unsigned char) maze[(maze_level*maze_h+YWRAP(j1 + YDIR(dir0))) * (maze_w + 1)+XWRAP(i1 + XDIR(dir0))];
+                        mcell = (my_uchar) maze[(maze_level*maze_h+YWRAP(j1 + YDIR(dir0))) * (maze_w + 1)+XWRAP(i1 + XDIR(dir0))];
                         d0 = ISDOOR((unsigned) mcell);
-                        mcell = (unsigned char) maze[(maze_level*maze_h+YWRAP(j1 + YDIR(dir2))) * (maze_w + 1)+XWRAP(i1 + XDIR(dir2))];
+                        mcell = (my_uchar) maze[(maze_level*maze_h+YWRAP(j1 + YDIR(dir2))) * (maze_w + 1)+XWRAP(i1 + XDIR(dir2))];
                         d2 = ISDOOR((unsigned) mcell);
                     }
                     d0 = d0 && (dir0 !=
@@ -782,7 +786,7 @@ gamelogic(void)
                            &&
                            ((! ghost_eaten_timer) || ! sprite_register_used[MEANGHOST(s)])) {
                     int dx, dy;
-                    unsigned char d, d1 = 0;
+                    my_uchar d, d1 = 0;
 
                     /* goin' home */
                     ghost_timer[s] = (int) MEMDELAY(s);
@@ -823,13 +827,13 @@ gamelogic(void)
                         ghost_mem[s] = 0;
                         continue;
                     }
-                    mcell = (unsigned char) maze[(maze_level*maze_h+YWRAP(j1 + YDIR(dir0))) * (maze_w + 1)+XWRAP(i1 + XDIR(dir0))];
+                    mcell = (my_uchar) maze[(maze_level*maze_h+YWRAP(j1 + YDIR(dir0))) * (maze_w + 1)+XWRAP(i1 + XDIR(dir0))];
                     o0 = ISOPEN((unsigned) mcell)
                         || ISDOOR((unsigned) mcell);
-                    mcell = (unsigned char) maze[(maze_level*maze_h+YWRAP(j1 + YDIR(dir1))) * (maze_w + 1)+XWRAP(i1 + XDIR(dir1))];
+                    mcell = (my_uchar) maze[(maze_level*maze_h+YWRAP(j1 + YDIR(dir1))) * (maze_w + 1)+XWRAP(i1 + XDIR(dir1))];
                     o1 = ISOPEN((unsigned) mcell)
                         || ISDOOR((unsigned) mcell);
-                    mcell = (unsigned char) maze[(maze_level*maze_h+YWRAP(j1 + YDIR(dir2))) * (maze_w + 1)+XWRAP(i1 + XDIR(dir2))];
+                    mcell = (my_uchar) maze[(maze_level*maze_h+YWRAP(j1 + YDIR(dir2))) * (maze_w + 1)+XWRAP(i1 + XDIR(dir2))];
                     o2 = ISOPEN((unsigned) mcell)
                         || ISDOOR((unsigned) mcell);
                     if (o2 && (dir2 == ghost_mem[s]))

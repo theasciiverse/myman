@@ -1,5 +1,5 @@
 /* guess.h - feature guessing for the MyMan video game
- * Copyright 2008, Benjamin C. Wiley Sittler <bsittler@gmail.com>
+ * Copyright 2008-2009, Benjamin C. Wiley Sittler <bsittler@gmail.com>
  *
  *  Permission is hereby granted, free of charge, to any person
  *  obtaining a copy of this software and associated documentation
@@ -68,7 +68,7 @@
 
 #if ! defined(WIN32)
 #ifndef WIN16
-#if defined(DOS) || defined(__TURBOC__) || defined(_DOS) || defined(MSDOS) || defined(__DOS__)
+#if defined(DOS) || defined(__TURBOC__) || defined(_DOS) || defined(MSDOS) || defined(__DOS__) || defined(__DESMET__)
 
 /* some DOS C compilers do not define __MSDOS__ */
 #ifndef __MSDOS__
@@ -100,7 +100,7 @@
 
 /* HAVE_FCNTL_H: do we have <fcntl.h>? */
 
-#ifdef __EFI__
+#if defined(__EFI__) || defined(__DESMET__)
 #ifndef HAVE_FCNTL_H
 #define HAVE_FCNTL_H 0
 #endif
@@ -155,7 +155,7 @@
 /* HAVE_LOCALE_H: do we have <locale.h>? */
 
 #ifndef HAVE_LOCALE_H
-#if ! (defined(LSI_C) || defined(__PACIFIC__) || defined(HI_TECH_C) || defined(SMALL_C) || defined(__TURBOC__) || (defined(__BCC__) && defined(__MSDOS__)) || defined(__EFI__))
+#if ! (defined(LSI_C) || defined(__PACIFIC__) || defined(HI_TECH_C) || defined(SMALL_C) || defined(__TURBOC__) || ((defined(__BCC__) || defined(__DESMET__)) && defined(__MSDOS__)) || defined(__EFI__))
 #define HAVE_LOCALE_H 1
 #endif
 #endif
@@ -195,7 +195,7 @@
 /* HAVE_STDINT_H: do we have <stdint.h>? */
 
 #ifndef HAVE_STDINT_H
-#if ! (defined(macintosh) || defined(AZTEC) || defined(LSI_C) || defined(__PACIFIC__) || defined(HI_TECH_C) || defined(SMALL_C) || defined(__TURBOC__) || (defined(__BCC__) && defined(__MSDOS__)) || defined(__EFI__))
+#if ! (defined(macintosh) || defined(AZTEC) || defined(__DESMET__) || defined(LSI_C) || defined(__PACIFIC__) || defined(HI_TECH_C) || defined(SMALL_C) || defined(__TURBOC__) || (defined(__BCC__) && defined(__MSDOS__)) || defined(__EFI__))
 #ifdef __atarist__
 #if ((! defined(__GNUC__)) || (__GNUC__ > 2))
 #define HAVE_STDINT_H 1
@@ -227,7 +227,7 @@
 /* HAVE_SYS_IOCTL_H: do we have <sys/ioctl.h>? */
 
 #ifndef HAVE_SYS_IOCTL_H
-#if ! (defined(AZTEC) || defined(__PACIFIC__) || defined(HI_TECH_C) || defined(macintosh) || defined(__TURBOC__) || defined(LSI_C) || defined(__BCC__) || defined(__DMC__) || defined(__WATCOMC__) || (defined(__TINYC__) && defined(WIN32)) || defined(__EFI__))
+#if ! (defined(AZTEC) || defined(__DESMET__) || defined(__PACIFIC__) || defined(HI_TECH_C) || defined(macintosh) || defined(__TURBOC__) || defined(LSI_C) || defined(__BCC__) || defined(__DMC__) || defined(__WATCOMC__) || (defined(__TINYC__) && defined(WIN32)) || defined(__EFI__))
 #define HAVE_SYS_IOCTL_H 1
 #endif
 #endif
@@ -265,7 +265,7 @@
 /* HAVE_SYS_TIME_H: do we have <sys/time.h>? */
 
 #ifndef HAVE_SYS_TIME_H
-#if ! (defined(AZTEC) || defined(LSI_C) || defined(macintosh) || defined(__PACIFIC__) || defined(HI_TECH_C) || defined(SMALL_C) || defined(__TURBOC__) || defined(__WATCOMC__) || defined(__POCC__) || defined(__EFI__))
+#if ! (defined(AZTEC) || defined(__DESMET__) || defined(LSI_C) || defined(macintosh) || defined(__PACIFIC__) || defined(HI_TECH_C) || defined(SMALL_C) || defined(__TURBOC__) || defined(__WATCOMC__) || defined(__POCC__) || defined(__EFI__))
 #define HAVE_SYS_TIME_H 1
 #endif
 #endif
@@ -280,7 +280,9 @@
 #ifndef macintosh
 #ifndef __PACIFIC__
 #ifndef AZTEC
+#ifndef __DESMET__ 
 #define HAVE_SYS_TYPES_H 1
+#endif
 #endif
 #endif
 #endif
@@ -307,7 +309,7 @@
 /* HAVE_UNISTD_H: do we have <unistd.h>? */
 
 #ifndef HAVE_UNISTD_H
-#if ! (defined(AZTEC) || defined(LSI_C) || defined(macintosh) || defined(__PACIFIC__) || defined(HI_TECH_C) || defined(SMALL_C) || defined(__TURBOC__) || (defined(WIN32) && defined(__DMC__)) || defined(__EFI__))
+#if ! (defined(AZTEC) || defined(__DESMET__) || defined(LSI_C) || defined(macintosh) || defined(__PACIFIC__) || defined(HI_TECH_C) || defined(SMALL_C) || defined(__TURBOC__) || (defined(WIN32) && defined(__DMC__)) || defined(__EFI__))
 #define HAVE_UNISTD_H 1
 #endif
 #endif
@@ -331,7 +333,7 @@
 /* HAVE_WCHAR_H: do we have <wchar.h>? */
 
 #ifndef HAVE_WCHAR_H
-#if ! (defined(macintosh) || defined(AZTEC) || defined(LSI_C) || defined(__PACIFIC__) || defined(HI_TECH_C) || defined(SMALL_C) || defined(__TURBOC__) || (defined(__BCC__) && defined(__MSDOS__)) || defined(__atarist__))
+#if ! (defined(macintosh) || defined(AZTEC) || defined(__DESMET__) || defined(LSI_C) || defined(__PACIFIC__) || defined(HI_TECH_C) || defined(SMALL_C) || defined(__TURBOC__) || (defined(__BCC__) && defined(__MSDOS__)) || defined(__atarist__))
 #define HAVE_WCHAR_H 1
 #endif
 #endif
@@ -411,6 +413,117 @@
 #if defined(__POCC__)
 #define MAIN_NO_ENVP 1
 #endif
+#endif
+
+#ifdef __DESMET__
+#ifndef HAVE_ERRNO_H
+#define HAVE_ERRNO_H 0
+#endif
+#ifndef HAVE_SIGNAL_H
+#define HAVE_SIGNAL_H 0
+#endif
+#ifndef HAVE_LIMITS_H
+#define HAVE_LIMITS_H 0
+#endif
+#ifndef HAVE_TIME_H
+#define HAVE_TIME_H 0
+#endif
+#ifndef HAVE_UNSIGNED_LONG
+#define HAVE_UNSIGNED_LONG 0
+#endif
+#ifndef HAVE_UNSIGNED_INT
+#define HAVE_UNSIGNED_INT 0
+#endif
+#ifndef HAVE_UNSIGNED_SHORT
+#define HAVE_UNSIGNED_SHORT 0
+#endif
+#ifndef HAVE_UNSIGNED_CHAR
+#define HAVE_UNSIGNED_CHAR 0
+#endif
+#endif
+
+/* Do we have <errno.h>? */
+#ifndef HAVE_ERRNO_H
+#define HAVE_ERRNO_H 1
+#endif
+
+/* Do we have <signal.h>? */
+#ifndef HAVE_SIGNAL_H
+#define HAVE_SIGNAL_H 1
+#endif
+
+/* Do we have <limits.h>? */
+#ifndef HAVE_LIMITS_H
+#define HAVE_LIMITS_H 1
+#endif
+
+/* Do we have <time.h>? */
+#ifndef HAVE_TIME_H
+#define HAVE_TIME_H 1
+#endif
+
+/* Do we have unsigned long? */
+#ifndef HAVE_UNSIGNED_LONG
+#define HAVE_UNSIGNED_LONG 1
+#endif
+
+/* Do we have unsigned int? */
+#ifndef HAVE_UNSIGNED_INT
+#define HAVE_UNSIGNED_INT 1
+#endif
+
+/* Do we have unsigned short? */
+#ifndef HAVE_UNSIGNED_SHORT
+#define HAVE_UNSIGNED_SHORT 1
+#endif
+
+/* Do we have unsigned char? */
+#ifndef HAVE_UNSIGNED_CHAR
+#define HAVE_UNSIGNED_CHAR 1
+#endif
+
+#ifndef my_ulong
+#if HAVE_UNSIGNED_LONG
+#define my_ulong unsigned long
+#else
+#define my_ulong long
+#endif
+#endif
+
+#ifndef my_uint
+#if HAVE_UNSIGNED_INT
+#define my_uint unsigned int
+#else
+#define my_uint unsigned
+#endif
+#endif
+
+#ifndef my_ushort
+#if HAVE_UNSIGNED_SHORT
+#define my_ushort unsigned short
+#else
+#define my_ushort short
+#endif
+#endif
+
+#ifndef my_uchar
+#if HAVE_UNSIGNED_CHAR
+#define my_uchar unsigned char
+#else
+#define my_uchar char
+#endif
+#endif
+
+#if defined(__MSDOS__)
+#ifndef __BCC__
+#ifndef __DESMET__
+#define my_far far
+#endif
+#endif
+#endif
+
+#ifndef my_far
+#define my_far
 #endif
 
 #endif /* ! defined(MYMAN_GUESS_H_INCLUDED) */

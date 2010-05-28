@@ -43,7 +43,10 @@
 #endif /* ! defined(_WIN32) */
 #endif /* ! defined(WIN32) */
 
-#undef DATADIR /* FIXME: conflicts with Win32 header files */
+/* FIXME: conflicts with Win32 header files */
+#ifdef DATADIR
+#undef DATADIR
+#endif
 
 /* subdirectory for graphics datafiles */
 #ifndef GFXDIR
@@ -104,11 +107,11 @@ extern const char *DONEMESSAGE;
 #define ISOPEN(c) (((c) == ' ') || ISDOT(c) || ISPELLET(c) || ((c) == '!') || (((c) >= 'A') && ((c) <= 'Z')) || ((c) == 'l') || ((c) == '~') || ISZAPRIGHT(c) || ISZAPLEFT(c) || ISZAPUP(c) || ISZAPDOWN(c))
 #define ISDOOR(c) (((c) == '=') || (c == ':') || ((c) == 240) || (c == 255))
 
-#define ISWALLCENTER(c) ((((unsigned) (unsigned char) (char) (c)) == 0x07) || (((unsigned) (unsigned char) (char) (c)) == 0x12) || (((unsigned) (unsigned char) (char) (c)) == 0x1d) || (((unsigned) (unsigned char) (char) (c)) == 0x3c) || (((unsigned) (unsigned char) (char) (c)) == 0x3e) || (((unsigned) (unsigned char) (char) (c)) == 0x5e) || (((unsigned) (unsigned char) (char) (c)) == 0x76) || (((unsigned) (unsigned char) (char) (c)) == 0xae) || (((unsigned) (unsigned char) (char) (c)) == 0xaf))
-#define ISWALLUP(c) (((unsigned) udlr[(unsigned int) (unsigned char) (c)]) & 0xc0)
-#define ISWALLDOWN(c) (((unsigned) udlr[(unsigned int) (unsigned char) (c)]) & 0x30)
-#define ISWALLLEFT(c) (((unsigned) udlr[(unsigned int) (unsigned char) (c)]) & 0x0c)
-#define ISWALLRIGHT(c) (((unsigned) udlr[(unsigned int) (unsigned char) (c)]) & 0x03)
+#define ISWALLCENTER(c) ((((unsigned) (my_uchar) (char) (c)) == 0x07) || (((unsigned) (my_uchar) (char) (c)) == 0x12) || (((unsigned) (my_uchar) (char) (c)) == 0x1d) || (((unsigned) (my_uchar) (char) (c)) == 0x3c) || (((unsigned) (my_uchar) (char) (c)) == 0x3e) || (((unsigned) (my_uchar) (char) (c)) == 0x5e) || (((unsigned) (my_uchar) (char) (c)) == 0x76) || (((unsigned) (my_uchar) (char) (c)) == 0xae) || (((unsigned) (my_uchar) (char) (c)) == 0xaf))
+#define ISWALLUP(c) (((unsigned) udlr[(my_uint) (my_uchar) (c)]) & 0xc0)
+#define ISWALLDOWN(c) (((unsigned) udlr[(my_uint) (my_uchar) (c)]) & 0x30)
+#define ISWALLLEFT(c) (((unsigned) udlr[(my_uint) (my_uchar) (c)]) & 0x0c)
+#define ISWALLRIGHT(c) (((unsigned) udlr[(my_uint) (my_uchar) (c)]) & 0x03)
 #define ISWALL(c) (ISWALLUP(c) || ISWALLDOWN(c) || ISWALLLEFT(c) || ISWALLRIGHT(c) || ISWALLCENTER(c))
 #define ISNONINVERTABLE(c) (ISPELLET(c) || ISDOT(c) || ISZAPLEFT(c) || ISZAPRIGHT(c) || ISZAPUP(c) || ISZAPDOWN(c) || ISDOOR(c))
 
@@ -139,47 +142,47 @@ extern struct option *long_options;
 
 /* UCS/Unicode mapping for CP437 (used in HTML snapshots) */
 
-extern const unsigned long uni_cp437_halfwidth[256];
+extern const my_ulong uni_cp437_halfwidth[256];
 
 /* alternate UCS/Unicode mapping used in CJK fullwidth mode */
 
-extern const unsigned long uni_cp437_fullwidth[256];
+extern const my_ulong uni_cp437_fullwidth[256];
 
 /* right-hand-size mapping used when approximating fullwidth with
  * halfwidth */
 
-extern const unsigned char cp437_fullwidth_rhs[256];
+extern const my_uchar cp437_fullwidth_rhs[256];
 
 /* mapping used to reflect sprites */
 
-extern unsigned char reflect_sprite[256];
+extern my_uchar reflect_sprite[256];
 
 /* fallback mapping to map missing sprites to tiles */
 
-extern unsigned char cp437_sprite[256];
+extern my_uchar cp437_sprite[256];
 
 /* box drawing Up-Down-Left-Right data for CP437 */
 
-extern const unsigned char udlr[256];
+extern const my_uchar udlr[256];
 
 /* fallback mapping for missing tiles */
 
-extern unsigned char fallback_cp437[256];
+extern my_uchar fallback_cp437[256];
 
 /* mapping used to reflect tiles */
 
-extern unsigned char reflect_cp437[256];
+extern my_uchar reflect_cp437[256];
 
 extern short mille_to_scale(short n, short scale);
 
-extern const unsigned long *uni_cp437;
+extern const my_ulong *uni_cp437;
 
 /* read a utf-8 sequence from stream, convert it to cp437, and return
  * it. unmappable sequences are silently converted to spaces. this
  * theoretically works with U+0000 .. U+D7FF and U+E000 .. U+10FFFF */
 
 #if 0
-extern int fputc_utf8(unsigned long u, FILE *stream);
+extern int fputc_utf8(my_ulong u, FILE *stream);
 #endif
 
 extern int
@@ -190,7 +193,7 @@ fgetc_cp437_utf8(FILE *stream);
  * note that the return value is a bit different -- EOF for failure, 0
  * for success */
 
-extern int fputc_utf8(unsigned long u, FILE *stream);
+extern int fputc_utf8(my_ulong u, FILE *stream);
 
 /* like fputc, but converts cp437 to a utf-8 sequence. this
  * theoretically works with U+0000 .. U+D7FF and U+E000 .. U+10FFFF;
@@ -255,7 +258,9 @@ extern int parse_maze_args(const char *mazefile, const char *maze_args);
 
 extern char *mystrdup(const char *s);
 
+#ifdef strdup
 #undef strdup
+#endif
 #define strdup(s) mystrdup(s)
 
 #ifndef MIN
@@ -293,7 +298,7 @@ extern char *maze;
 extern char *maze_color;
 extern char *blank_maze;
 extern char *blank_maze_color;
-extern unsigned char *dirty_cell;
+extern my_uchar *dirty_cell;
 extern int all_dirty;
 
 extern int nogame;
@@ -378,7 +383,7 @@ extern void maze_putsn_nonblank(int y, int x, int color, const char *s, int n);
 #endif
 
 extern int ghost_dir[MAXGHOSTS], ghost_mem[MAXGHOSTS], ghost_man[MAXGHOSTS], ghost_timer[MAXGHOSTS];
-extern unsigned char *home_dir;
+extern my_uchar *home_dir;
 
 /* sprite register numbers */
 #define GHOSTEYES(ghost) ((ghost) * 2)
@@ -397,7 +402,7 @@ extern unsigned char *home_dir;
 /* total sprite register count */
 #define SPRITE_REGISTERS (BIGHERO_LR + 1)
 
-extern unsigned char sprite_register[SPRITE_REGISTERS];
+extern my_uchar sprite_register[SPRITE_REGISTERS];
 extern int sprite_register_frame[SPRITE_REGISTERS];
 extern int sprite_register_x[SPRITE_REGISTERS], sprite_register_y[SPRITE_REGISTERS];
 extern int sprite_register_used[SPRITE_REGISTERS];
@@ -444,19 +449,19 @@ mark_sprite_register(int s);
 #define XLEAVING(dir, x) ( -((((dir) == MYMAN_LEFT) && ! NOTLEFT(x)) ? 1 : 0) + \
 ((((dir) == MYMAN_RIGHT) && ! NOTRIGHT(x)) ? 1 : 0))
 
-extern unsigned char gfx2(unsigned char c);
+extern my_uchar gfx2(my_uchar c);
 
-extern size_t gfx1(const char **font, unsigned char c, int y, int x, int w);
+extern size_t gfx1(const char **font, my_uchar c, int y, int x, int w);
 
-extern unsigned char gfx0(unsigned char c, unsigned char *m);
+extern my_uchar gfx0(my_uchar c, my_uchar *m);
 
 #define gfx_w (gfx_reflect ? tile_h : tile_w)
 #define gfx_h (gfx_reflect ? tile_w : tile_h)
-#define gfx(c,y,x) ((unsigned long) (unsigned char) gfx2((unsigned long) (unsigned char) gfx1(tile, (unsigned long) (unsigned char) gfx0(((unsigned long) (unsigned char) (c)), (reflect_cp437)), (y) % gfx_h, (x) % gfx_w, tile_w)))
+#define gfx(c,y,x) ((my_ulong) (my_uchar) gfx2((my_ulong) (my_uchar) gfx1(tile, (my_ulong) (my_uchar) gfx0(((my_ulong) (my_uchar) (c)), (reflect_cp437)), (y) % gfx_h, (x) % gfx_w, tile_w)))
 
 #define sgfx_w (gfx_reflect ? sprite_h : sprite_w)
 #define sgfx_h (gfx_reflect ? sprite_w : sprite_h)
-#define sgfx(c,y,x) ((unsigned long) (unsigned char) gfx2((unsigned long) (unsigned char) gfx1(sprite, (unsigned long) (unsigned char) gfx0(((unsigned long) (unsigned char) (c)), (reflect_sprite)), (y) % sgfx_h, (x) % sgfx_w, sprite_w)))
+#define sgfx(c,y,x) ((my_ulong) (my_uchar) gfx2((my_ulong) (my_uchar) gfx1(sprite, (my_ulong) (my_uchar) gfx0(((my_ulong) (my_uchar) (c)), (reflect_sprite)), (y) % sgfx_h, (x) % sgfx_w, sprite_w)))
 
 extern int reflect;
 extern int gfx_reflect;
@@ -519,7 +524,7 @@ extern int gamecycle(int lines, int cols);
 extern void creditscreen(void);
 extern void paint_walls(int verbose);
 
-extern unsigned short *inside_wall;
+extern my_ushort *inside_wall;
 extern FILE *snapshot;
 extern FILE *snapshot_txt;
 extern int xoff_received;
@@ -529,8 +534,8 @@ extern const char * pager_remaining;
 extern int pager_arrow_magic;
 extern int reinit_requested;
 extern long myman_intro;
-extern unsigned long myman_start;
-extern unsigned long myman_demo;
+extern my_ulong myman_start;
+extern my_ulong myman_demo;
 extern int munched;
 extern int old_lines, old_cols, old_score, old_showlives, old_level;
 extern int ignore_delay;
@@ -538,12 +543,12 @@ extern long frameskip, frameskip0, frameskip1;
 extern long scrolling;
 extern long frames;
 extern long winning;
-extern unsigned long mymandelay;
-extern unsigned long mindelay;
+extern my_ulong mymandelay;
+extern my_ulong mindelay;
 extern int ghost_eaten_timer;
 extern int paused;
 extern long intermission_running;
-extern unsigned long myman_demo_setup;
+extern my_ulong myman_demo_setup;
 extern int need_reset;
 extern int level,
     intermission,
@@ -939,7 +944,7 @@ extern int *pellets;
 extern long flip_to;
 extern int debug;
 extern int ghosts_p;
-extern unsigned long myman_sfx;
+extern my_ulong myman_sfx;
 extern int showlives;
 extern int visible_frame;
 
@@ -994,7 +999,7 @@ extern int visible_frame;
 #define MORTAR_COLOR maze_MORTAR_COLORS[maze_level % maze_MORTAR_COLORS_len]
 #endif
 
-#define TRANSLATED_MORTAR_COLOR (((BICOLOR_WALLS) && (((unsigned) udlr[(unsigned) (unsigned char) (char) maze[(maze_level*maze_h+ytile)*(maze_w+1)+xtile]]) & 0xAA)) ? (WALL_COLOR) : (MORTAR_COLOR))
+#define TRANSLATED_MORTAR_COLOR (((BICOLOR_WALLS) && (((unsigned) udlr[(unsigned) (my_uchar) (char) maze[(maze_level*maze_h+ytile)*(maze_w+1)+xtile]]) & 0xAA)) ? (WALL_COLOR) : (MORTAR_COLOR))
 
 #define TRANSLATED_WALL_COLOR ((BICOLOR_WALLS) ? TRANSLATED_MORTAR_COLOR : (WALL_COLOR))
 

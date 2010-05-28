@@ -78,9 +78,13 @@
 #endif
 #endif
 
+#if HAVE_ERRNO_H
 #include <errno.h>
+#endif
 
+#if HAVE_SIGNAL_H
 #include <signal.h>
+#endif
 
 #ifndef SIG_ERR
 #define SIG_ERR ((void (*) (int)) -1)
@@ -97,11 +101,15 @@
 #endif
 
 #if ! HAVE_RAISE
+#ifdef raise
 #undef raise
+#endif
 #define raise(sig) kill(getpid(), (sig))
 #endif
 
+#if HAVE_LIMITS_H
 #include <limits.h>
+#endif
 #if HAVE_LOCALE_H
 #include <locale.h>
 #endif
@@ -122,7 +130,9 @@
 #if HAVE_SYS_TIME_H
 #include <sys/time.h>
 #endif
+#if HAVE_TIME_H
 #include <time.h>
+#endif
 
 /* MyMan utilities; also defines cruft like __MSDOS__ under some circumstances */
 #ifndef MYMAN_UTILS_H_INCLUDED
@@ -142,11 +152,15 @@
 #endif
 
 #ifndef USE_SDL
+#ifdef USE_SDL_MIXER
 #undef USE_SDL_MIXER
+#endif
 #define USE_SDL_MIXER 0
 #else
 #if ! USE_SDL
+#ifdef USE_SDL_MIXER
 #undef USE_SDL_MIXER
+#endif
 #define USE_SDL_MIXER 0
 #endif
 #endif
@@ -336,8 +350,8 @@ static int
 vmscurses_getch(void)
 {
     int res;
-    unsigned long kbdid;
-    unsigned short keycode = ERR;
+    my_ulong kbdid;
+    my_ushort keycode = ERR;
     int timeout;
 
     kbdid = stdkb->_id;
@@ -348,7 +362,9 @@ vmscurses_getch(void)
     return getch();
 }
 
+#ifdef getch
 #undef getch
+#endif
 #define getch vmscurses_getch
 
 #ifndef KEY_UP
@@ -626,7 +642,7 @@ static iconv_t cd_to_wchar = (iconv_t) -1;
 
 static iconv_t cd_to_uni = (iconv_t) -1;
 
-static wchar_t ucs_to_wchar(unsigned long ucs)
+static wchar_t ucs_to_wchar(my_ulong ucs)
 {
     wchar_t wcbuf[2];
 #ifdef LC_CTYPE
@@ -707,7 +723,7 @@ static wchar_t ucs_to_wchar(unsigned long ucs)
 
 #else
 
-#define ucs_to_wchar(ucs) ((((unsigned long) (wchar_t) (unsigned long) (ucs)) == ((unsigned long) (ucs))) ? ((wchar_t) (unsigned long) (ucs)) : ((wchar_t) 0))
+#define ucs_to_wchar(ucs) ((((my_ulong) (wchar_t) (my_ulong) (ucs)) == ((my_ulong) (ucs))) ? ((wchar_t) (my_ulong) (ucs)) : ((wchar_t) 0))
 
 #endif
 
@@ -1806,14 +1822,18 @@ static int locale_is_utf8(void)
 
 #ifdef BUILTIN_SIZE
 extern const char *builtin_size;
+#ifdef MYMANSIZE
 #undef MYMANSIZE
+#endif
 #define MYMANSIZE builtin_size
 #else
 #ifndef MYMANSIZE
 #define MYMANSIZE "big"
 #endif
 static const char *MYMANSIZE_str = MYMANSIZE;
+#ifdef MYMANSIZE
 #undef MYMANSIZE
+#endif
 #define MYMANSIZE MYMANSIZE_str
 #endif
 
@@ -1822,12 +1842,16 @@ static const char *MYMANSIZE_str = MYMANSIZE;
 #endif
 
 #ifdef BUILTIN_TILE
+#ifdef TILEFILE
 #undef TILEFILE
+#endif
 #define TILEFILE 0
 extern const char *builtin_tilefile;
 #else
 static const char TILEFILE_str[] = TILEFILE;
+#ifdef TILEFILE
 #undef TILEFILE
+#endif
 #define TILEFILE TILEFILE_str
 #define builtin_tilefile TILEFILE
 #endif
@@ -1837,12 +1861,16 @@ static const char TILEFILE_str[] = TILEFILE;
 #endif
 
 #ifdef BUILTIN_SPRITE
+#ifdef SPRITEFILE
 #undef SPRITEFILE
+#endif
 #define SPRITEFILE 0
 extern const char *builtin_spritefile;
 #else
 static const char SPRITEFILE_str[] = SPRITEFILE;
+#ifdef SPRITEFILE
 #undef SPRITEFILE
+#endif
 #define SPRITEFILE SPRITEFILE_str
 #define builtin_spritefile SPRITEFILE
 #endif
@@ -1898,7 +1926,7 @@ static chtype
 ascii_cp437[256];
 
 #ifdef NEED_CP437_TO_ASCII
-static chtype cp437_to_ascii(unsigned char ch)
+static chtype cp437_to_ascii(my_uchar ch)
 {
     return ascii_cp437[(ch & 0xff)];
 }
@@ -2653,14 +2681,18 @@ static int use_sound = SOUND;
 
 #ifdef BUILTIN_VARIANT
 extern const char *builtin_variant;
+#ifdef MYMANVARIANT
 #undef MYMANVARIANT
+#endif
 #define MYMANVARIANT builtin_variant
 #else
 #ifndef MYMANVARIANT
 #define MYMANVARIANT "myman"
 #endif
 static const char *MYMANVARIANT_str = MYMANVARIANT;
+#ifdef MYMANVARIANT
 #undef MYMANVARIANT
+#endif
 #define MYMANVARIANT MYMANVARIANT_str
 #endif
 
@@ -2673,16 +2705,20 @@ static const char *MYMANVARIANT_str = MYMANVARIANT;
 extern const char *maze_data;
 extern const char *maze_color_data;
 extern const char *builtin_mazefile;
+#ifdef MAZEFILE
 #undef MAZEFILE
+#endif
 #define MAZEFILE 0
 #else
 static char MAZEFILE_str[] = MAZEFILE;
+#ifdef MAZEFILE
 #undef MAZEFILE
+#endif
 #define MAZEFILE MAZEFILE_str
 #define builtin_mazefile MAZEFILE
 #endif
 
-unsigned short *inside_wall = NULL;
+my_ushort *inside_wall = NULL;
 
 /*
 
@@ -2810,7 +2846,33 @@ static short old_pair[256][2];
 #ifndef MY_INIT_PAIR_RET
 #define MY_INIT_PAIR_RET
 #endif
+
 #define my_init_pair(x,y,z) init_pair(x,y,z) MY_INIT_PAIR_RET
+
+#ifdef my_init_pair
+#undef my_init_pair
+#endif
+
+static int
+my_init_pair(short pair, short f, short b)
+{
+    static short pairs[256][2];
+    short pair2;
+
+    for (pair2 = 1; pair2 < pair; pair2++)
+    {
+        if ((pairs[pair2][0] == f) && pairs[pair2][1] == b)
+        {
+#if 0
+            fprintf(stderr, "!!! pair %hd == pair %hd\n", pair, pair2); fflush(stderr);
+#endif
+            break;
+        }
+    }
+    pairs[pair][0] = f;
+    pairs[pair][1] = b;
+    return init_pair(pair, f, b) MY_INIT_PAIR_RET;
+}
 
 static void
 destroy_pen(void)
@@ -2833,12 +2895,19 @@ init_pen(void)
 {
     int i;
     int nextpair;
-    unsigned char pair_allocated[32];
+    my_uchar pair_allocated[32];
 
     memset((void *) pair_allocated, 0, sizeof(pair_allocated));
     for (i = 0; i < 256; i ++)
         if (i < COLOR_PAIRS)
             pair_content(i, old_pair[i], old_pair[i] + 1);
+#ifdef MY_A_BOLD
+#define trans_pen_bright ((PEN_BRIGHT == MY_A_BOLD) ? 8 : (((PEN_BRIGHT > 0) && (PEN_BRIGHT < 16)) ? PEN_BRIGHT : 8))
+#define trans_attr_bright (((PEN_BRIGHT == MY_A_BOLD) || (PEN_BRIGHT > 127)) ? PEN_BRIGHT : 0)
+#else
+#define trans_pen_bright (((PEN_BRIGHT > 0) && (PEN_BRIGHT < 16)) ? PEN_BRIGHT : 8)
+#define trans_attr_bright ((PEN_BRIGHT > 127) ? PEN_BRIGHT : 0)
+#endif
 #if USE_PALETTE
     if (can_change_color() && (COLORS >= 16) && (COLOR_PAIRS >= 16))
     {
@@ -2847,11 +2916,6 @@ init_pen(void)
 
         /* attempt to use similar colors for the dynamic palette in case
          * setting the dynamic palette does not actually work */
-#ifdef MY_A_BOLD
-#define trans_dynamic_pen_bright ((PEN_BRIGHT == MY_A_BOLD) ? 8 : (((PEN_BRIGHT > 0) && (PEN_BRIGHT < 16)) ? PEN_BRIGHT : 8))
-#else
-#define trans_dynamic_pen_bright (((PEN_BRIGHT > 0) && (PEN_BRIGHT < 16)) ? PEN_BRIGHT : 8)
-#endif
         for (i = 0; i < 16; i ++)
         {
             trans_dynamic_color[i] = (short) ERR;
@@ -2871,18 +2935,18 @@ init_pen(void)
             {
                 trans_dynamic_color[i] = trans_color(i);
                 trans_dynamic_color_reverse[trans_color(i)] = i;
-                if (((trans_color(i) | trans_dynamic_pen_bright) > 0)
+                if (((trans_color(i) | trans_pen_bright) > 0)
                     &&
-                    ((trans_color(i) | trans_dynamic_pen_bright) < 16)
+                    ((trans_color(i) | trans_pen_bright) < 16)
                     &&
-                    ((trans_color(i) | trans_dynamic_pen_bright) != (short) ERR)
+                    ((trans_color(i) | trans_pen_bright) != (short) ERR)
                     &&
                     ((i | 8) != (short) ERR)
                     &&
-                    (trans_dynamic_color_reverse[trans_color(i) | trans_dynamic_pen_bright] == (short) ERR))
+                    (trans_dynamic_color_reverse[trans_color(i) | trans_pen_bright] == (short) ERR))
                 {
-                    trans_dynamic_color[i | 8] = trans_color(i) | trans_dynamic_pen_bright;
-                    trans_dynamic_color_reverse[trans_color(i) | trans_dynamic_pen_bright] = i | 8;
+                    trans_dynamic_color[i | 8] = trans_color(i) | trans_pen_bright;
+                    trans_dynamic_color_reverse[trans_color(i) | trans_pen_bright] = i | 8;
                 }
             }
         }
@@ -2918,7 +2982,7 @@ init_pen(void)
             {
                 pen[i] = COLOR_PAIR(i);
                 pair_allocated[i / 8] =
-                    ((unsigned) (unsigned char) pair_allocated[i / 8])
+                    ((unsigned) (my_uchar) pair_allocated[i / 8])
                     |
                     (1U << (i % 8));
             }
@@ -2942,7 +3006,7 @@ init_pen(void)
                     {
                         pen[i] = COLOR_PAIR(nextpair);
                         pair_allocated[i / 8] =
-                            ((unsigned) (unsigned char) pair_allocated[i / 8])
+                            ((unsigned) (my_uchar) pair_allocated[i / 8])
                             |
                             (1U << (i % 8));
                         nextpair++;
@@ -2962,18 +3026,18 @@ init_pen(void)
             {
                 pen[i] = COLOR_PAIR(i);
                 pair_allocated[i / 8] =
-                    ((unsigned) (unsigned char) pair_allocated[i / 8])
+                    ((unsigned) (my_uchar) pair_allocated[i / 8])
                     |
                     (1U << (i % 8));
                 pen[8 + i] = COLOR_PAIR(i) |
-                    (use_dim_and_bright ? PEN_BRIGHT : 0);
+                    (use_dim_and_bright ? trans_attr_bright : 0);
             }
             else
             {
                 pen[i] = COLOR_PAIR(0);
                 pen[8 + i] = pen[i] |
                     (use_dim_and_bright
-                     ? ((i == 8) ? PEN_DIM : PEN_BRIGHT)
+                     ? ((i == 8) ? PEN_DIM : trans_attr_bright)
                      : 0);
             }
         }
@@ -3009,7 +3073,7 @@ init_pen(void)
                     if (! (pen[16 * bgansi + (fgansi & 7)] & A_REVERSE))
 #endif
                     {
-                        pen[i] = pen[16 * bgansi + (fgansi & 7)] | ((fgansi == 8) ? PEN_DIM : PEN_BRIGHT);
+                        pen[i] = pen[16 * bgansi + (fgansi & 7)] | ((fgansi == 8) ? PEN_DIM : trans_attr_bright);
                         continue;
                     }
                 }
@@ -3018,7 +3082,7 @@ init_pen(void)
                 {
                     if (! (pen[16 * fgansi + (bgansi & 7)] & A_REVERSE))
                     {
-                        pen[i] = pen[16 * fgansi + (bgansi & 7)] | ((bgansi == 8) ? PEN_DIM : PEN_BRIGHT) | A_REVERSE;
+                        pen[i] = pen[16 * fgansi + (bgansi & 7)] | ((bgansi == 8) ? PEN_DIM : trans_attr_bright) | A_REVERSE;
                         continue;
                     }
                 }
@@ -3055,14 +3119,15 @@ init_pen(void)
                     {
                         pen[i] = COLOR_PAIR(nextpair) | A_REVERSE;
                         pair_allocated[i / 8] =
-                            ((unsigned) (unsigned char) pair_allocated[i / 8])
+                            ((unsigned) (my_uchar) pair_allocated[i / 8])
                             |
                             (1U << (i % 8));
                         if (bgansi > 7)
                         {
-                            pen[i] |= (use_dim_and_bright ? ((bgansi == 8) ? PEN_DIM : PEN_BRIGHT) : 0);
+                            pen[i] |= (use_dim_and_bright ? ((bgansi == 8) ? PEN_DIM : trans_attr_bright) : 0);
                         }
                         nextpair ++;
+                        continue;
                     }
                     else
 #endif
@@ -3071,20 +3136,23 @@ init_pen(void)
                         {
                             pen[i] = COLOR_PAIR(nextpair);
                             pair_allocated[i / 8] =
-                                ((unsigned) (unsigned char) pair_allocated[i / 8])
+                                ((unsigned) (my_uchar) pair_allocated[i / 8])
                                 |
                                 (1U << (i % 8));
                             if (fgansi > 7)
                             {
-                                pen[i] |= (use_dim_and_bright ? ((fgansi == 8) ? PEN_DIM : PEN_BRIGHT) : 0);
+                                pen[i] |= (use_dim_and_bright ? ((fgansi == 8) ? PEN_DIM : trans_attr_bright) : 0);
                             }
                             nextpair ++;
+                            continue;
                         }
                     }
                 }
             }
         }
         if ((COLORS == 16)
+            &&
+            0
             &&
             (nextpair < COLOR_PAIRS))
         {
@@ -3109,7 +3177,7 @@ init_pen(void)
 
                     fgansi = i % 16;
                     bgansi = i / 16;
-                    if (((fgansi > 7) || (bgansi > 7)) && (nextpair < COLOR_PAIRS))
+                    if ((fgansi > 7) || (bgansi > 7))
                     {
                         if (bgansi == fgansi)
                         {
@@ -3117,24 +3185,40 @@ init_pen(void)
                             continue;
                         }
 #ifdef A_REVERSE
-                        if ((bgansi > fgansi) && (! (pen[16 * fgansi + bgansi] & A_REVERSE)))
+                        if ((bgansi > fgansi)
+                            &&
+                            (! (pen[16 * fgansi + bgansi] & A_REVERSE)))
                         {
-                            pen[i] = pen[16 * fgansi + bgansi] | A_REVERSE;
+                            pen[i] = pen[16 * fgansi + bgansi] ^ A_REVERSE;
                             continue;
                         }
 #endif
-                        if (my_init_pair(nextpair, trans_color(fgansi & 7) | (fgansi & 8), trans_color(bgansi & 7) | (bgansi & 8)) != ERR)
+                        if ((nextpair < COLOR_PAIRS)
+                            &&
+                            (my_init_pair(nextpair, trans_color(fgansi & 7) | (fgansi & 8), trans_color(bgansi & 7) | (bgansi & 8)) != ERR))
                         {
                             pen[i] = COLOR_PAIR(nextpair);
                             pair_allocated[i / 8] =
-                                ((unsigned) (unsigned char) pair_allocated[i / 8])
+                                ((unsigned) (my_uchar) pair_allocated[i / 8])
                                 |
                                 (1U << (i % 8));
                             if (fgansi > 7)
                             {
-                                pen[i] |= (use_dim_and_bright ? ((fgansi == 8) ? PEN_DIM : PEN_BRIGHT) : 0);
+                                pen[i] |= (use_dim_and_bright ? ((fgansi == 8) ? PEN_DIM : trans_attr_bright) : 0);
+#ifdef A_REVERSE
+                                if (bgansi == 0)
+                                {
+                                    int j;
+
+                                    for (j = 0; j < 16; j ++)
+                                    {
+                                        pen[16 * fgansi + j] = pen[i] | A_REVERSE;
+                                    }
+                                }
+#endif
                             }
                             nextpair ++;
+                            continue;
                         }
                     }
                 }
@@ -3235,7 +3319,7 @@ init_pen(void)
                 {
                     pen[i] = COLOR_PAIR(nextpair);
                     pair_allocated[i / 8] =
-                        ((unsigned) (unsigned char) pair_allocated[i / 8])
+                        ((unsigned) (my_uchar) pair_allocated[i / 8])
                         |
                         (1U << (i % 8));
                     nextpair ++;
@@ -3321,7 +3405,7 @@ snapshot_attrset_active(chtype attrs)
                 if (pen[i] &&
                     snapshot_attrs_active == pen[i])
                 {
-                    unsigned long r, g, b;
+                    my_ulong r, g, b;
 
                     r = (255 * pen_pal[i % 16][0]) / 1000;
                     g = (255 * pen_pal[i % 16][1]) / 1000;
@@ -3773,7 +3857,9 @@ static void
 snapshot_addch(short inbyte)
 {
 
+#ifdef SNAPSHOT_ADDCH__NARROWC
 #undef SNAPSHOT_ADDCH__NARROWC
+#endif
 #if USE_WIDEC_SUPPORT
 #define SNAPSHOT_ADDCH__NARROWC(c) NULL
 #else
@@ -3782,7 +3868,7 @@ snapshot_addch(short inbyte)
 
     if (snapshot || snapshot_txt)
     {
-        unsigned long codepoint;
+        my_ulong codepoint;
 
         if (use_acs)
         {
@@ -4199,7 +4285,7 @@ snapshot_addch(short inbyte)
                         ) ? uni_cp437_halfwidth[inbyte] : (ascii_cp437[inbyte] & MY_A_CHARTEXT);
                     break;
                 default:
-                    inbyte = (int) (unsigned char)
+                    inbyte = (int) (my_uchar)
                         (ascii_cp437[inbyte] & MY_A_CHARTEXT);
                     codepoint = inbyte;
                 }
@@ -4207,7 +4293,7 @@ snapshot_addch(short inbyte)
         }
         else
         {
-            inbyte = (int) (unsigned char)
+            inbyte = (int) (my_uchar)
                 (ascii_cp437[inbyte] & MY_A_CHARTEXT);
             codepoint = inbyte;
         }
@@ -4309,7 +4395,7 @@ my_getch(void)
 
 /* add CP437 byte b with attributes attrs */
 static int
-my_addch(unsigned long b, chtype attrs)
+my_addch(my_ulong b, chtype attrs)
 {
     int ret = 0;
     chtype c = '\?';
@@ -4328,10 +4414,10 @@ my_addch(unsigned long b, chtype attrs)
     snapshot_addch(b);
     if (CJK_MODE && ! (use_acs && use_raw && use_raw_ucs))
     {
-        unsigned char rhs;
+        my_uchar rhs;
 
         rhs = cp437_fullwidth_rhs[b];
-        if ((int) (unsigned char) rhs)
+        if ((int) (my_uchar) rhs)
         {
             snapshot_addch(rhs);
         }
@@ -4346,7 +4432,7 @@ my_addch(unsigned long b, chtype attrs)
         if (use_acs && use_raw && ! use_raw_ucs)
         {
             char buf[2];
-            buf[0] = (char) (unsigned char) (b & 0xFF);
+            buf[0] = (char) (my_uchar) (b & 0xFF);
             buf[1] = '\0';
             ret = addstr(buf);
             getyx(stdscr, new_y, new_x);
@@ -4354,12 +4440,12 @@ my_addch(unsigned long b, chtype attrs)
             {
                 if (CJK_MODE && ((new_x % COLS) != ((old_x + 2) % COLS)))
                 {
-                    unsigned char rhs;
+                    my_uchar rhs;
 
                     rhs = cp437_fullwidth_rhs[b];
-                    if ((int) (unsigned char) rhs)
+                    if ((int) (my_uchar) rhs)
                     {
-                        buf[0] = (char) (unsigned char) (0xFFU & (unsigned) rhs);
+                        buf[0] = (char) (my_uchar) (0xFFU & (unsigned) rhs);
                         addstr(buf);
                     }
                 }
@@ -4373,7 +4459,7 @@ my_addch(unsigned long b, chtype attrs)
 #if USE_WIDEC_SUPPORT
                 if (use_raw && use_raw_ucs)
                 {
-                    unsigned long my_ucs;
+                    my_ulong my_ucs;
                     wchar_t my_wch;
                     int my_wcw;
 
@@ -4388,14 +4474,14 @@ my_addch(unsigned long b, chtype attrs)
                         {
                             if (CJK_MODE && (my_wcw == 1))
                             {
-                                unsigned char rhs;
+                                my_uchar rhs;
 
                                 rhs = cp437_fullwidth_rhs[b];
-                                if ((int) (unsigned char) rhs)
+                                if ((int) (my_uchar) rhs)
                                 {
                                     wchar_t wrhs;
 
-                                    wrhs = ucs_to_wchar(uni_cp437_fullwidth[(int) (unsigned char) rhs]);
+                                    wrhs = ucs_to_wchar(uni_cp437_fullwidth[(int) (my_uchar) rhs]);
                                     my_wcw += wrhs ? my_wcwidth(wrhs) : 0;
                                     if (my_wcw == 2)
                                     {
@@ -4495,23 +4581,23 @@ my_addch(unsigned long b, chtype attrs)
                         getyx(stdscr, new_y, new_x);
                         if (CJK_MODE && ((old_x != new_x) || (old_y != new_y)))
                         {
-                            unsigned char rhs;
+                            my_uchar rhs;
                         
                             rhs = cp437_fullwidth_rhs[b];
-                            if ((int) (unsigned char) rhs)
+                            if ((int) (my_uchar) rhs)
                             {
-                                if (altcharset_cp437[(int) (unsigned char) rhs])
+                                if (altcharset_cp437[(int) (my_uchar) rhs])
                                 {
                                     my_len =
                                         getcchar(
-                                            MY_WACS_PTR altcharset_cp437[(int) (unsigned char) rhs],
+                                            MY_WACS_PTR altcharset_cp437[(int) (my_uchar) rhs],
                                             NULL,
                                             &my_acs_attrs,
                                             &my_color_pair,
                                             NULL);
                                     if (my_len &&
                                         (getcchar(
-                                            MY_WACS_PTR altcharset_cp437[(int) (unsigned char) rhs],
+                                            MY_WACS_PTR altcharset_cp437[(int) (my_uchar) rhs],
                                             my_wchbuf,
                                             &my_acs_attrs,
                                             &my_color_pair,
@@ -4525,7 +4611,7 @@ my_addch(unsigned long b, chtype attrs)
                                 }
                                 else
                                 {
-                                    addch(ascii_cp437[(int) (unsigned char) rhs]);
+                                    addch(ascii_cp437[(int) (my_uchar) rhs]);
                                 }
                             }
                         }
@@ -4559,12 +4645,12 @@ my_addch(unsigned long b, chtype attrs)
                             my_wch = ucs_to_wchar(c);
                             if (my_wch && (my_wcwidth(my_wch) < 2))
                             {
-                                unsigned char rhs;
+                                my_uchar rhs;
 
                                 rhs = cp437_fullwidth_rhs[b];
-                                if ((int) (unsigned char) rhs)
+                                if ((int) (my_uchar) rhs)
                                 {
-                                    c = uni_cp437[(int) (unsigned char) rhs];
+                                    c = uni_cp437[(int) (my_uchar) rhs];
                                     my_wch = ucs_to_wchar(c);
                                     getyx(stdscr, old_y, old_x);
                                     if (my_wch && (my_wcwidth(my_wch) < 2))
@@ -4576,7 +4662,7 @@ my_addch(unsigned long b, chtype attrs)
                                             break;
                                         }
                                     }
-                                    c = altcharset_cp437[(int) (unsigned char) rhs];
+                                    c = altcharset_cp437[(int) (my_uchar) rhs];
 #if USE_A_CHARTEXT
 #ifdef A_CHARTEXT
                                     if (c & ~A_CHARTEXT)
@@ -4609,7 +4695,7 @@ my_addch(unsigned long b, chtype attrs)
                                     {
                                         break;
                                     }
-                                    addch(ascii_cp437[(int) (unsigned char) rhs]);
+                                    addch(ascii_cp437[(int) (my_uchar) rhs]);
                                 }
                             }
                         }
@@ -4650,12 +4736,12 @@ my_addch(unsigned long b, chtype attrs)
                 {
                     if (CJK_MODE && ((new_x % COLS) != ((old_x + 2) % COLS)))
                     {
-                        unsigned char rhs;
+                        my_uchar rhs;
                     
-                        rhs = (unsigned char) (unsigned) (chtype) cp437_fullwidth_rhs[b];
-                        if ((int) (unsigned char) rhs)
+                        rhs = (my_uchar) (unsigned) (chtype) cp437_fullwidth_rhs[b];
+                        if ((int) (my_uchar) rhs)
                         {
-                            c = altcharset_cp437[(int) (unsigned char) rhs];
+                            c = altcharset_cp437[(int) (my_uchar) rhs];
 #if USE_A_CHARTEXT
 #ifdef A_CHARTEXT
                             if (c & ~A_CHARTEXT)
@@ -4696,12 +4782,12 @@ my_addch(unsigned long b, chtype attrs)
         getyx(stdscr, new_y, new_x);
         if (CJK_MODE && ((new_x % COLS) != ((old_x + 2) % COLS)))
         {
-            unsigned char rhs;
+            my_uchar rhs;
 
             rhs = cp437_fullwidth_rhs[b];
-            if ((int) (unsigned char) rhs)
+            if ((int) (my_uchar) rhs)
             {
-                addch(ascii_cp437[(int) (unsigned char) rhs]);
+                addch(ascii_cp437[(int) (my_uchar) rhs]);
             }
         }
     }
@@ -4725,9 +4811,9 @@ my_addstr(const char *s, chtype attrs)
     getyx(stdscr, y, x);
     for (i = 0; s[i]; i ++)
     {
-        unsigned long b;
+        my_ulong b;
 
-        b = (unsigned long) (unsigned char) s[i];
+        b = (my_ulong) (my_uchar) s[i];
         move(y, x + i * (CJK_MODE ? 2 : 1));
         ret = my_addch(b, attrs);
         if (ret == ERR)
@@ -4795,7 +4881,7 @@ pager_move(int y, int x)
 } while(0)
 
 static void
-pager_addch(unsigned long c, chtype a)
+pager_addch(my_ulong c, chtype a)
 {
     int pager_addch__x, pager_addch__y, pager_addch__i, pager_addch__j;
     
@@ -4813,18 +4899,18 @@ pager_addch(unsigned long c, chtype a)
     {
         if (pager_big)
         {
-            unsigned long pager_addch__c, pager_addch__cc;
+            my_ulong pager_addch__c, pager_addch__cc;
             chtype pager_addch__a;
     
-            pager_addch__c = (unsigned long) (unsigned char) (c);
+            pager_addch__c = (my_ulong) (my_uchar) (c);
             pager_addch__cc = pager_addch__c;
             while ((! tile_used[pager_addch__cc])
                    &&
-                   (((unsigned long) (unsigned char) fallback_cp437[pager_addch__cc]) != pager_addch__c)
+                   (((my_ulong) (my_uchar) fallback_cp437[pager_addch__cc]) != pager_addch__c)
                    &&
-                   (((unsigned long) (unsigned char) fallback_cp437[pager_addch__cc]) != pager_addch__cc))
+                   (((my_ulong) (my_uchar) fallback_cp437[pager_addch__cc]) != pager_addch__cc))
             {
-                pager_addch__cc = (unsigned long) (unsigned char) fallback_cp437[pager_addch__cc];
+                pager_addch__cc = (my_ulong) (my_uchar) fallback_cp437[pager_addch__cc];
             }
             pager_addch__c = pager_addch__cc;
             pager_addch__a = (a);
@@ -4838,8 +4924,8 @@ pager_addch(unsigned long c, chtype a)
             {
                 for (pager_addch__i = 0; pager_addch__i < tile_w; pager_addch__i ++)
                 {
-                    pager_addch__cc = (unsigned long) (unsigned char) ((pager_addch__j < tile_h) ? tile[pager_addch__c][pager_addch__j * tile_w + pager_addch__i] : ' ');
-                    if (! pager_addch__cc) pager_addch__cc = (unsigned long) (unsigned char) ' ';
+                    pager_addch__cc = (my_ulong) (my_uchar) ((pager_addch__j < tile_h) ? tile[pager_addch__c][pager_addch__j * tile_w + pager_addch__i] : ' ');
+                    if (! pager_addch__cc) pager_addch__cc = (my_ulong) (my_uchar) ' ';
                     my_move(pager_addch__y * pager_tile_h + pager_addch__j,
                             (pager_addch__x * tile_w + pager_addch__i) * (use_fullwidth ? 2 : 1));
                     my_addch(pager_addch__cc,
@@ -4859,7 +4945,7 @@ pager_addch(unsigned long c, chtype a)
                     {
                         my_move(pager_addch__y * pager_tile_h + pager_addch__j,
                                 pager_addch__i * (use_fullwidth ? 2 : 1));
-                        my_addch((unsigned long) (unsigned char) ' ',
+                        my_addch((my_ulong) (my_uchar) ' ',
                                  (USE_COLOR && use_color)
                                  ?
                                  pen[TEXT_COLOR]
@@ -4895,7 +4981,7 @@ pager_addstr(const char *s, chtype a)
 
     while (*pager_addstr__s)
     {
-        pager_addch((unsigned long) (unsigned char) *pager_addstr__s, (a));
+        pager_addch((my_ulong) (my_uchar) *pager_addstr__s, (a));
         pager_addstr__s ++;
     }
 }
@@ -5064,7 +5150,7 @@ pager(void)
                 }
                 if (c == '\n')
                 {
-                    pager_addch((unsigned long) (unsigned char) *(pager - 1),
+                    pager_addch((my_ulong) (my_uchar) *(pager - 1),
                                 (USE_COLOR && use_color)
                                 ?
                                 pen[TEXT_COLOR]
@@ -5093,7 +5179,7 @@ pager(void)
                 /* FIXME: this hyphenation rule is really not even
                  * adequate for English. Fortunately, we almost
                  * never actually use it. */
-                pager_addch((unsigned long) (unsigned char) c,
+                pager_addch((my_ulong) (my_uchar) c,
                             (USE_COLOR && use_color)
                             ?
                             pen[TEXT_COLOR]
@@ -5101,7 +5187,7 @@ pager(void)
                             0
                     );
                 x ++;
-                pager_addch((unsigned long) (unsigned char) '-',
+                pager_addch((my_ulong) (my_uchar) '-',
                             (USE_COLOR && use_color)
                             ?
                             pen[TEXT_COLOR]
@@ -5114,7 +5200,7 @@ pager(void)
             if (c != '\n')
             {
                 pager_getyx(stdscr, y, x);
-                pager_addch((unsigned long) (unsigned char) c,
+                pager_addch((my_ulong) (my_uchar) c,
                             (USE_COLOR && use_color)
                             ?
                             pen[TEXT_COLOR]
@@ -5148,7 +5234,7 @@ pager(void)
             {
                 while ((x ++) < PAGER_COLS)
                 {
-                    pager_addch((unsigned long) (unsigned char) ' ',
+                    pager_addch((my_ulong) (my_uchar) ' ',
                                 (USE_COLOR && use_color)
                                 ?
                                 pen[TEXT_COLOR]
@@ -5176,7 +5262,7 @@ pager(void)
                         pager_getyx(stdscr, y, x);
                         while (((x ++) < PAGER_COLS) && (y < PAGER_LINES))
                         {
-                            pager_addch((unsigned long) (unsigned char) ' ', PAGER_A_STANDOUT);
+                            pager_addch((my_ulong) (my_uchar) ' ', PAGER_A_STANDOUT);
                         }
                     }
                     my_refresh();
@@ -5405,7 +5491,7 @@ pager(void)
                     if (! x)
                     {
                         pager_move(y, x);
-                        pager_addch((unsigned long) (unsigned char) '~',
+                        pager_addch((my_ulong) (my_uchar) '~',
                                     (USE_COLOR && use_color)
                                     ?
                                     pen[TEXT_COLOR]
@@ -5415,7 +5501,7 @@ pager(void)
                         x ++;
                         while ((x ++) < PAGER_COLS)
                         {
-                            pager_addch((unsigned long) (unsigned char) ' ',
+                            pager_addch((my_ulong) (my_uchar) ' ',
                                         (USE_COLOR && use_color)
                                         ?
                                         pen[TEXT_COLOR]
@@ -5432,7 +5518,7 @@ pager(void)
                 pager_getyx(stdscr, y, x);
                 while (((x ++) < PAGER_COLS) && (y < PAGER_LINES))
                 {
-                    pager_addch((unsigned long) (unsigned char) ' ', PAGER_A_STANDOUT);
+                    pager_addch((my_ulong) (my_uchar) ' ', PAGER_A_STANDOUT);
                 }
             }
             my_refresh();
@@ -5614,53 +5700,59 @@ double td = 0.0L;
 static int sdl_audio_open = 0;
 #endif
 
-void
-gamesfx(void)
-{
 #ifdef ALLEGROCURSES
 #define handle_sfx(n) \
-            do { if (myman_sfx & myman_sfx_ ## n) \
-            { \
-                static MIDI *n##_music = 0; \
-                myman_sfx &= ~myman_sfx_ ## n; \
-                if ((use_sound && ! myman_demo) && ! n##_music) \
-                { \
-                    n##_music = load_midi("sfx/"#n".mid"); \
-                } \
-                if ((use_sound && ! myman_demo) && n##_music) \
-                { \
-                    stop_midi(); \
-                    play_midi(n##_music, 0); \
-                } \
-            } } while (0)
+do { if (myman_sfx & myman_sfx_##n) \
+{ \
+    static MIDI *n##_music = 0; \
+    myman_sfx &= ~myman_sfx_##n; \
+    if ((use_sound && ! myman_demo) && ! n##_music) \
+    { \
+        n##_music = load_midi("sfx/"#n".mid"); \
+    } \
+    if ((use_sound && ! myman_demo) && n##_music) \
+    { \
+        stop_midi(); \
+        play_midi(n##_music, 0); \
+    } \
+} } while (0)
 #else
 #if USE_SDL_MIXER
 #define handle_sfx(n) \
-            do { if ((myman_sfx & myman_sfx_ ## n) && sdl_audio_open) \
-            { \
-                static Mix_Music *n##_music = 0; \
-                myman_sfx &= ~myman_sfx_ ## n; \
-                if ((use_sound && ! myman_demo) && ! n##_music) \
-                { \
-                    n##_music = Mix_LoadMUS("sfx/"#n".xm"); \
-                } \
-                if ((use_sound && ! myman_demo) && ! n##_music) \
-                { \
-                    n##_music = Mix_LoadMUS("sfx/"#n".mid"); \
-                } \
-                if ((use_sound && ! myman_demo) && n##_music) \
-                { \
-                    if (! Mix_PlayingMusic()) Mix_PlayMusic(n##_music, 1); \
-                } \
-            } } while (0)
+do { if ((myman_sfx & myman_sfx_##n) && sdl_audio_open) \
+{ \
+    static Mix_Music *n##_music = 0; \
+    myman_sfx &= ~myman_sfx_##n; \
+    if ((use_sound && ! myman_demo) && ! n##_music) \
+    { \
+        n##_music = Mix_LoadMUS("sfx/"#n".xm"); \
+    } \
+    if ((use_sound && ! myman_demo) && ! n##_music) \
+    { \
+        n##_music = Mix_LoadMUS("sfx/"#n".mid"); \
+    } \
+    if ((use_sound && ! myman_demo) && n##_music) \
+    { \
+        if (! Mix_PlayingMusic()) Mix_PlayMusic(n##_music, 1); \
+    } \
+} } while (0)
 #else
 #if USE_BEEP
-#define handle_sfx(n) do { if (myman_sfx & myman_sfx_ ## n) { myman_sfx &= ~myman_sfx_##n; if ((myman_sfx_##n & ~myman_sfx_nobeep_mask) && use_sound && ! myman_demo) beep(); } } while (0)
+#define handle_sfx(n) do { if (myman_sfx & myman_sfx_##n) { myman_sfx &= ~myman_sfx_##n; if ((myman_sfx_##n & ~myman_sfx_nobeep_mask) && use_sound && ! myman_demo) beep(); } } while (0)
 #else
-#define handle_sfx(n) do { if (myman_sfx & myman_sfx_ ## n) { myman_sfx &= ~myman_sfx_##n; } } while (0)
+#define handle_sfx(n) do { if (myman_sfx & myman_sfx_##n) { myman_sfx &= ~myman_sfx_##n; } } while (0)
 #endif
 #endif
 #endif
+
+#ifdef __DESMET__
+#undef handle_sfx
+#define handle_sfx(n)
+#endif
+
+void
+gamesfx(void)
+{
     handle_sfx(credit);
     handle_sfx(dot);
     handle_sfx(dying);
@@ -5783,7 +5875,7 @@ gamerender(void)
                             {
                                 int player_col;
                                 int player_tile_x;
-                                unsigned char player_tile;
+                                my_uchar player_tile;
                                 int tmp, tmp2;
 
                                 player_tile = 0;
@@ -5861,7 +5953,7 @@ gamerender(void)
                             {
                                 int score_col;
                                 int score_tile_x;
-                                unsigned char score_tile;
+                                my_uchar score_tile;
                                 int tmp;
 
                                 score_col = (score_anchor - col) / tile_w;
@@ -5895,7 +5987,7 @@ gamerender(void)
                     }
 #endif
                     my_move(vline + (reflect ? c_off : r_off), (vcol + (reflect ? r_off : c_off)) * (use_fullwidth ? 2 : 1));
-                    my_addch((unsigned long) (unsigned char) tile[filler_tile][((vline + (3 * tile_h)) % tile_h) * tile_w + (vcol % tile_w)], a);
+                    my_addch((my_ulong) (my_uchar) tile[filler_tile][((vline + (3 * tile_h)) % tile_h) * tile_w + (vcol % tile_w)], a);
                 }
             }
             continue;
@@ -5929,7 +6021,7 @@ gamerender(void)
                     ||
                     (score_col < 2))
                 {
-                    unsigned char score_tile;
+                    my_uchar score_tile;
 
                     score_tile = (tmp % 10) + '0';
                     if (tile_used[(unsigned) score_tile])
@@ -5945,7 +6037,7 @@ gamerender(void)
                         }
 #endif
                         my_move(vline + (reflect ? c_off : r_off), col * (use_fullwidth ? 2 : 1));
-                        my_addch((unsigned long) (unsigned char) tile[(unsigned) score_tile][vline * tile_w + tile_w - 1 - (score_x % tile_w)], a);
+                        my_addch((my_ulong) (my_uchar) tile[(unsigned) score_tile][vline * tile_w + tile_w - 1 - (score_x % tile_w)], a);
 
                     }
                 }
@@ -5981,7 +6073,7 @@ gamerender(void)
                 {
                     chtype a;
 
-                    c = (unsigned long) (unsigned char) sprite[life_sprite][hud_line * sprite_w + (col % sprite_w)];
+                    c = (my_ulong) (my_uchar) sprite[life_sprite][hud_line * sprite_w + (col % sprite_w)];
                     if (c)
                     {
                         a = 0;
@@ -6007,7 +6099,7 @@ gamerender(void)
                         {
                             my_move(vline + (reflect ? c_off : r_off),
                                     (col + (reflect ? r_off : c_off) - hud_life_anchor) * (use_fullwidth ? 2 : 1));
-                            my_addch((unsigned long) (unsigned char) c, a);
+                            my_addch((my_ulong) (my_uchar) c, a);
                         }
                         continue;
                     }
@@ -6081,16 +6173,16 @@ gamerender(void)
             {
                 int pause_x;
                 int pause_y;
-                unsigned char pause_tile;
+                my_uchar pause_tile;
                 const char *msg_pause = PAUSE;
 
                 pause_shown = 1;
                 pause_x = vcol + (reflect ? r_off : c_off) - ((MY_COLS - tile_w * (int) strlen(PAUSE) + 1) / 2);
                 pause_y = vline + (reflect ? c_off : r_off) - ((LINES - tile_h + 1) / 2);
-                pause_tile = (unsigned long) (unsigned char) msg_pause[pause_x / tile_w];
+                pause_tile = (my_ulong) (my_uchar) msg_pause[pause_x / tile_w];
                 if (tile_used[(unsigned) pause_tile])
                 {
-                    c = (unsigned long) (unsigned char) tile[(unsigned long) (unsigned char) msg_pause[pause_x / tile_w]][pause_y * tile_w + (pause_x % tile_w)];
+                    c = (my_ulong) (my_uchar) tile[(my_ulong) (my_uchar) msg_pause[pause_x / tile_w]][pause_y * tile_w + (pause_x % tile_w)];
                     if (! c)
                     {
                         c = ' ';
@@ -6114,7 +6206,7 @@ gamerender(void)
             }
             if (IS_CELL_DIRTY(xtile, ytile)
                 ||
-                ISPELLET((unsigned) (unsigned char) (char) maze[(maze_level*maze_h+ytile) * (maze_w + 1)+xtile])
+                ISPELLET((unsigned) (my_uchar) (char) maze[(maze_level*maze_h+ytile) * (maze_w + 1)+xtile])
                 ||
                 winning)
             {
@@ -6210,12 +6302,12 @@ gamerender(void)
                         } else if (sprite_register_used[s]
                                    && (! sprite_used[t])
                                    && ((unsigned) cp437_sprite[t])
-                                   && tile_used[(unsigned long) (unsigned char) cp437_sprite[t]]
+                                   && tile_used[(my_ulong) (my_uchar) cp437_sprite[t]]
                                    && ((x = sprite_register_x[s] - gfx_w / 2) <= i)
                                    && ((x_off = i - x) < gfx_w)
                                    && ((y = sprite_register_y[s] - gfx_h / 2) <= j)
                                    && ((y_off = j - y) < gfx_h)
-                                   && ((c = gfx((unsigned long) (unsigned char) cp437_sprite[t], y_off, x_off)) != 0))
+                                   && ((c = gfx((my_ulong) (my_uchar) cp437_sprite[t], y_off, x_off)) != 0))
                         {
 #if USE_COLOR
                             if (use_color)
@@ -6277,7 +6369,7 @@ gamerender(void)
                                &&
                                (((int) (unsigned) fallback_cp437[c_mapped]) != c_mapped))
                         {
-                            c_mapped = (unsigned long) (unsigned char) fallback_cp437[c_mapped];
+                            c_mapped = (my_ulong) (my_uchar) fallback_cp437[c_mapped];
                         }
                         if (tile_used[c_mapped]) {
                             if ((ISWALL(c) && ! ISDOOR(c)) || (c == ' '))
@@ -6287,7 +6379,7 @@ gamerender(void)
 #if USE_COLOR
                             if (use_color)
                             {
-                                a = (int) (unsigned char) maze_color[(maze_level*maze_h+ytile) * (maze_w + 1)+xtile];
+                                a = (int) (my_uchar) maze_color[(maze_level*maze_h+ytile) * (maze_w + 1)+xtile];
                                 if (! a)
                                 {
                                     a = tile_color[c_mapped];
@@ -6330,7 +6422,7 @@ gamerender(void)
                             }
                             if (debug) {
                                 int s = WHOSE_HOME_DIR(ytile, xtile);
-                                unsigned char d;
+                                my_uchar d;
                                             
                                 d = home_dir[(s % ghosts*maze_h+ytile)*(maze_w+1)+xtile];
                                 c = (((unsigned) d) == MYMAN_UP) ? '^'
@@ -6401,7 +6493,7 @@ gamerender(void)
                                         {
                                             if (TRANSLATED_WALL_COLOR)
                                             {
-                                                a = pen[(((unsigned long) (unsigned char) TRANSLATED_WALL_COLOR) * (SOLID_WALLS_BGCOLOR ? 16 : 1)) % 256];
+                                                a = pen[(((my_ulong) (my_uchar) TRANSLATED_WALL_COLOR) * (SOLID_WALLS_BGCOLOR ? 16 : 1)) % 256];
                                             }
                                         }
                                         else
@@ -6436,9 +6528,9 @@ gamerender(void)
                                         {
                                             if (TRANSLATED_WALL_COLOR)
                                             {
-                                                a = pen[(((unsigned long) (unsigned char) EFFECTIVE_MORTAR_COLOR)
+                                                a = pen[(((my_ulong) (my_uchar) EFFECTIVE_MORTAR_COLOR)
                                                          |
-                                                         (((unsigned long) (unsigned char) TRANSLATED_WALL_COLOR) * 16)) % 256];
+                                                         (((my_ulong) (my_uchar) TRANSLATED_WALL_COLOR) * 16)) % 256];
                                             }
                                         }
                                         else
@@ -6490,7 +6582,7 @@ gamerender(void)
                     }
 #endif
 #endif
-                my_addch((unsigned long) (unsigned char) c, a);
+                my_addch((my_ulong) (my_uchar) c, a);
             }
         }
         if (((MY_COLS - (reflect ? (r_off + maze_h * gfx_h) : (c_off + maze_w * gfx_w))) >= sprite_w)
@@ -6525,7 +6617,7 @@ gamerender(void)
                 {
                     chtype a;
 
-                    c = (unsigned long) (unsigned char) sprite[level_sprite][hud_line * sprite_w + (level_x % sprite_w)];
+                    c = (my_ulong) (my_uchar) sprite[level_sprite][hud_line * sprite_w + (level_x % sprite_w)];
                     if (c)
                     {
                         a = 0;
@@ -6540,7 +6632,7 @@ gamerender(void)
                         }
 #endif
                         my_move(vline + (reflect ? c_off : r_off), col * (use_fullwidth ? 2 : 1));
-                        my_addch((unsigned long) (unsigned char) c, a);
+                        my_addch((my_ulong) (my_uchar) c, a);
                         continue;
                     }
                 }
@@ -6590,7 +6682,7 @@ gamerender(void)
                     {
                         chtype a;
 
-                        c = (unsigned long) (unsigned char) sprite[life_sprite][line * sprite_w + ((col - (reflect ? r_off : c_off) - 2 * tile_w) % sprite_w)];
+                        c = (my_ulong) (my_uchar) sprite[life_sprite][line * sprite_w + ((col - (reflect ? r_off : c_off) - 2 * tile_w) % sprite_w)];
                         if (c)
                         {
                             a = 0;
@@ -6612,7 +6704,7 @@ gamerender(void)
 #endif
 #endif
                             }
-                            my_addch((unsigned long) (unsigned char) c, a);
+                            my_addch((my_ulong) (my_uchar) c, a);
                             continue;
                         }
                     }
@@ -6630,7 +6722,7 @@ gamerender(void)
                     {
                         chtype a;
 
-                        c = (unsigned long) (unsigned char) sprite[level_sprite][line * sprite_w + (level_x % sprite_w)];
+                        c = (my_ulong) (my_uchar) sprite[level_sprite][line * sprite_w + (level_x % sprite_w)];
                         if (c)
                         {
                             a = 0;
@@ -6644,7 +6736,7 @@ gamerender(void)
                                 a = pen[a];
                             }
 #endif
-                            my_addch((unsigned long) (unsigned char) c, a);
+                            my_addch((my_ulong) (my_uchar) c, a);
                             continue;
                         }
                     }
@@ -6751,7 +6843,7 @@ gameinput(void)
     int hero_can_move_right = 0;
     int hero_can_move_up = 0;
     int hero_can_move_down = 0;
-    unsigned char m1, m2;
+    my_uchar m1, m2;
     int xtile, ytile, x_off, y_off;
 
     x_off = sprite_register_x[HERO] % gfx_w;
@@ -6773,26 +6865,26 @@ gameinput(void)
             ignore_delay = 1;
             frameskip = 0;
         }
-        m1 = (unsigned char) maze[(maze_level*maze_h+ytile) * (maze_w + 1)+XWRAP(xtile - NOTRIGHT(x_off))];
-        m2 = (unsigned char) maze[(maze_level*maze_h+ytile) * (maze_w + 1)+xtile];
+        m1 = (my_uchar) maze[(maze_level*maze_h+ytile) * (maze_w + 1)+XWRAP(xtile - NOTRIGHT(x_off))];
+        m2 = (my_uchar) maze[(maze_level*maze_h+ytile) * (maze_w + 1)+xtile];
         hero_can_move_left =
             ISOPEN((unsigned) m1)
             ||
             ISZAPLEFT((unsigned) m2);
-        m1 = (unsigned char) maze[(maze_level*maze_h+ytile) * (maze_w + 1)+XWRAP(xtile + NOTLEFT(x_off))];
-        m2 = (unsigned char) maze[(maze_level*maze_h+ytile) * (maze_w + 1)+xtile];
+        m1 = (my_uchar) maze[(maze_level*maze_h+ytile) * (maze_w + 1)+XWRAP(xtile + NOTLEFT(x_off))];
+        m2 = (my_uchar) maze[(maze_level*maze_h+ytile) * (maze_w + 1)+xtile];
         hero_can_move_right =
             ISOPEN((unsigned) m1)
             ||
             ISZAPRIGHT((unsigned) m2);
-        m1 = (unsigned char) maze[(maze_level*maze_h+YWRAP(ytile - NOTBOTTOM(y_off))) * (maze_w + 1)+xtile];
-        m2 = (unsigned char) maze[(maze_level*maze_h+ytile) * (maze_w + 1)+xtile];
+        m1 = (my_uchar) maze[(maze_level*maze_h+YWRAP(ytile - NOTBOTTOM(y_off))) * (maze_w + 1)+xtile];
+        m2 = (my_uchar) maze[(maze_level*maze_h+ytile) * (maze_w + 1)+xtile];
         hero_can_move_up =
             ISOPEN((unsigned) m1)
             ||
             ISZAPUP((unsigned) m2);
-        m1 = (unsigned char) maze[(maze_level*maze_h+YWRAP(ytile + NOTTOP(y_off))) * (maze_w + 1)+xtile];
-        m2 = (unsigned char) maze[(maze_level*maze_h+ytile) * (maze_w + 1)+xtile];
+        m1 = (my_uchar) maze[(maze_level*maze_h+YWRAP(ytile + NOTTOP(y_off))) * (maze_w + 1)+xtile];
+        m2 = (my_uchar) maze[(maze_level*maze_h+ytile) * (maze_w + 1)+xtile];
         hero_can_move_down =
             ISOPEN((unsigned) m1)
             ||
@@ -6967,7 +7059,7 @@ gameinput(void)
         {
             char buf[128];
             char buf_txt[128];
-            unsigned int idx;
+            my_uint idx;
 
             if ((! snapshot)
                 &&
@@ -7425,7 +7517,7 @@ parse_myman_args(int argc, char **argv)
     int option_index;
     const char *defvariant = MYMANVARIANT;
     const char *defsize = MYMANSIZE;
-    unsigned long uli;
+    my_ulong uli;
 
     while ((i = getopt_long(argc, argv, short_options,
                             long_options, &option_index))
@@ -7490,7 +7582,7 @@ parse_myman_args(int argc, char **argv)
             if (sscanf(optarg, "%lu%c", &uli, &garbage) != 1)
             {
                 fprintf(stderr,
-                        "%s: argument to -d must be an unsigned long integer.\n",
+                        "%s: argument to -d must be an my_ulong integer.\n",
                         progname);
                 fflush(stderr), exit(1);
             }
@@ -7839,21 +7931,21 @@ parse_myman_args(int argc, char **argv)
         exit(1);
     }
     memset((void *) blank_maze_color, 0, maze_n * maze_h * (maze_w + 1) * sizeof(*blank_maze_color));
-    inside_wall = (unsigned short *) malloc(maze_n * maze_h * (maze_w + 1) * sizeof(*inside_wall));
+    inside_wall = (my_ushort *) malloc(maze_n * maze_h * (maze_w + 1) * sizeof(*inside_wall));
     if (! inside_wall)
     {
         perror("malloc");
         exit(1);
     }
     memset((void *) inside_wall, 0, maze_n * maze_h * (maze_w + 1) * sizeof(*inside_wall));
-    dirty_cell = (unsigned char *) malloc(maze_h * ((maze_w + 1 + 7) >> 3) * sizeof(*dirty_cell));
+    dirty_cell = (my_uchar *) malloc(maze_h * ((maze_w + 1 + 7) >> 3) * sizeof(*dirty_cell));
     if (! dirty_cell)
     {
         perror("malloc");
         exit(1);
     }
     memset((void *) dirty_cell, 0, maze_h * ((maze_w + 1 + 7) >> 3) * sizeof(*dirty_cell));
-    home_dir = (unsigned char *) malloc(MAXGHOSTS * maze_h * (maze_w + 1) * sizeof(*home_dir));
+    home_dir = (my_uchar *) malloc(MAXGHOSTS * maze_h * (maze_w + 1) * sizeof(*home_dir));
     if (! home_dir)
     {
         perror("malloc");
@@ -7862,10 +7954,10 @@ parse_myman_args(int argc, char **argv)
     memset((void *) home_dir, 0, MAXGHOSTS * maze_h * (maze_w + 1) * sizeof(*home_dir));
     memcpy((void *)blank_maze,
            (void *)maze,
-           (maze_w + 1) * maze_h * maze_n * sizeof(unsigned char));
+           (maze_w + 1) * maze_h * maze_n * sizeof(my_uchar));
     memcpy((void *)blank_maze_color,
            (void *)maze_color,
-           (maze_w + 1) * maze_h * maze_n * sizeof(unsigned char));
+           (maze_w + 1) * maze_h * maze_n * sizeof(my_uchar));
 
     CLEAN_ALL();
 #if USE_ISATTY
@@ -7968,7 +8060,7 @@ main(int argc, char *argv[]
     {
         int c_mapped;
 
-        c = (unsigned long) (unsigned char) cp437_sprite[i];
+        c = (my_ulong) (my_uchar) cp437_sprite[i];
         c_mapped = c;
         while (c_mapped
                &&
@@ -7978,8 +8070,8 @@ main(int argc, char *argv[]
                &&
                (((int) (unsigned) fallback_cp437[c_mapped]) != c_mapped))
         {
-            c_mapped = (unsigned long) (unsigned char) fallback_cp437[c_mapped];
-            cp437_sprite[i] = (unsigned char) c_mapped;
+            c_mapped = (my_ulong) (my_uchar) fallback_cp437[c_mapped];
+            cp437_sprite[i] = (my_uchar) c_mapped;
         }
     }
 

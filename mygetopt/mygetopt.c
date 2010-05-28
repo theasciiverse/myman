@@ -1,6 +1,5 @@
-/*
- *  mygetopt.c - my re-implementation of getopt.
- *  Copyright 1997, 2000, 2001, 2002, 2006, 2008, Benjamin C. Wiley Sittler
+/*  mygetopt.c - my re-implementation of getopt.
+ *  Copyright 1997, 2000, 2001, 2002, 2006, 2008, 2009. Benjamin C. Wiley Sittler
  *
  *  Permission is hereby granted, free of charge, to any person
  *  obtaining a copy of this software and associated documentation
@@ -51,7 +50,12 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+
+#ifdef MYGETOPT_MYGETOPT_H
+#include MYGETOPT_MYGETOPT_H
+#else
 #include "mygetopt.h"
+#endif
 
 int my_optind=1, my_opterr=1, my_optopt=0, my_optreset=0;
 char *my_optarg=0;

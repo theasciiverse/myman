@@ -451,9 +451,13 @@ char *strchr(const char *s, int c)
     char *ret = NULL;
     int c2;
 
+    c = (int) (char) c;
     while (s && (c2 = *s) && (! ret))
     {
-        if (c2 == c) ret = (char *) s;
+        if (c2 == c) {
+            ret = (char *) s;
+            break;
+        }
         s ++;
     }
     if (! c) ret = (char *) s;
@@ -465,6 +469,7 @@ char *strrchr(const char *s, int c)
     char *ret = NULL;
     int c2;
 
+    c = (int) (char) c;
     while (s && (c2 = *s))
     {
         if (c2 == c) ret = (char *) s;
@@ -474,7 +479,12 @@ char *strrchr(const char *s, int c)
     return ret;
 }
 
+extern int vfprintf(FILE *stream, const char *fmt, va_list va);
+
 #undef printf
+#ifndef __EFI__
+#define printf efilibc_printf
+#endif /* ! defined(__EFI__) */
 int printf(const char *fmt, ...)
 {
     int ret;
@@ -496,6 +506,8 @@ int fprintf(FILE *stream, const char *fmt, ...)
     va_end(va);
     return ret;
 }
+
+extern size_t fwrite(const void *ptr, size_t sz, size_t nmem, FILE *stream);
 
 static int vfnprintf(FILE *stream,
                      int (*fputc)(int c, FILE *stream),
@@ -964,7 +976,7 @@ FILE *fopen(const char *path, const char *mode)
             {
                 EFI_DEVICE_PATH *efi_device_path;
 
-                efi_device_path = FileDevicePath(efilibc_loaded_image ? efilibc_loaded_image->DeviceHandle : NULL, name16);
+                efi_device_path = FileDevicePath(NULL, name16);
                 if (efi_device_path)
                 {
                     if (! EFI_ERROR(OpenSimpleReadFile(FALSE,
@@ -991,6 +1003,37 @@ FILE *fopen(const char *path, const char *mode)
                         ret->data = NULL;
                     }
                     BS->FreePool((VOID *) efi_device_path);
+                }
+                if (! ret)
+                {
+                    efi_device_path = FileDevicePath(efilibc_loaded_image ? efilibc_loaded_image->DeviceHandle : NULL, name16);
+                    if (efi_device_path)
+                    {
+                        if (! EFI_ERROR(OpenSimpleReadFile(FALSE,
+                                                           NULL, 0,
+                                                           &efi_device_path,
+                                                           &(efilibc_FILEs[i].efi_device_handle),
+                                                           &(efilibc_FILEs[i].simple_read_handle))))
+                        {
+                            size_t k;
+
+                            ret = efilibc_FILEs + i;
+                            ret->fd = fd;
+                            for (k = 0; k < sizeof(ret->ungetc_buf) / sizeof(*(ret->ungetc_buf)); k ++)
+                            {
+                                ret->ungetc_buf[k] = EOF;
+                            }
+                            for (k = 0; k < sizeof(ret->utf8out_buf) / sizeof(*(ret->utf8out_buf)); k ++)
+                            {
+                                ret->utf8out_buf[k] = '\0';
+                            }
+                            ret->offset = 0;
+                            ret->at_eof = 0;
+                            ret->at_eof = 0;
+                            ret->data = NULL;
+                        }
+                        BS->FreePool((VOID *) efi_device_path);
+                    }
                 }
                 free((void *) name16);
                 name16 = NULL;
@@ -1233,7 +1276,12 @@ FILE *freopen(const char *path, const char *mode, FILE *stream)
 }
 #endif /* defined(__EFI__) */
 
+extern long strtol(const char *nptr, char **endptr, int base);
+
 #undef atoi
+#ifndef __EFI__
+#define atoi efilibc_atoi
+#endif /* ! defined(__EFI__) */
 int atoi(const char *nptr)
 {
     return (int) strtol(nptr, (char **)NULL, 10);

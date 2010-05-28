@@ -34,7 +34,7 @@
 <body style="border: 0px; margin: 0px; background: black; color: white; overflow: hidden;">
 <script type="text/javascript">
 /*<![CDATA[*/
-(function() {
+self['myman'] = (function() {
     document.body.setAttribute('tabindex', '1');
     var wideFontFamily = '"sazanami gothic", "kochi gothic", "ar pl new sung", osaka, kai, biaukai, stkaiti, "ms gothic", nsimsun, mingliu, fixedsys, courier, monospace';
     var narrowFontFamily = 'monaco, fixedsys, "lucida sans unicode", freemono, fixed, monospace';
@@ -503,7 +503,7 @@
     document.body.onkeypress = function (ev) {
         if (! ev) ev = self.event;
         blurred = false;
-        var code = ev.charCode ? ev.charCode : ev.keyCode ? ev.keyCode : ev.which;
+        var code = ev.keyCode ? ev.keyCode : (ev.charCode ? ev.charCode : ev.which);
         var ch = String.fromCharCode(code).toLowerCase();
         if ((ev.keyIdentifier == 'Left') || (ch == 'h') || (ch == '%') || (ch == '\uf702') || (ch == '\x1c')) joydir = LEFT;
         else if ((ev.keyIdentifier == 'Down') || (ch == 'j') || (ch == '(') || (ch == '\uf701') || (ch == '\x1f')) joydir = DOWN;
@@ -674,7 +674,7 @@
             }
         }
         lastRun = (new Date);
-        setTimeout(game, quantum);
+        setTimeout('self.myman.game();', quantum);
     });
     game();
     var startTime = (new Date);
@@ -775,7 +775,11 @@
         }
         else
         {
-            var elt = document.documentElement ? document.documentElement : document.body ? document.body : document;
+            var elt = (document.documentElement && document.documentElement.clientHeight) ?
+                document.documentElement :
+                (document.body && document.body.clientHeight) ?
+                document.body :
+                document;
             visw = elt.clientWidth;
             vish = elt.clientHeight;
         }
@@ -826,9 +830,10 @@
             display.style.left = '' + originx + 'px';
         }
         framecount ++;
-        setTimeout(draw, 0.100e3);
+        setTimeout('self.myman.draw();', 0.100e3);
     });
     draw();
+    return { 'draw': draw, 'game': game };
 })();
 /*]]>*/
 </script>

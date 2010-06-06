@@ -4409,6 +4409,12 @@ typedef BOOL WINAPI (*rawcurses_kernel32_SetConsoleScreenBufferInfoEx_t)(HANDLE,
 typedef BOOL WINAPI (*rawcurses_kernel32_QueryFullProcessImageNameW_t)(HANDLE, DWORD, LPWSTR, PDWORD);
 typedef BOOL WINAPI (*rawcurses_kernel32_QueryFullProcessImageNameA_t)(HANDLE, DWORD, LPSTR, PDWORD);
 
+/* from advapi */
+typedef LONG WINAPI (*rawcurses_advapi32_RegOpenKeyExW_t)(HKEY, LPCWSTR, DWORD, REGSAM, PHKEY);
+typedef LONG WINAPI (*rawcurses_advapi32_RegOpenKeyExA_t)(HKEY, LPCSTR, DWORD, REGSAM, PHKEY);
+typedef LONG WINAPI (*rawcurses_advapi32_RegQueryValueExW_t)(HKEY, LPCWSTR, LPDWORD, LPDWORD, LPBYTE, LPDWORD);
+typedef LONG WINAPI (*rawcurses_advapi32_RegCloseKey_t)(HKEY);
+
 /* from psapi */
 typedef DWORD WINAPI (*rawcurses_psapi_GetModuleFileNameExW_t)(HANDLE, HMODULE, LPWSTR, DWORD);
 typedef DWORD WINAPI (*rawcurses_psapi_GetModuleFileNameExA_t)(HANDLE, HMODULE, LPSTR, DWORD);
@@ -4419,6 +4425,119 @@ typedef DWORD WINAPI (*rawcurses_psapi_GetModuleFileNameExA_t)(HANDLE, HMODULE, 
 #endif
 typedef WINSHLWAPI BOOL WINAPI (*rawcurses_shlwapi_PathUnExpandEnvStringsW_t)(LPCWSTR, LPWSTR, UINT);
 typedef WINSHLWAPI BOOL WINAPI (*rawcurses_shlwapi_PathUnExpandEnvStringsA_t)(LPCSTR, LPSTR, UINT);
+
+/* weak-binding wrapper for RegOpenKeyExA */
+static LONG rawcurses_win32_RegOpenKeyExA(HKEY key, LPCSTR sub_key, DWORD options, REGSAM desired, PHKEY result)
+{
+  HMODULE advapi32;
+  LONG ret;
+
+  ret = ! ERROR_SUCCESS;
+  advapi32 = LoadLibraryA("advapi32");
+  if (advapi32) {
+    rawcurses_advapi32_RegOpenKeyExA_t rawcurses_RegOpenKeyExA;
+
+    rawcurses_RegOpenKeyExA = (rawcurses_advapi32_RegOpenKeyExA_t)(GetProcAddress(advapi32, "RegOpenKeyExA"));
+    if (rawcurses_RegOpenKeyExA)
+      {
+	ret = rawcurses_RegOpenKeyExA(key, sub_key, options, desired, result);
+      }
+    FreeLibrary(advapi32);
+  }
+  return ret;
+}
+#ifdef RegOpenKeyExA
+#undef RegOpenKeyExA
+#endif
+#define RegOpenKeyExA rawcurses_win32_RegOpenKeyExA
+
+#ifdef UNICODE
+
+/* weak-binding wrapper for RegOpenKeyExW */
+static LONG rawcurses_win32_RegOpenKeyExW(HKEY key, LPCWSTR sub_key, DWORD options, REGSAM desired, PHKEY result)
+{
+  HMODULE advapi32;
+  LONG ret;
+
+  ret = ! ERROR_SUCCESS;
+  advapi32 = LoadLibraryA("advapi32");
+  if (advapi32) {
+    rawcurses_advapi32_RegOpenKeyExW_t rawcurses_RegOpenKeyExW;
+
+    rawcurses_RegOpenKeyExW = (rawcurses_advapi32_RegOpenKeyExW_t)(GetProcAddress(advapi32, "RegOpenKeyExW"));
+    if (rawcurses_RegOpenKeyExW)
+      {
+	ret = rawcurses_RegOpenKeyExW(key, sub_key, options, desired, result);
+      }
+    FreeLibrary(advapi32);
+  }
+  return ret;
+}
+#ifdef RegOpenKeyExW
+#undef RegOpenKeyExW
+#endif
+#define RegOpenKeyExW rawcurses_win32_RegOpenKeyExW
+
+#endif /* defined(UNICODE) */
+
+#ifdef RegOpenKeyEx
+#undef RegOpenKeyEx
+#endif
+#ifdef UNICODE
+#define RegOpenKeyEx RegOpenKeyExW
+#else /* ! defined(UNICODE) */
+#define RegOpenKeyEx RegOpenKeyExA
+#endif /* ! defined(UNICODE) */
+
+/* weak-binding wrapper for RegCloseKey */
+static LONG rawcurses_win32_RegCloseKey(HKEY key)
+{
+  HMODULE advapi32;
+  LONG ret;
+
+  ret = ! ERROR_SUCCESS;
+  advapi32 = LoadLibraryA("advapi32");
+  if (advapi32) {
+    rawcurses_advapi32_RegCloseKey_t rawcurses_RegCloseKey;
+
+    rawcurses_RegCloseKey = (rawcurses_advapi32_RegCloseKey_t)(GetProcAddress(advapi32, "RegCloseKey"));
+    if (rawcurses_RegCloseKey)
+      {
+	ret = rawcurses_RegCloseKey(key);
+      }
+    FreeLibrary(advapi32);
+  }
+  return ret;
+}
+#ifdef RegCloseKey
+#undef RegCloseKey
+#endif
+#define RegCloseKey rawcurses_win32_RegCloseKey
+
+/* weak-binding wrapper for RegQueryValueExW */
+static LONG rawcurses_win32_RegQueryValueExW(HKEY key, LPCWSTR value_name, LPDWORD reserved, LPDWORD type, LPBYTE data, LPDWORD data_size)
+{
+  HMODULE advapi32;
+  LONG ret;
+
+  ret = ! ERROR_SUCCESS;
+  advapi32 = LoadLibraryA("advapi32");
+  if (advapi32) {
+    rawcurses_advapi32_RegQueryValueExW_t rawcurses_RegQueryValueExW;
+
+    rawcurses_RegQueryValueExW = (rawcurses_advapi32_RegQueryValueExW_t)(GetProcAddress(advapi32, "RegQueryValueExW"));
+    if (rawcurses_RegQueryValueExW)
+      {
+	ret = rawcurses_RegQueryValueExW(key, value_name, reserved, type, data, data_size);
+      }
+    FreeLibrary(advapi32);
+  }
+  return ret;
+}
+#ifdef RegQueryValueExW
+#undef RegQueryValueExW
+#endif
+#define RegQueryValueExW rawcurses_win32_RegQueryValueExW
 
 /* helper function to find the console window handle so we can send a
  * message */

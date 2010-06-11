@@ -178,6 +178,12 @@ the underlying display libraries:
                                             Nonzero value forces use of
                                             Braille pseudo-bitmap characters
                                             on a Unicode display
+                        OPTCURSES_TALL
+                          or
+                        RAWCURSES_TALL      Nonzero value allows use
+                                            of the VT100 double-width,
+                                            double-height characters by
+                                            doubling each row.
 
  libcaca 1.x            CACACURSES_BITMAP   Nonempty value causes
                                             pseudo-bitmap rendering
@@ -242,6 +248,12 @@ the underlying display libraries:
                                             Nonzero value forces use of
                                             Braille pseudo-bitmap characters
                                             on a Unicode display
+                        OPTCURSES_TALL
+                          or
+                        RAWCURSES_TALL      Nonzero value allows use
+                                            of the VT100 double-width,
+                                            double-height characters by
+                                            doubling each row.
 
  LibGGI/LibGII          GGICURSES_BITMAP    Nonempty value causes bitmap
                                             rendering
@@ -277,6 +289,12 @@ the underlying display libraries:
                                             Nonzero value forces use of
                                             Braille pseudo-bitmap characters
                                             on a Unicode display
+                        OPTCURSES_TALL
+                          or
+                        RAWCURSES_TALL      Nonzero value allows use
+                                            of the VT100 double-width,
+                                            double-height characters by
+                                            doubling each row.
 
  Allegro                ALLEGROCURSES_BITMAP
                                             Nonempty value causes bitmap
@@ -318,6 +336,12 @@ the underlying display libraries:
                                             Nonzero value forces use of
                                             Braille pseudo-bitmap characters
                                             on a Unicode display
+                        OPTCURSES_TALL
+                          or
+                        RAWCURSES_TALL      Nonzero value allows use
+                                            of the VT100 double-width,
+                                            double-height characters by
+                                            doubling each row.
 
  Win32 Console/CONIO/TOS/AROS/VMS/*nix TTY
                         RAWCURSES_RAW       Nonzero value causes raw UTF-8
@@ -353,6 +377,10 @@ the underlying display libraries:
                         RAWCURSES_WIDE      Nonzero value forces use of the
                                             VT100 double-width characters when
                                             using stdio
+                        RAWCURSES_TALL      Nonzero value forces use
+                                            of the VT100 double-width,
+                                            double-height characters
+                                            when using stdio
                         RAWCURSES_H19       Nonzero value forces use of the
                                             H-19 alternate character set when
                                             using stdio
@@ -429,6 +457,13 @@ the underlying display libraries:
                                             Nonzero value forces use of
                                             Braille pseudo-bitmap characters
                                             on a Unicode display
+                        OPTCURSES_TALL
+                          or
+                        RAWCURSES_TALL      Nonzero value allows use
+                                            of the VT100 double-width,
+                                            double-height characters by
+                                            doubling each row.
+
  Carbon/Toolbox         MACCURSES_FONT      Font name
                         MACCURSES_FONTSIZE  Initial font size in pixels
                         MACCURSES_FONTENCODING
@@ -452,6 +487,13 @@ the underlying display libraries:
                                             Nonzero value forces use of
                                             Braille pseudo-bitmap characters
                                             on a Unicode display
+                        OPTCURSES_TALL
+                          or
+                        RAWCURSES_TALL      Nonzero value allows use
+                                            of the VT100 double-width,
+                                            double-height characters by
+                                            doubling each row.
+
  GTK+                   GTKCURSES_FONT      Font name
                         GTKCURSES_ICON      Icon graphic
                         GTKCURSES_BITMAP    Nonzero value causes
@@ -470,6 +512,13 @@ the underlying display libraries:
                                             Nonzero value forces use of
                                             Braille pseudo-bitmap characters
                                             on a Unicode display
+                        OPTCURSES_TALL
+                          or
+                        RAWCURSES_TALL      Nonzero value allows use
+                                            of the VT100 double-width,
+                                            double-height characters by
+                                            doubling each row.
+
  FLTK                   FLTKCURSES_FONT     Font face
                         FLTKCURSES_FONTSIZE
                                             Font size
@@ -487,6 +536,13 @@ the underlying display libraries:
                                             Nonzero value forces use of
                                             Braille pseudo-bitmap characters
                                             on a Unicode display
+                        OPTCURSES_TALL
+                          or
+                        RAWCURSES_TALL      Nonzero value allows use
+                                            of the VT100 double-width,
+                                            double-height characters by
+                                            doubling each row.
+
  Open Watcom-style graph.h
                         GRAPHCURSES_BITMAP  Nonzero value causes bitmap
                                             rendering
@@ -525,6 +581,13 @@ the underlying display libraries:
                                             Nonzero value forces use of
                                             Braille pseudo-bitmap characters
                                             on a Unicode display
+                        OPTCURSES_TALL
+                          or
+                        RAWCURSES_TALL      Nonzero value allows use
+                                            of the VT100 double-width,
+                                            double-height characters by
+                                            doubling each row.
+
  <disp.h>               DISPCURSES_USEBIOS  Nonzero value forces use of
                                             BIOS routines for display I/O
                                             (DOS)
@@ -542,6 +605,13 @@ the underlying display libraries:
                                             Nonzero value forces use of
                                             Braille pseudo-bitmap characters
                                             on a Unicode display
+                        OPTCURSES_TALL
+                          or
+                        RAWCURSES_TALL      Nonzero value allows use
+                                            of the VT100 double-width,
+                                            double-height characters by
+                                            doubling each row.
+
  newt
    or
  Borland-style CONIO    
@@ -561,6 +631,12 @@ the underlying display libraries:
                                             Nonzero value forces use of
                                             Braille pseudo-bitmap characters
                                             on a Unicode display
+                        OPTCURSES_TALL
+                          or
+                        RAWCURSES_TALL      Nonzero value allows use
+                                            of the VT100 double-width,
+                                            double-height characters by
+                                            doubling each row.
 
 
 Detailed Notes

@@ -1259,7 +1259,7 @@ typedef chtype attr_t;
 
 #define LINES rawcurses_h
 
-#define COLS (rawcurses_w / ((rawcurses_stdio_wide && ! rawcurses_after_endwin) ? 2 : 1))
+#define COLS (rawcurses_w / (((rawcurses_stdio_tall || rawcurses_stdio_wide) && ! rawcurses_after_endwin) ? 2 : 1))
 
 #define _PAIR_SHIFT 21
 
@@ -1586,6 +1586,7 @@ RAWCURSES_GLOBAL(int rawcurses_stdio_nocolorbold, = 0);
 RAWCURSES_GLOBAL(int rawcurses_stdio_bterm, = 0);
 RAWCURSES_GLOBAL(int rawcurses_stdio_vt52, = 0);
 RAWCURSES_GLOBAL(int rawcurses_stdio_st52, = 0);
+RAWCURSES_GLOBAL(int rawcurses_stdio_tall, = 0);
 RAWCURSES_GLOBAL(int rawcurses_stdio_wide, = 0);
 RAWCURSES_GLOBAL(int rawcurses_stdio_amiga, = 0);
 RAWCURSES_GLOBAL(int rawcurses_stdio_tw52, = 0);
@@ -3079,7 +3080,8 @@ static int rawcurses_fput_clear(FILE *fh)
     if (rawcurses_stdio_vt52) return fputs("\f" ESCAPE("H") ESCAPE("J"), fh) != EOF;
     if (rawcurses_stdio_amiga) ret = fputs(CSI("H") CSI("J"), fh) != EOF;
     else ret = fputs(CSI("1;1H") CSI("2J"), fh) != EOF;
-    if (rawcurses_stdio_wide
+    if ((rawcurses_stdio_wide ||
+         rawcurses_stdio_tall)
         &&
         (! rawcurses_after_endwin))
     {
@@ -3092,7 +3094,15 @@ static int rawcurses_fput_clear(FILE *fh)
                 if (y) rawcurses_fput_relcup(fh, 1, 0);
             }
             else rawcurses_fput_cup(fh, y, 0);
-            fprintf(fh, ESCAPE("#6"));
+            if (rawcurses_stdio_tall) {
+                if (y % 2) {
+                    fprintf(fh, ESCAPE("#4"));
+                } else {
+                    fprintf(fh, ESCAPE("#3"));
+                }
+            } else {
+                fprintf(fh, ESCAPE("#6"));
+            }
         }
         if (rawcurses_stdio_relcup) rawcurses_fput_relcup(fh, 1 - rawcurses_h, 0);
         else rawcurses_fput_cup(fh, 0, 0);
@@ -6043,6 +6053,11 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
     {
         rawcurses_stdio_wide = *(rawcurses_getenv_boolean("RAWCURSES_WIDE")) ? 1 : 0;
     }
+    rawcurses_stdio_tall = 0;
+    if (rawcurses_getenv_boolean("RAWCURSES_TALL"))
+    {
+        rawcurses_stdio_tall = *(rawcurses_getenv_boolean("RAWCURSES_TALL")) ? 1 : 0;
+    }
     if (rawcurses_getenv_boolean("RAWCURSES_VWMTERM"))
     {
         rawcurses_stdio_vwmterm = *(rawcurses_getenv_boolean("RAWCURSES_VWMTERM")) ? 1 : 0;
@@ -6239,6 +6254,8 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
              (! strcmp(termType, "cxterm"))
              ||
              (! strcmp(termType, "nsterm-16color"))
+             ||
+             (! strcmp(termType, "nsterm-bce"))
              ||
              rawcurses_stdio_vwmterm
              ||
@@ -10478,7 +10495,12 @@ static int mvprintw(int y, int x, const char *s)
 #define resizeterm rawcurses_resizeterm
 static int resizeterm(int y, int x)
 {
-    if (rawcurses_stdio_wide && ! rawcurses_after_endwin) x *= 2;
+    if ((rawcurses_stdio_wide || rawcurses_stdio_tall)
+        &&
+        ! rawcurses_after_endwin)
+    {
+        x *= 2;
+    }
     if (x && y
         &&
         (! (rawcurses_nw || rawcurses_nh)))

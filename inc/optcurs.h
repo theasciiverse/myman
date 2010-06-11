@@ -355,10 +355,16 @@ static int optcurses_addch(chtype ch)
         int y, x;
 
         optcurses_getyx(&y, &x);
-        if (! (y % 2))
+        if ((! (y % 2)) && ((y + 1) < optcurses_h))
         {
+            int y1, x1;
+
             optcurses_move(y + 1, x);
-            optcurses_addch(ch);
+            optcurses_getyx(&y1, &x1);
+            if (y1 % 2)
+            {
+                optcurses_addch(ch);
+            }
             optcurses_move(y, x);
         }
     }
@@ -437,11 +443,18 @@ static int optcurses_clrtoeol(void)
     {
         int y, x;
 
+        optcurses_init();
         optcurses_getyx(&y, &x);
-        if (! (y % 2))
+        if ((! (y % 2)) && ((y + 1) < optcurses_h))
         {
+            int y1, x1;
+
             optcurses_move(y + 1, x);
-            optcurses_clrtoeol();
+            optcurses_getyx(&y1, &x1);
+            if (y1 % 2)
+            {
+                optcurses_clrtoeol();
+            }
             optcurses_move(y, x);
         }
     }
@@ -477,7 +490,7 @@ static int optcurses_clrtobot(void)
         int y, x;
 
         optcurses_getyx(&y, &x);
-        if (! (y % 2))
+        if ((! (y % 2)) && ((y + 1) < optcurses_h))
         {
             int ret;
 
@@ -563,9 +576,18 @@ static int optcurses_addstr(const char *s)
         int y, x;
 
         getyx(stdscr, y, x);
-        move(y + 1, x);
-        addstr(s);
-        move(y, x);
+        if ((! (y % 2)) && ((y + 1) < optcurses_h))
+        {
+            int y1, x1;
+
+            move(y + 1, x);
+            getyx(stdscr, y1, x1);
+            if (y1 % 2)
+            {
+                addstr(s);
+            }
+            move(y, x);
+        }
     }
     return addstr(s);
 }
@@ -581,7 +603,10 @@ static int optcurses_mvprintw(int y, int x, const char *s)
     if (OPTCURSES__TALL)
     {
         y *= 2;
-        mvprintw(y + 1, x, s);
+        if ((! (y % 2)) && ((y + 1) < optcurses_h))
+        {
+            mvprintw(y + 1, x, s);
+        }
     }
     return mvprintw(y, x, s);
 }

@@ -3094,13 +3094,19 @@ static int rawcurses_fput_clear(FILE *fh)
                 if (y) rawcurses_fput_relcup(fh, 1, 0);
             }
             else rawcurses_fput_cup(fh, y, 0);
-            if (rawcurses_stdio_tall) {
-                if (y % 2) {
+            if (rawcurses_stdio_tall)
+            {
+                if (y % 2)
+                {
                     fprintf(fh, ESCAPE("#4"));
-                } else {
+                }
+                else
+                {
                     fprintf(fh, ESCAPE("#3"));
                 }
-            } else {
+            }
+            else
+            {
                 fprintf(fh, ESCAPE("#6"));
             }
         }
@@ -3412,8 +3418,12 @@ static int rawcurses_fput_bel(FILE *fh)
     return fputc('\7', fh) != EOF;
 }
 
+static void rawcurses_getyx(int *y, int *x);
+
 static int rawcurses_fput_clrtobot(FILE *fh)
 {
+    int ret = 0;
+
 #if USE_CONIO
     if (rawcurses_stdio_conio)
     {
@@ -3422,12 +3432,50 @@ static int rawcurses_fput_clrtobot(FILE *fh)
 #endif
     if (rawcurses_stdio_adm3a || rawcurses_stdio_atascii || rawcurses_stdio_petscii) return 0;
     if (rawcurses_stdio_vt52) return fputs(ESCAPE("J"), fh) != EOF;
-    if (rawcurses_stdio_amiga) return fputs(CSI("J"), fh) != EOF;
-    return fputs(CSI("0J"), fh) != EOF;
+    if (rawcurses_stdio_amiga) ret = (fputs(CSI("J"), fh) != EOF);
+    else ret = (fputs(CSI("0J"), fh) != EOF);
+    if ((rawcurses_stdio_wide ||
+         rawcurses_stdio_tall)
+        &&
+        (! rawcurses_after_endwin))
+    {
+        int y;
+        int ox, oy;
+
+        rawcurses_getyx(&oy, &ox);
+        for (y = oy; y < rawcurses_h; y ++)
+        {
+            if (rawcurses_stdio_relcup)
+            {
+                if (y) rawcurses_fput_relcup(fh, 1, 0);
+            }
+            else rawcurses_fput_cup(fh, y, ox);
+            if (rawcurses_stdio_tall)
+            {
+                if (y % 2)
+                {
+                    fprintf(fh, ESCAPE("#4"));
+                }
+                else
+                {
+                    fprintf(fh, ESCAPE("#3"));
+                }
+            }
+            else
+            {
+                fprintf(fh, ESCAPE("#6"));
+            }
+        }
+        if (rawcurses_stdio_relcup) rawcurses_fput_relcup(fh, oy + 1 - rawcurses_h, 0);
+        else rawcurses_fput_cup(fh, oy, ox);
+    }
+    return ret;
 }
 
 static int rawcurses_fput_clrtoeol(FILE *fh)
 {
+    int ret = 0;
+
 #if USE_CONIO
     if (rawcurses_stdio_conio)
     {
@@ -3437,7 +3485,33 @@ static int rawcurses_fput_clrtoeol(FILE *fh)
 #endif
     if (rawcurses_stdio_adm3a || rawcurses_stdio_atascii || rawcurses_stdio_petscii) return 0;
     if (rawcurses_stdio_vt52) return fputs(ESCAPE("K"), fh) != EOF;
-    return fputs(CSI("0K"), fh) != EOF;
+    ret = (fputs(CSI("0K"), fh) != EOF);
+    if ((rawcurses_stdio_wide ||
+         rawcurses_stdio_tall)
+        &&
+        (! rawcurses_after_endwin))
+    {
+        int x, y;
+
+        rawcurses_getyx(&y, &x);
+        if (rawcurses_stdio_tall)
+        {
+            if (y % 2)
+            {
+                fprintf(fh, ESCAPE("#4"));
+            }
+            else
+            {
+                fprintf(fh, ESCAPE("#3"));
+            }
+        }
+        else
+        {
+            fprintf(fh, ESCAPE("#6"));
+        }
+        if (! rawcurses_stdio_relcup) rawcurses_fput_cup(fh, y, x);
+    }
+    return ret;
 }
 
 static int rawcurses_fput_relcup(FILE *fh, int dy, int dx)
@@ -5345,8 +5419,6 @@ static int addch(chtype ch);
 #endif
 #define addstr rawcurses_addstr
 static int addstr(const char *s);
-
-static void rawcurses_getyx(int *y, int *x);
 
 #ifdef erase
 #undef erase

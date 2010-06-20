@@ -1,4 +1,4 @@
-﻿1x1~6 ABOUT="Single-character tiles using raw tile characters (CP437 or UCS/Unicode character graphics) with the custom tile8x8 font"
+﻿1x1~6 ABOUT="Single-character tiles using raw tile characters (CP437 or UCS/Unicode character graphics) with the custom chr8 font"
 
 00
 : 

@@ -2050,7 +2050,10 @@ tinykame \
 bigpac \
 pacmaine \
 mazeman2 \
-pakus
+pakus \
+and \
+and2 \
+and3
 
 all_sizes = \
 small \
@@ -3488,6 +3491,12 @@ lvl/ackman.asc \
 lvl/ackman.txt \
 lvl/alien.asc \
 lvl/alien.txt \
+lvl/and.asc \
+lvl/and.txt \
+lvl/and2.asc \
+lvl/and2.txt \
+lvl/and3.asc \
+lvl/and3.txt \
 lvl/apollo.asc \
 lvl/apollo.txt \
 lvl/armpac2.asc \

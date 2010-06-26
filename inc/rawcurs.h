@@ -150,6 +150,16 @@
 #ifndef MYMAN_RAWCURS_H_INCLUDED
 #define MYMAN_RAWCURS_H_INCLUDED 1
 
+/* string matching macros */
+#define RAWCURSES__NE(s1,s2) (strcmp((s1), (s2)))
+#define RAWCURSES__EQ(s1,s2) (! RAWCURSES__NE((s1), (s2)))
+#define RAWCURSES__STARTSWITH(s1,s2) (! strncmp((s1), (s2), strlen((s2))))
+#define RAWCURSES__ENDSWITH(s1,s2) (myman_strrstr((s1), (s2)) && ! strcmp(myman_strrstr((s1), (s2)), (s2)))
+#define RAWCURSES__CONTAINS(s1,s2) (strstr((s1), (s2)))
+/* NOTE: s2 must be a string literal, and this relies on the compiler
+ * merging successive string literals, as in ANSI C */
+#define RAWCURSES__HASFLAG(s1,s2) (RAWCURSES__CONTAINS((s1), ("-"s2"-")) || RAWCURSES__ENDSWITH((s1), ("-"s2)))
+
 #if defined(WIN32)
 #ifndef USE_WINCONSOLE
 #define USE_WINCONSOLE 1
@@ -671,11 +681,11 @@ int rawcurses_isatty(int fd)
         return 0;
     }
 #endif
-    if ((! strcmp(namebuf, "dev:console"))
+    if (RAWCURSES__EQ(namebuf, "dev:console")
         ||
-        (! strncmp(namebuf, "dev:tty", strlen("dev:tty")))
+        RAWCURSES__STARTSWITH(namebuf, "dev:tty")
         ||
-        (! strncmp(namebuf, "dev:pty", strlen("dev:pty"))))
+        RAWCURSES__STARTSWITH(namebuf, "dev:pty"))
     {
         return 1;
     }
@@ -1587,6 +1597,7 @@ RAWCURSES_GLOBAL(int rawcurses_stdio_bterm, = 0);
 RAWCURSES_GLOBAL(int rawcurses_stdio_vt52, = 0);
 RAWCURSES_GLOBAL(int rawcurses_stdio_st52, = 0);
 RAWCURSES_GLOBAL(int rawcurses_stdio_tall, = 0);
+RAWCURSES_GLOBAL(int rawcurses_stdio_dwl, = 0);
 RAWCURSES_GLOBAL(int rawcurses_stdio_wide, = 0);
 RAWCURSES_GLOBAL(int rawcurses_stdio_amiga, = 0);
 RAWCURSES_GLOBAL(int rawcurses_stdio_tw52, = 0);
@@ -1786,6 +1797,7 @@ static const char *RAWCURSES_VT52LIKE =
     "mskermit227am" "\0"
     "ncr260vppp" "\0"
     "ncr7901" "\0"
+    "nsterm-vt52" "\0"
     "p19" "\0"
     "pc-coherent" "\0"
     "pc-venix" "\0"
@@ -3217,9 +3229,9 @@ static int rawcurses_fput_rmcup(FILE *fh, int lines)
         usleep(100000UL);
         fprintf(fh,
                 "%s",
-                strncmp(rawcurses_term_type(), "petscii-unshifted", strlen("petscii-unshifted"))
-                ? "\011\216\216\011\016\016"
-                : "\011\016\016\011\216\216");
+                RAWCURSES__STARTSWITH(rawcurses_term_type(), "petscii-unshifted")
+                ? "\011\016\016\011\216\216"
+                : "\011\216\216\011\016\016");
         fflush(fh);
         usleep(100000UL);
         return 1;
@@ -5604,7 +5616,7 @@ static const char *rawcurses_getenv_boolean(const char *var)
     val = myman_getenv(var);
     if (val)
     {
-        if (! strcmp(val, "0")) val = "";
+        if (RAWCURSES__EQ(val, "0")) val = "";
     }
     return val;
 }
@@ -5631,33 +5643,31 @@ static const char *rawcurses_term_type(void)
     /* attempt to infer actual terminal type */
     if (termType
         &&
-        (! strcmp(termType, "xterm"))
+        RAWCURSES__EQ(termType, "xterm")
         &&
-        (xEnvironment
-         &&
-         (strlen(xEnvironment) >= strlen("CXterm"))
-         &&
-         (! strcmp(xEnvironment + strlen(xEnvironment) - strlen("CXterm"), "CXterm"))))
+        xEnvironment
+        &&
+        RAWCURSES__ENDSWITH(xEnvironment, "CXterm"))
     {
         termType = "cxterm";
     }
     else if (termType
              &&
-             (! strcmp(termType, "rxvt"))
+             RAWCURSES__EQ(termType, "rxvt")
              &&
              colorTermType
              &&
-             (! strcmp(colorTermType, "rxvt")))
+             RAWCURSES__EQ(colorTermType, "rxvt"))
     {
         termType = "aterm";
     }
     else if (termType
              &&
-             (! strcmp(termType, "xterm"))
+             RAWCURSES__EQ(termType, "xterm")
              &&
              colorTermType
              &&
-             (! strcmp(colorTermType, ""))
+             RAWCURSES__EQ(colorTermType, "")
              &&
              konsoleDcop)
     {
@@ -5665,53 +5675,53 @@ static const char *rawcurses_term_type(void)
     }
     else if (termType
              &&
-             (! strcmp(termType, "xterm"))
+             RAWCURSES__EQ(termType, "xterm")
              &&
              colorTermType
              &&
-             strcmp(colorTermType, "")
+             RAWCURSES__NE(colorTermType, "")
              &&
-             strcmp(colorTermType, "1")
+             RAWCURSES__NE(colorTermType, "1")
              &&
-             strcmp(colorTermType, "0"))
+             RAWCURSES__NE(colorTermType, "0"))
     {
         termType = colorTermType;
     }
     else if (termType
              &&
-             (! strcmp(termType, "xterm-color"))
+             RAWCURSES__EQ(termType, "xterm-color")
              &&
              termProgram
              &&
-             (! strcmp(termProgram, "iTerm.app")))
+             RAWCURSES__EQ(termProgram, "iTerm.app"))
     {
         termType = "iTerm.app";
     }
     else if (termType
              &&
-             ((! strcmp(termType, "vt100"))
+             (RAWCURSES__EQ(termType, "vt100")
               ||
-              (! strcmp(termType, "xterm-color")))
+              RAWCURSES__EQ(termType, "xterm-color"))
              &&
              termProgram
              &&
-             (! strcmp(termProgram, "A" /* Hmm... */ "pple_Terminal")))
+             RAWCURSES__EQ(termProgram, "A" /* Hmm... */ "pple_Terminal"))
     {
         if (termProgramVersion
             &&
             (atoi(termProgramVersion) <= 41))
         {
-            termType = "nsterm";
+            termType = "nsterm-old";
         }
-        else if (! strcmp(termType, "xterm-color"))
+        else if (RAWCURSES__EQ(termType, "xterm-color"))
         {
-            if (atoi(termProgramVersion) >= 100)
+            if (atoi(termProgramVersion) >= 240)
             {
                 termType = "nsterm-16color";
             }
             else
             {
-                termType = "nsterm-c-acs";
+                termType = "nsterm-bce";
             }
         }
         else
@@ -5721,7 +5731,7 @@ static const char *rawcurses_term_type(void)
     }
     else if (termType
              &&
-             (! strcmp(termType, "xterm"))
+             RAWCURSES__EQ(termType, "xterm")
              &&
              mlterm)
     {
@@ -5731,25 +5741,25 @@ static const char *rawcurses_term_type(void)
              &&
              (! x11display)
              &&
-             (! strcmp(colorTermType, "rxvt-xpm"))
+             RAWCURSES__EQ(colorTermType, "rxvt-xpm")
              &&
              termType
              &&
-             ((! strcmp(termType, "xterm"))
+             (RAWCURSES__EQ(termType, "xterm")
               ||
-              (! strcmp(termType, "rxvt"))))
+              RAWCURSES__EQ(termType, "rxvt")))
     {
         termType = "rxvt-noacs";
     }
     else if (colorTermType
              &&
-             strcmp("", colorTermType)
+             RAWCURSES__NE("", colorTermType)
              &&
-             strcmp("0", colorTermType)
+             RAWCURSES__NE("0", colorTermType)
              &&
              termType
              &&
-             (! strcmp(termType, "tw52")))
+             RAWCURSES__EQ(termType, "tw52"))
     {
         termType = "tw52-color";
     }
@@ -5803,9 +5813,9 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
     rawcurses_stdio_tw52 = 0;
     if (termType
         &&
-        ((! strncmp(termType, "stv52", strlen("stv52")))
+        (RAWCURSES__STARTSWITH(termType, "stv52")
          ||
-         (! strncmp(termType, "tw52", strlen("tw52")))))
+         RAWCURSES__STARTSWITH(termType, "tw52")))
     {
         /* internal flag for handling the ever-quirky TosWin2 in VT52
          * mode */
@@ -5828,33 +5838,41 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
     else
     {
         rawcurses_16color = 1;
-        if (strstr(termType, "-16color-")
+        if (RAWCURSES__EQ(termType, "nsterm")
             ||
-            (strstr(termType, "-16color")
+            (RAWCURSES__STARTSWITH(termType, "nsterm-")
              &&
-             (! strcmp(termType + strlen(termType) - strlen("-16color"), "-16color"))))
+             (RAWCURSES__HASFLAG(termType, "bce")
+              ||
+              RAWCURSES__HASFLAG(termType, "dwl")
+              ||
+              RAWCURSES__HASFLAG(termType, "16color"))))
         {
             rawcurses_16color = 1;
         }
-        else if ((! strcmp(termType, "kterm"))
+        else if (RAWCURSES__EQ(termType, "kterm")
                  ||
-                 (! strcmp(termType, "cxterm"))
+                 RAWCURSES__EQ(termType, "cxterm")
                  ||
-                 (! strcmp(termType, "eterm"))
+                 RAWCURSES__EQ(termType, "eterm")
                  ||
-                 (! strcmp(termType, "eterm-color"))
+                 RAWCURSES__EQ(termType, "eterm-color")
                  ||
-                 ((! strncmp(termType, "nsterm", strlen("termType")))
+                 (RAWCURSES__STARTSWITH(termType, "nsterm-")
                   &&
-                  (! strstr(termType, "-c-"))
-                  &&
-                  ((! strstr(termType, "-c"))
+                  (RAWCURSES__HASFLAG(termType, "c")
                    ||
-                   strcmp(termType + strlen(termType) - strlen("-c"), "-c")))
+                   RAWCURSES__HASFLAG(termType, "7")
+                   ||
+                   RAWCURSES__HASFLAG(termType, "s")
+                   ||
+                   RAWCURSES__HASFLAG(termType, "acs")
+                   ||
+                   RAWCURSES__HASFLAG(termType, "old")))
                  ||
-                 (! strncmp(termType, "darwin", strlen("darwin")))
+                 RAWCURSES__STARTSWITH(termType, "darwin")
                  ||
-                 (! strncmp(termType, "xnuppc", strlen("xnuppc"))))
+                 RAWCURSES__STARTSWITH(termType, "xnuppc"))
         {
             rawcurses_16color = 0;
         }
@@ -5876,27 +5894,23 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
     else
     {
         rawcurses_stdio_256color = 0;
-        if ((! strcmp(termType, "konsole"))
+        if (RAWCURSES__EQ(termType, "konsole")
             ||
-            (! strcmp(termType, "Eterm"))
+            RAWCURSES__EQ(termType, "Eterm")
             ||
-            (! strcmp(termType, "Eterm-color"))
+            RAWCURSES__EQ(termType, "Eterm-color")
             ||
-            (! strcmp(termType, "iTerm.app"))
+            RAWCURSES__EQ(termType, "iTerm.app")
             ||
-            (! strcmp(termType, "Terminal"))
+            RAWCURSES__EQ(termType, "Terminal")
             ||
-            (! strcmp(termType, "putty"))
+            RAWCURSES__EQ(termType, "putty")
             ||
-            (! strcmp(termType, "rxvt-cygwin"))
+            RAWCURSES__EQ(termType, "rxvt-cygwin")
             ||
-            (! strcmp(termType, "rxvt-cygwin-native"))
+            RAWCURSES__EQ(termType, "rxvt-cygwin-native")
             ||
-            strstr(termType, "-256color-")
-            ||
-            (strstr(termType, "-256color")
-             &&
-             (! strcmp(termType + strlen(termType) - strlen("-256color"), "-256color"))))
+            RAWCURSES__HASFLAG(termType, "256color"))
         {
             rawcurses_stdio_256color = 1;
         }
@@ -5908,13 +5922,9 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
     else
     {
         rawcurses_stdio_88color = 0;
-        if ((! strcmp(termType, "rxvt-unicode"))
+        if (RAWCURSES__EQ(termType, "rxvt-unicode")
             ||
-            strstr(termType, "-88color-")
-            ||
-            (strstr(termType, "-88color")
-             &&
-             (! strcmp(termType + strlen(termType) - strlen("-88color"), "-88color"))))
+            RAWCURSES__HASFLAG(termType, "88color"))
         {
             rawcurses_stdio_88color = 1;
         }
@@ -5926,29 +5936,29 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
     else
     {
         rawcurses_stdio_ccc_linux = 0;
-        if ((! strcmp(termType, "Eterm"))
+        if (RAWCURSES__EQ(termType, "Eterm")
             ||
-            (! strcmp(termType, "Eterm-color"))
+            RAWCURSES__EQ(termType, "Eterm-color")
             ||
-            (! strcmp(termType, "linux"))
+            RAWCURSES__EQ(termType, "linux")
             ||
-            (! strcmp(termType, "linux-c"))
+            RAWCURSES__EQ(termType, "linux-c")
             ||
-            (! strcmp(termType, "linux-c-nc"))
+            RAWCURSES__EQ(termType, "linux-c-nc")
             ||
-            (! strcmp(termType, "linux-nic"))
+            RAWCURSES__EQ(termType, "linux-nic")
             ||
-            (! strcmp(termType, "linux-koi8"))
+            RAWCURSES__EQ(termType, "linux-koi8")
             ||
-            (! strcmp(termType, "linux-lat"))
+            RAWCURSES__EQ(termType, "linux-lat")
             ||
-            (! strcmp(termType, "linux-koi8r"))
+            RAWCURSES__EQ(termType, "linux-koi8r")
             ||
-            (! strcmp(termType, "linux-vt"))
+            RAWCURSES__EQ(termType, "linux-vt")
             ||
-            (! strcmp(termType, "linux-16color"))
+            RAWCURSES__EQ(termType, "linux-16color")
             ||
-            (! strcmp(termType, "putty")))
+            RAWCURSES__EQ(termType, "putty"))
         {
             rawcurses_stdio_ccc_linux = 1;
         }
@@ -5960,21 +5970,21 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
     else
     {
         rawcurses_stdio_blink = 0;
-        if ((! strcmp(termType, "Eterm"))
+        if (RAWCURSES__EQ(termType, "Eterm")
             ||
-            (! strcmp(termType, "Eterm-color"))
+            RAWCURSES__EQ(termType, "Eterm-color")
             ||
-            (! strcmp(termType, "uuterm"))
+            RAWCURSES__EQ(termType, "uuterm")
             ||
-            (! strcmp(termType, "aterm"))
+            RAWCURSES__EQ(termType, "aterm")
             ||
-            (! strncmp(termType, "rxvt", strlen("rxvt")))
+            RAWCURSES__STARTSWITH(termType, "rxvt")
             ||
-            (! strcmp(termType, "putty"))
+            RAWCURSES__EQ(termType, "putty")
             ||
-            (! strncmp(termType, "linux", strlen("linux")))
+            RAWCURSES__STARTSWITH(termType, "linux")
             ||
-            (! strncmp(termType, "cygwin", strlen("cygwin"))))
+            RAWCURSES__STARTSWITH(termType, "cygwin"))
         {
             rawcurses_stdio_blink = 1;
         }
@@ -5986,33 +5996,33 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
     else
     {
         rawcurses_stdio_ccc = 0;
-        if ((! strcmp(termType, "Eterm"))
+        if (RAWCURSES__EQ(termType, "Eterm")
             ||
-            (! strcmp(termType, "Eterm-color"))
+            RAWCURSES__EQ(termType, "Eterm-color")
             ||
-            (! strcmp(termType, "aterm"))
+            RAWCURSES__EQ(termType, "aterm")
             ||
-            (! strcmp(termType, "rxvt"))
+            RAWCURSES__EQ(termType, "rxvt")
             ||
-            (! strcmp(termType, "rxvt-16color"))
+            RAWCURSES__EQ(termType, "rxvt-16color")
             ||
-            (! strcmp(termType, "rxvt-256color"))
+            RAWCURSES__EQ(termType, "rxvt-256color")
             ||
-            (! strcmp(termType, "rxvt-color"))
+            RAWCURSES__EQ(termType, "rxvt-color")
             ||
-            (! strcmp(termType, "rxvt-cygwin"))
+            RAWCURSES__EQ(termType, "rxvt-cygwin")
             ||
-            (! strcmp(termType, "rxvt-cygwin-native"))
+            RAWCURSES__EQ(termType, "rxvt-cygwin-native")
             ||
-            (! strcmp(termType, "rxvt-unicode"))
+            RAWCURSES__EQ(termType, "rxvt-unicode")
             ||
-            (! strcmp(termType, "rxvt-xpm"))
+            RAWCURSES__EQ(termType, "rxvt-xpm")
             ||
-            (! strcmp(termType, "xterm"))
+            RAWCURSES__EQ(termType, "xterm")
             ||
-            (! strcmp(termType, "xterm-88color"))
+            RAWCURSES__EQ(termType, "xterm-88color")
             ||
-            (! strcmp(termType, "xterm-256color")))
+            RAWCURSES__EQ(termType, "xterm-256color"))
         {
             rawcurses_stdio_ccc = 1;
         }
@@ -6036,25 +6046,25 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
     rawcurses_raw = 0;
     rawcurses_stdio_utf8 = locale_is_utf8();
     rawcurses_winsize_on_clear = 1;
-    if ((! strcmp(termType, "Eterm"))
+    if (RAWCURSES__EQ(termType, "Eterm")
         ||
-        (! strcmp(termType, "Eterm-color"))
+        RAWCURSES__EQ(termType, "Eterm-color")
         ||
-        (! strcmp(termType, "aterm"))
+        RAWCURSES__EQ(termType, "aterm")
         ||
-        (! strcmp(termType, "eterm"))
+        RAWCURSES__EQ(termType, "eterm")
         ||
-        (! strcmp(termType, "eterm-color"))
+        RAWCURSES__EQ(termType, "eterm-color")
         ||
-        ((! strncmp(termType, "rxvt", strlen("rxvt")))
+        (RAWCURSES__STARTSWITH(termType, "rxvt")
          &&
-         strcmp(termType, "rxvt-unicode")))
+         RAWCURSES__NE(termType, "rxvt-unicode")))
     {
         /* (m)rxvt is still living in the pre-UTF-8 dark ages. it gets
          * ASCII for now. likewise the Emacs "eterm"/"eterm-color". */
         rawcurses_stdio_utf8 = 0;
     }
-    else if (! strncmp(termType, "cygwin", strlen("cygwin")))
+    else if (RAWCURSES__STARTSWITH(termType, "cygwin"))
     {
         /* severe problems reading the winsize response mean we only try to do it at startup */
         rawcurses_winsize_on_clear = 0;
@@ -6074,7 +6084,7 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
         rawcurses_stdio_vt52 = 0;
         while (strlen(vt52like))
         {
-            if (! strcmp(termType, vt52like))
+            if (RAWCURSES__EQ(termType, vt52like))
             {
                 rawcurses_stdio_vt52 = 1;
                 break;
@@ -6093,7 +6103,7 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
         rawcurses_stdio_amiga = 0;
         while (strlen(amigalike))
         {
-            if (! strncmp(termType, amigalike, strlen(amigalike)))
+            if (RAWCURSES__STARTSWITH(termType, amigalike))
             {
                 rawcurses_stdio_amiga = 1;
                 break;
@@ -6112,7 +6122,7 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
         rawcurses_stdio_st52 = 0;
         while (strlen(st52like))
         {
-            if (! strncmp(termType, st52like, strlen(st52like)))
+            if (RAWCURSES__STARTSWITH(termType, st52like))
             {
                 rawcurses_stdio_st52 = 1;
                 break;
@@ -6120,7 +6130,16 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
             st52like += strlen(st52like) + 1;
         }
     }
-    rawcurses_stdio_wide = 0;
+    rawcurses_stdio_dwl = 0;
+    if (RAWCURSES__HASFLAG(termType, "dwl"))
+    {
+        rawcurses_stdio_dwl = 1;
+    }
+    if (rawcurses_getenv_boolean("RAWCURSES_DWL"))
+    {
+        rawcurses_stdio_dwl = *(rawcurses_getenv_boolean("RAWCURSES_DWL")) ? 1 : 0;
+    }
+    rawcurses_stdio_wide = rawcurses_stdio_dwl;
     if (rawcurses_getenv_boolean("RAWCURSES_WIDE"))
     {
         rawcurses_stdio_wide = *(rawcurses_getenv_boolean("RAWCURSES_WIDE")) ? 1 : 0;
@@ -6137,7 +6156,7 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
     else
     {
         rawcurses_stdio_vwmterm = 0;
-        if (! strcmp(termType, "vwmterm"))
+        if (RAWCURSES__EQ(termType, "vwmterm"))
         {
             rawcurses_stdio_vwmterm = 1;
         }
@@ -6153,7 +6172,7 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
         rawcurses_stdio_adm3a = 0;
         while (strlen(adm3alike))
         {
-            if (! strcmp(termType, adm3alike))
+            if (RAWCURSES__EQ(termType, adm3alike))
             {
                 rawcurses_stdio_adm3a = 1;
                 break;
@@ -6168,7 +6187,7 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
     else
     {
         rawcurses_stdio_atascii = 0;
-        if (! strncmp(termType, "atascii", strlen("atascii")))
+        if (RAWCURSES__STARTSWITH(termType, "atascii"))
         {
             rawcurses_stdio_atascii = 1;
         }
@@ -6180,7 +6199,7 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
     else
     {
         rawcurses_stdio_petscii = 0;
-        if (! strncmp(termType, "petscii", strlen("petscii")))
+        if (RAWCURSES__STARTSWITH(termType, "petscii"))
         {
             rawcurses_stdio_petscii = 1;
         }
@@ -6192,7 +6211,7 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
     else
     {
         rawcurses_stdio_petscii_shifted = 1;
-        if (! strncmp(termType, "petscii-unshifted", strlen("petscii-unshifted")))
+        if (RAWCURSES__STARTSWITH(termType, "petscii-unshifted"))
         {
             rawcurses_stdio_petscii_shifted = 0;
         }
@@ -6220,7 +6239,7 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
         rawcurses_stdio_idchok = 1;
         if (rawcurses_stdio_atascii
             &&
-            (! strncmp(termType, "atascii-23", strlen("atascii-23"))))
+            RAWCURSES__STARTSWITH(termType, "atascii-23"))
         {
             rawcurses_stdio_idchok = 0;
         }
@@ -6236,9 +6255,9 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
         rawcurses_stdio_decterm = 0;
         while (strlen(dectermlike))
         {
-            if ((! strcmp(termType, dectermlike))
+            if (RAWCURSES__EQ(termType, dectermlike)
                 ||
-                ((! strncmp(termType, dectermlike, strlen(dectermlike)))
+                (RAWCURSES__STARTSWITH(termType, dectermlike)
                  &&
                  (termType[strlen(dectermlike)] == '-')))
             {
@@ -6259,17 +6278,17 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
             ||
             rawcurses_stdio_vt52
             ||
-            (! strncmp(termType, "pcansi", strlen("pcansi")))
+            RAWCURSES__STARTSWITH(termType, "pcansi")
             ||
-            (! strncmp(termType, "ansi", strlen("ansi")))
+            RAWCURSES__STARTSWITH(termType, "ansi")
             ||
-            (! strncmp(termType, "ibmpc", strlen("ibmpc")))
+            RAWCURSES__STARTSWITH(termType, "ibmpc")
             ||
-            (! strncmp(termType, "origibmpc", strlen("origibmpc")))
+            RAWCURSES__STARTSWITH(termType, "origibmpc")
             ||
-            (! strncmp(termType, "nansi.sys", strlen("nansi.sys")))
+            RAWCURSES__STARTSWITH(termType, "nansi.sys")
             ||
-            (! strncmp(termType, "cygwin", strlen("cygwin"))))
+            RAWCURSES__STARTSWITH(termType, "cygwin"))
         {
             rawcurses_stdio_iso2022 = 0;
         }
@@ -6281,73 +6300,71 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
     else
     {
         rawcurses_stdio_acs = 0;
-        if (((! strncmp(termType, "vt1", strlen("vt1")))
+        if ((RAWCURSES__STARTSWITH(termType, "vt1")
              ||
-             (! strncmp(termType, "vt2", strlen("vt2")))
+             RAWCURSES__STARTSWITH(termType, "vt2")
              ||
-             (! strncmp(termType, "vt3", strlen("vt3")))
+             RAWCURSES__STARTSWITH(termType, "vt3")
              ||
-             (! strncmp(termType, "rxvt", strlen("rxvt")))
+             RAWCURSES__STARTSWITH(termType, "rxvt")
              ||
-             (! strncmp(termType, "tw100", strlen("tw100")))
+             RAWCURSES__STARTSWITH(termType, "tw100")
              ||
 #if 0
              /* FIXME: this should be re-enabled once we find a way to
               * leave altcharset mode in TosWin II's VT52 mode */
-             (! strncmp(termType, "tw52", strlen("tw52")))
+             RAWCURSES__STARTSWITH(termType, "tw52")
              ||
 #endif
-             (! strcmp(termType, "iTerm.app"))
+             RAWCURSES__EQ(termType, "iTerm.app")
              ||
-             (! strcmp(termType, "aterm"))
+             RAWCURSES__EQ(termType, "aterm")
              ||
-             (! strcmp(termType, "kterm"))
+             RAWCURSES__EQ(termType, "kterm")
              ||
-             (! strcmp(termType, "mlterm"))
+             RAWCURSES__EQ(termType, "mlterm")
              ||
-             (! strcmp(termType, "Eterm"))
+             RAWCURSES__EQ(termType, "Eterm")
              ||
-             (! strcmp(termType, "Eterm-color"))
+             RAWCURSES__EQ(termType, "Eterm-color")
              ||
-             (! strcmp(termType, "arm100"))
+             RAWCURSES__EQ(termType, "arm100")
              ||
-             (! strcmp(termType, "arm100-am"))
+             RAWCURSES__EQ(termType, "arm100-am")
              ||
-             (! strcmp(termType, "konsole"))
+             RAWCURSES__EQ(termType, "konsole")
              ||
-             (! strcmp(termType, "gnome-terminal"))
+             RAWCURSES__EQ(termType, "gnome-terminal")
              ||
-             (! strcmp(termType, "gnome"))
+             RAWCURSES__EQ(termType, "gnome")
              ||
-             (! strncmp(termType, "gnome-", strlen("gnome-")))
+             RAWCURSES__STARTSWITH(termType, "gnome-")
              ||
-             (! strcmp(termType, "Terminal"))
+             RAWCURSES__EQ(termType, "Terminal")
              ||
-             (! strcmp(termType, "cxterm"))
+             RAWCURSES__EQ(termType, "cxterm")
              ||
-             (! strcmp(termType, "nsterm-16color"))
+             RAWCURSES__EQ(termType, "nsterm")
              ||
-             (! strcmp(termType, "nsterm-bce"))
+             (RAWCURSES__STARTSWITH(termType, "nsterm-")
+              &&
+              (RAWCURSES__HASFLAG(termType, "bce")
+               ||
+               RAWCURSES__HASFLAG(termType, "dwl")
+               ||
+               RAWCURSES__HASFLAG(termType, "16color")))
              ||
              rawcurses_stdio_vwmterm
              ||
-             (! strncmp(termType, "xterm", strlen("xterm")))
+             RAWCURSES__STARTSWITH(termType, "xterm")
              ||
-             (strstr(termType, "-acs-")
-              ||
-              (strstr(termType, "-acs")
-               &&
-               (! strcmp(termType + strlen(termType) - strlen("-acs"), "-acs")))))
+             RAWCURSES__HASFLAG(termType, "acs"))
             &&
-            ((! strstr(termType, "-noacs-"))
-             &&
-             ((! strstr(termType, "-noacs"))
-              ||
-              strcmp(termType + strlen(termType) - strlen("-noacs"), "-noacs")))
+            (! RAWCURSES__HASFLAG(termType, "noacs"))
             &&
-            strcmp(termType, "rxvt-cygwin")
+            RAWCURSES__NE(termType, "rxvt-cygwin")
             &&
-            strcmp(termType, "rxvt-cygwin-native"))
+            RAWCURSES__NE(termType, "rxvt-cygwin-native"))
         {
             /* HACK: avoid ACS in cygwin rxvt running in native Win32
              * GUI mode since the font lacks the ACS glyphs */
@@ -6363,7 +6380,7 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
         rawcurses_stdio_acs_nobullet = 0;
         /* HACK: avoid ACS bullet in nsterm since it is fullwidth in
          * the default setup */
-        if (! strncmp(termType, "nsterm", strlen("nsterm")))
+        if (RAWCURSES__STARTSWITH(termType, "nsterm"))
         {
             rawcurses_stdio_acs_nobullet = 1;
         }
@@ -6385,29 +6402,27 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
             ||
             (rawcurses_16color
              &&
-             ((! strcmp(termType, "konsole"))
+             (RAWCURSES__EQ(termType, "konsole")
               ||
-              (! strcmp(termType, "gnome-terminal"))
+              RAWCURSES__EQ(termType, "gnome-terminal")
               ||
-              (! strcmp(termType, "gnome"))
+              RAWCURSES__EQ(termType, "gnome")
               ||
-              (! strncmp(termType, "gnome-", strlen("gnome-")))
+              RAWCURSES__STARTSWITH(termType, "gnome-")
               ||
-              (! strcmp(termType, "Terminal"))
+              RAWCURSES__EQ(termType, "Terminal")
               ||
-              (! strcmp(termType, "iTerm.app"))
+              RAWCURSES__EQ(termType, "iTerm.app")
               ||
-              (! strncmp(termType, "nsterm-c", strlen("nsterm-c")))
+              RAWCURSES__STARTSWITH(termType, "nsterm")
               ||
-              (! strcmp(termType, "nsterm-16color"))
-              ||
-              (! strncmp(termType, "xterm", strlen("xterm")))))
+              RAWCURSES__STARTSWITH(termType, "xterm")))
             ||
             rawcurses_stdio_decterm
             ||
-            (! strncmp(termType, "darwin", strlen("darwin")))
+            RAWCURSES__STARTSWITH(termType, "darwin")
             ||
-            (! strncmp(termType, "xnuppc", strlen("xnuppc"))))
+            RAWCURSES__STARTSWITH(termType, "xnuppc"))
         {
             rawcurses_stdio_nocolorbold = 1;
         }
@@ -6423,7 +6438,7 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
         rawcurses_stdio_bterm = 0;
         while (strlen(btermlike))
         {
-            if (! strcmp(termType, btermlike))
+            if (RAWCURSES__EQ(termType, btermlike))
             {
                 rawcurses_stdio_bterm = 1;
                 break;
@@ -6442,7 +6457,7 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
         rawcurses_stdio_acs_h19 = 0;
         while (strlen(h19like))
         {
-            if (! strcmp(termType, h19like))
+            if (RAWCURSES__EQ(termType, h19like))
             {
                 rawcurses_stdio_acs_h19 = 1;
                 break;
@@ -6461,7 +6476,7 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
         rawcurses_stdio_wy60 = 0;
         while (strlen(wyse60like))
         {
-            if (! strcmp(termType, wyse60like))
+            if (RAWCURSES__EQ(termType, wyse60like))
             {
                 rawcurses_stdio_wy60 = 1;
                 break;
@@ -6484,7 +6499,7 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
         rawcurses_stdio_acs_wy60 = rawcurses_stdio_wy60;
         while (strlen(acs_wy60like))
         {
-            if (! strcmp(termType, acs_wy60like))
+            if (RAWCURSES__EQ(termType, acs_wy60like))
             {
                 rawcurses_stdio_acs_wy60 = 1;
                 break;
@@ -6503,7 +6518,7 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
         rawcurses_stdio_kaypro2x = 0;
         while (strlen(wyse60like))
         {
-            if (! strcmp(termType, wyse60like))
+            if (RAWCURSES__EQ(termType, wyse60like))
             {
                 rawcurses_stdio_kaypro2x = 1;
                 break;
@@ -6526,7 +6541,7 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
         rawcurses_stdio_acs_kaypro2x = rawcurses_stdio_kaypro2x;
         while (strlen(acs_kaypro2xlike))
         {
-            if (! strcmp(termType, acs_kaypro2xlike))
+            if (RAWCURSES__EQ(termType, acs_kaypro2xlike))
             {
                 rawcurses_stdio_acs_kaypro2x = 1;
                 break;
@@ -6541,11 +6556,11 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
     else
     {
         rawcurses_stdio_noswapdots = 0;
-        if ((! strncmp(termType, "tw100", strlen("tw100")))
+        if (RAWCURSES__STARTSWITH(termType, "tw100")
             ||
-            (! strncmp(termType, "tw52", strlen("tw52")))
+            RAWCURSES__STARTSWITH(termType, "tw52")
             ||
-            (! strcmp(termType, "vwmterm")))
+            RAWCURSES__EQ(termType, "vwmterm"))
         {
             rawcurses_stdio_noswapdots = 1;
         }
@@ -6581,7 +6596,7 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
         rawcurses_stdio_cp437 = 0;
         while (strlen(cp437like))
         {
-            if (! strcmp(termType, cp437like))
+            if (RAWCURSES__EQ(termType, cp437like))
             {
                 rawcurses_stdio_cp437 = 1;
                 break;
@@ -6685,6 +6700,10 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
     {
         rawcurses_w = (columns && atoi(columns)) ? atoi(columns) : 0;
         rawcurses_h = (lines && atoi(lines)) ? atoi(lines) : 0;
+        if ((rawcurses_stdio_wide || rawcurses_stdio_tall) && rawcurses_stdio_dwl)
+        {
+            rawcurses_w *= 2;
+        }
     }
     rawcurses_x = -1;
     rawcurses_y = -1;
@@ -6831,7 +6850,7 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
         stdindev = ttyname(fileno(stdin));
         if (stdindev
             &&
-            (! strcmp(stdindev, "/dev/con")))
+            RAWCURSES__EQ(stdindev, "/dev/con"))
         {
             rawcurses_stdio_stcon = 1;
         }
@@ -6939,7 +6958,14 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
         if (! ioctl(fileno(stdout), TIOCGWINSZ, &wsz))
         {
             if (! rawcurses_h) rawcurses_h = wsz.ws_row;
-            if (! rawcurses_w) rawcurses_w = wsz.ws_col;
+            if (! rawcurses_w)
+            {
+                rawcurses_w = wsz.ws_col;
+                if ((rawcurses_stdio_wide || rawcurses_stdio_tall) && rawcurses_stdio_dwl)
+                {
+                    rawcurses_w *= 2;
+                }
+            }
         }
 #else
 #ifdef TIOCGSIZE
@@ -6948,7 +6974,14 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
         if (! ioctl(fileno(stdout), TIOCGSIZE, &tsz))
         {
             if (! rawcurses_h) rawcurses_h = tsz.ts_lines;
-            if (! rawcurses_w) rawcurses_w = tsz.ts_cols;
+            if (! rawcurses_w)
+            {
+                rawcurses_w = tsz.ts_cols;
+                if ((rawcurses_stdio_wide || rawcurses_stdio_tall) && rawcurses_stdio_dwl)
+                {
+                    rawcurses_w *= 2;
+                }
+            }
         }
 #endif
 #endif
@@ -7099,7 +7132,7 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
             ||
             (stdindev
              &&
-             (! strcmp(stdindev, "con"))
+             RAWCURSES__EQ(stdindev, "con")
              &&
              (rawcurses_stdio_conio_input != 0)))
         {
@@ -7115,7 +7148,7 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
             ||
             (stdindev
              &&
-             (! strcmp(stdindev, "con"))
+             RAWCURSES__EQ(stdindev, "con")
              &&
              (rawcurses_stdio_conio != 0)))
         {
@@ -7260,7 +7293,7 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
 
             while (strlen(nocivis))
             {
-                if (! strcmp(termType, nocivis))
+                if (RAWCURSES__EQ(termType, nocivis))
                 {
                         rawcurses_civis = 0;
                         break;
@@ -7319,9 +7352,7 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
                     }
                     rawcurses_w = termw;
                     rawcurses_h = termh;
-                    if (strstr(termType, "-s-")
-                        ||
-                        (myman_strrstr(termType, "-s") && ! strcmp(myman_strrstr(termType, "-s"), "-s")))
+                    if (RAWCURSES__HASFLAG(termType, "s"))
                     {
                         rawcurses_h --;
                     }
@@ -7333,44 +7364,40 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
         if (rawcurses_w < 1)
         {
             rawcurses_w = 80;
-            if ((! strncmp(termType, "atascii", strlen("atascii")))
+            if (RAWCURSES__STARTSWITH(termType, "atascii")
                 ||
-                (! strncmp(termType, "petscii", strlen("petscii")))
+                RAWCURSES__STARTSWITH(termType, "petscii")
                 ||
-                (! strncmp(termType, "ibm6153-40", strlen("ibm6153-40"))))
+                RAWCURSES__STARTSWITH(termType, "ibm6153-40"))
             {
                 rawcurses_w = 40;
             }
-            if (! strncmp(termType, "ibm6153-90", strlen("ibm6153-90")))
+            if (RAWCURSES__STARTSWITH(termType, "ibm6153-90"))
             {
                 rawcurses_w = 90;
             }
-            if (strstr(termType, "-132-")
+            if (RAWCURSES__HASFLAG(termType, "132")
                 ||
-                (myman_strrstr(termType, "-132") && ! strcmp(myman_strrstr(termType, "-132"), "-132"))
-                ||
-                strstr(termType, "-w-")
-                ||
-                (myman_strrstr(termType, "-w") && ! strcmp(myman_strrstr(termType, "-w"), "-w")))
+                RAWCURSES__HASFLAG(termType, "w"))
             {
                 rawcurses_w = 132;
-                if (strstr(termType, "-w-")
-                    ||
-                    (myman_strrstr(termType, "-w") && ! strcmp(myman_strrstr(termType, "-w"), "-w")))
+                if (RAWCURSES__HASFLAG(termType, "w"))
                 {
-                    if ((strstr(termType, "opennt") || strstr(termType, "ntconsole"))
+                    if ((RAWCURSES__CONTAINS(termType, "opennt")
+                         ||
+                         RAWCURSES__CONTAINS(termType, "ntconsole"))
                         &&
-                        (! strstr(termType, "-vt")))
+                        (! RAWCURSES__CONTAINS(termType, "-vt")))
                     {
                         rawcurses_w = 125;
                     }
-                    if (strstr(termType, "osborne"))
+                    if (RAWCURSES__CONTAINS(termType, "osborne"))
                     {
                         rawcurses_w = 104;
                     }
-                    if ((! strncmp(termType, "d4", strlen("d4")))
+                    if (RAWCURSES__STARTSWITH(termType, "d4")
                         ||
-                        (! strncmp(termType, "d5", strlen("d5"))))
+                        RAWCURSES__STARTSWITH(termType, "d5"))
                     {
                         rawcurses_w = 126;
                     }
@@ -7381,175 +7408,125 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
         if (rawcurses_h < 1)
         {
             rawcurses_h = 24;
-            if ((! strncmp(termType, "petscii", strlen("petscii")))
+            if (RAWCURSES__STARTSWITH(termType, "petscii")
                 ||
-                (! strncmp(termType, "ansi", strlen("ansi")))
+                RAWCURSES__STARTSWITH(termType, "ansi")
                 ||
-                (! strncmp(termType, "pcansi", strlen("pcansi")))
+                RAWCURSES__STARTSWITH(termType, "pcansi")
                 ||
-                strstr(termType, "ntconsole")
+                RAWCURSES__CONTAINS(termType, "ntconsole")
                 ||
-                strstr(termType, "opennt")
+                RAWCURSES__CONTAINS(termType, "opennt")
                 ||
-                strstr(termType, "-25-")
-                ||
-                (myman_strrstr(termType, "-25") && ! strcmp(myman_strrstr(termType, "-25"), "-25")))
+                RAWCURSES__HASFLAG(termType, "25"))
             {
                 rawcurses_h = 25;
             }
-            if (! strncmp(termType, "ibm6153-90", strlen("ibm6153-90")))
+            if (RAWCURSES__STARTSWITH(termType, "ibm6153-90"))
             {
                 rawcurses_h = 36;
             }
-            if ((strstr(termType, "ntconsole")
+            if ((RAWCURSES__CONTAINS(termType, "ntconsole")
                  ||
-                 strstr(termType, "opennt"))
+                 RAWCURSES__CONTAINS(termType, "opennt"))
                 &&
-                (strstr(termType, "-100-")
-                 ||
-                 (myman_strrstr(termType, "-100") && ! strcmp(myman_strrstr(termType, "-100"), "-100"))))
+                RAWCURSES__HASFLAG(termType, "100"))
             {
                 rawcurses_h = 100;
             }
-            if (strstr(termType, "-76-")
-                ||
-                (myman_strrstr(termType, "-76") && ! strcmp(myman_strrstr(termType, "-76"), "-76")))
+            if (RAWCURSES__HASFLAG(termType, "76"))
             {
                 rawcurses_h = 76;
             }
-            if (strstr(termType, "-65-")
-                ||
-                (myman_strrstr(termType, "-65") && ! strcmp(myman_strrstr(termType, "-65"), "-65")))
+            if (RAWCURSES__HASFLAG(termType, "65"))
             {
                 rawcurses_h = 65;
             }
-            if (strstr(termType, "-60-")
-                ||
-                (myman_strrstr(termType, "-60") && ! strcmp(myman_strrstr(termType, "-60"), "-60")))
+            if (RAWCURSES__HASFLAG(termType, "60"))
             {
                 rawcurses_h = 60;
             }
-            if (strstr(termType, "-50-")
-                ||
-                (myman_strrstr(termType, "-50") && ! strcmp(myman_strrstr(termType, "-50"), "-50")))
+            if (RAWCURSES__HASFLAG(termType, "50"))
             {
                 rawcurses_h = 50;
             }
-            if (strstr(termType, "-48-")
-                ||
-                (myman_strrstr(termType, "-48") && ! strcmp(myman_strrstr(termType, "-48"), "-48")))
+            if (RAWCURSES__HASFLAG(termType, "48"))
             {
                 rawcurses_h = 48;
             }
-            if (strstr(termType, "-44-")
-                ||
-                (myman_strrstr(termType, "-44") && ! strcmp(myman_strrstr(termType, "-44"), "-44")))
+            if (RAWCURSES__HASFLAG(termType, "44"))
             {
                 rawcurses_h = 44;
             }
-            if (strstr(termType, "-43-")
-                ||
-                (myman_strrstr(termType, "-43") && ! strcmp(myman_strrstr(termType, "-43"), "-43")))
+            if (RAWCURSES__HASFLAG(termType, "43"))
             {
                 rawcurses_h = 43;
             }
-            if (strstr(termType, "-42-")
-                ||
-                (myman_strrstr(termType, "-42") && ! strcmp(myman_strrstr(termType, "-42"), "-42")))
+            if (RAWCURSES__HASFLAG(termType, "42"))
             {
                 rawcurses_h = 42;
             }
-            if (strstr(termType, "-41-")
-                ||
-                (myman_strrstr(termType, "-41") && ! strcmp(myman_strrstr(termType, "-41"), "-41")))
+            if (RAWCURSES__HASFLAG(termType, "41"))
             {
                 rawcurses_h = 41;
             }
-            if (strstr(termType, "-40-")
-                ||
-                (myman_strrstr(termType, "-40") && ! strcmp(myman_strrstr(termType, "-40"), "-40")))
+            if (RAWCURSES__HASFLAG(termType, "40"))
             {
                 rawcurses_h = 40;
-                if (! strncmp(termType, "ibm6153-40", strlen("ibm6153-40")))
+                if (RAWCURSES__STARTSWITH(termType, "ibm6153-40"))
                 {
                     rawcurses_h = 12;
                 }
             }
-            if (strstr(termType, "-36-")
-                ||
-                (myman_strrstr(termType, "-36") && ! strcmp(myman_strrstr(termType, "-36"), "-36")))
+            if (RAWCURSES__HASFLAG(termType, "36"))
             {
                 rawcurses_h = 36;
             }
-            if (strstr(termType, "-35-")
-                ||
-                (myman_strrstr(termType, "-35") && ! strcmp(myman_strrstr(termType, "-35"), "-35")))
+            if (RAWCURSES__HASFLAG(termType, "35"))
             {
                 rawcurses_h = 34;
             }
-            if (strstr(termType, "-34-")
-                ||
-                (myman_strrstr(termType, "-34") && ! strcmp(myman_strrstr(termType, "-34"), "-34")))
+            if (RAWCURSES__HASFLAG(termType, "34"))
             {
                 rawcurses_h = 34;
             }
-            if (strstr(termType, "-33-")
-                ||
-                (myman_strrstr(termType, "-33") && ! strcmp(myman_strrstr(termType, "-33"), "-33")))
+            if (RAWCURSES__HASFLAG(termType, "33"))
             {
                 rawcurses_h = 34;
             }
-            if (strstr(termType, "-30-")
-                ||
-                (myman_strrstr(termType, "-30") && ! strcmp(myman_strrstr(termType, "-30"), "-30")))
+            if (RAWCURSES__HASFLAG(termType, "30"))
             {
                 rawcurses_h = 30;
             }
-            if (strstr(termType, "-28-")
-                ||
-                (myman_strrstr(termType, "-28") && ! strcmp(myman_strrstr(termType, "-28"), "-28")))
+            if (RAWCURSES__HASFLAG(termType, "28"))
             {
                 rawcurses_h = 28;
             }
-            if (strstr(termType, "-24-")
-                ||
-                (myman_strrstr(termType, "-24") && ! strcmp(myman_strrstr(termType, "-24"), "-24")))
+            if (RAWCURSES__HASFLAG(termType, "24"))
             {
                 rawcurses_h = 24;
             }
-            if (strstr(termType, "-22-")
-                ||
-                (myman_strrstr(termType, "-22") && ! strcmp(myman_strrstr(termType, "-22"), "-22")))
+            if (RAWCURSES__HASFLAG(termType, "22"))
             {
                 rawcurses_h = 22;
             }
-            if (strstr(termType, "-20-")
-                ||
-                (myman_strrstr(termType, "-20") && ! strcmp(myman_strrstr(termType, "-20"), "-20")))
+            if (RAWCURSES__HASFLAG(termType, "20"))
             {
                 rawcurses_h = 20;
             }
-            if (strstr(termType, "-18-")
-                ||
-                (myman_strrstr(termType, "-18") && ! strcmp(myman_strrstr(termType, "-18"), "-18")))
+            if (RAWCURSES__HASFLAG(termType, "18"))
             {
                 rawcurses_h = 18;
             }
-            if (strstr(termType, "-17-")
-                ||
-                (myman_strrstr(termType, "-17") && ! strcmp(myman_strrstr(termType, "-17"), "-17")))
+            if (RAWCURSES__HASFLAG(termType, "17"))
             {
                 rawcurses_h = 17;
             }
-            if (strstr(termType, "-12-")
-                ||
-                (myman_strrstr(termType, "-12") && ! strcmp(myman_strrstr(termType, "-12"), "-12")))
+            if (RAWCURSES__HASFLAG(termType, "12"))
             {
                 rawcurses_h = 12;
             }
-            if (strstr(termType, "-s-")
-                ||
-                (myman_strrstr(termType, "-s") && ! strcmp(myman_strrstr(termType, "-s"), "-s")))
+            if (RAWCURSES__HASFLAG(termType, "s"))
             {
                 rawcurses_h --;
             }
@@ -7609,19 +7586,11 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
     else
     {
         /* true to a first approximation... */
-        if (strstr(termType, "-mono-")
+        if (RAWCURSES__HASFLAG(termType, "mono")
             ||
-            strstr(termType, "-m-")
+            RAWCURSES__HASFLAG(termType, "m")
             ||
-            (! strcmp(termType, "et52"))
-            ||
-            (strstr(termType, "-m")
-             &&
-             (! strcmp(termType + strlen(termType) - strlen("-m"), "-m")))
-            ||
-            (strstr(termType, "-mono")
-             &&
-             (! strcmp(termType + strlen(termType) - strlen("-mono"), "-mono"))))
+            RAWCURSES__EQ(termType, "et52"))
         {
             rawcurses_color = 0;
         }
@@ -9114,7 +9083,7 @@ static int rawcurses_getch(void)
                     break;
                 case 'r':
                     ret = ERR;
-                    if (! strcmp(rawcurses_input_intermed, " "))
+                    if (RAWCURSES__EQ(rawcurses_input_intermed, " "))
                     {
                         int w, h;
                         size_t i;
@@ -9819,7 +9788,9 @@ static int rawcurses_wcwidth(wchar_t wc)
         break;
     }
 #ifdef UNICODE
-    if (rawcurses_stdio_acs
+    if (rawcurses_stdio
+        &&
+        rawcurses_stdio_acs
         &&
         rawcurses_stdio_acs_kaypro2x
         &&

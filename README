@@ -374,6 +374,10 @@ the underlying display libraries:
                                             stdio (ESC[11m)
                         RAWCURSES_ISO2022   Zero value disables use of ISO 2022
                                             character set selection sequences
+                        RAWCURSES_DWL       Nonzero value forces doubling of
+                                            width from RAWCURSES_COLUMNS, COLUMNS,
+                                            sgtty, or termios unless RAWCURSES_WIDE
+                                            is zero
                         RAWCURSES_WIDE      Nonzero value forces use of the
                                             VT100 double-width characters when
                                             using stdio

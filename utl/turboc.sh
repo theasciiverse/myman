@@ -35,14 +35,11 @@ rm -f "${TMPDIR}/${errfile}" &&
 touch "${TMPDIR}/${errfile}" &&
 rm -f "${TMPDIR}/${retfile}" &&
 echo 0 > "${TMPDIR}/${retfile}" &&
-(
-    tail -f "${TMPDIR}/${errfile}" | sed 's/$//;s/^\([^:]*\)\\/\1\//;s/^\([^ ]*\) \([^:]*\) \([0-9]\+\): /\2:\3: \1: /;s/\(.*\) (warning)$/warning: \1/;s/ (error)$//'
-) & tail=${!}
 sleep 1
-(echo '[dosbox]'; echo 'memsize=64'; echo '[cpu]'; echo 'cycles=max') | $DOSBOX -conf /dev/fd/0 -noautoexec -c cls -c 'mount c '"${TURBOC}" -c 'mount t '"${TMPDIR:-/tmp}" -c 'mount d .' -c 'd:' -c 'path c:\tc;%path%' -c '%comspec% /c call utl\turboc > t:'"${errfile}"'' -c 'if errorlevel 1 echo 1 > t:'"${retfile}"'' -c 'exit' >/dev/null || echo $? > "${TMPDIR}/${retfile}"
+(echo '[dosbox]'; echo 'machine=hercules'; echo 'memsize=64'; echo '[render]'; echo 'scaler=none'; echo '[cpu]'; echo 'cycles=max') | $DOSBOX -conf /dev/fd/0 -noautoexec -c cls -c 'mount c '"${TURBOC}" -c 'mount t '"${TMPDIR:-/tmp}" -c 'mount d .' -c 'd:' -c 'path c:\tc;%path%' -c '%comspec% /c call utl\turboc > t:'"${errfile}"'' -c 'if errorlevel 1 echo 1 > t:'"${retfile}"'' -c 'exit' >/dev/null || echo $? > "${TMPDIR}/${retfile}"
 sleep 1
-disown "$tail"
-kill "$tail"
+cat "${TMPDIR}/${errfile}" | \
+    sed 's/$//;s/^\([^:]*\)\\/\1\//;s/^\([^ ]*\) \([^:]*\) \([0-9]\+\): /\2:\3: \1: /;s/\(.*\) (warning)$/warning: \1/;s/ (error)$//'
 ret="$( ( echo 1; cat "${TMPDIR}/${retfile}" ) | tr -d '' | grep . | tail -1)"
 rm -f "${TMPDIR}/${retfile}" "${TMPDIR}/${errfile}"
 exit "$ret"

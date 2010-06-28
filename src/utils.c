@@ -103,6 +103,16 @@
 #define HUGE_VAL 1e500
 #endif
 
+#ifdef __TURBOC__
+/* Force math?.lib to link in order to work around a bug seen at
+ * runtime: strtod is not magical enough to force math?.lib to link by
+ * itselt, yet requires it to be linked in order to work. */
+double turboc_math_hack(double x)
+{
+    return sqrt(x);
+}
+#endif /* defined(__TURBOC__) */
+
 /* legal notice to display before starting */
 const char *MYMANLEGALNOTICE =
 "LEGAL NOTICE" "\n"

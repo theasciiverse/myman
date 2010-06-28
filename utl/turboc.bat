@@ -1,9 +1,9 @@
 @echo off
 @rem # turboc.bat - compile MyMan using Turbo C
 @rem #
-@rem # NOTE: this does not work yet -- the compiler runs out of memory and croaks
+@rem # NOTE: this does not work with color enabled yet -- the compiler runs out of memory and croaks
 
-set CC=tcc -mh -O -Z -1
+set CC=tcc -ml -O -Z
 
 if not exist obj mkdir obj
 
@@ -62,7 +62,16 @@ cd ..
 cd obj\crlf
 
 rem %CC% -DCONIOCURSES=1 -Imygetopt -Iinc -n..\..\obj -e..\myman.exe src\utils.c src\logic.c src\myman.c mygetopt\*.c
-%CC% -DMY_CURSES_H="coniocur.h" -Imygetopt -Iinc -n..\..\obj -e..\myman src\utils src\logic src\myman mygetopt\*.c
+%CC% -DCONIOCURSES -DUSE_COLOR=0 -Imygetopt -Iinc -n..\..\obj -c src\myman
+if errorlevel 1 goto croaked
+%CC% -Imygetopt -Iinc -n..\..\obj -c src\utils
+if errorlevel 1 goto croaked
+%CC% -Imygetopt -Iinc -n..\..\obj -c src\logic
+if errorlevel 1 goto croaked
+%CC% -Imygetopt -Iinc -n..\..\obj -c mygetopt\mygetopt
+if errorlevel 1 goto croaked
+cd ..\..\obj
+%CC% -e..\myman utils.obj logic.obj myman.obj mygetopt.obj
 
 if errorlevel 1 goto croaked
 set ret=0

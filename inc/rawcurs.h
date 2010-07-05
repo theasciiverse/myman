@@ -272,9 +272,15 @@
 #endif
 #endif
 
+#if HAVE_SYS_SELECT_H
+#include <sys/select.h>
+#endif
+
+#ifndef FD_SETSIZE
 #if HAVE_SYS_SOCKET_H
 #include <sys/socket.h>
 #endif
+#endif /* ! defined(FD_SETSIZE) */
 
 #if defined(__MSDOS__) || defined(CPM)
 
@@ -1154,7 +1160,7 @@ typedef int rawcurses_wchar_t;
 #endif
 
 #ifndef HAVE_SELECT
-#ifdef FD_SET
+#ifdef FD_SETSIZE
 #define HAVE_SELECT 1
 #else
 #define HAVE_SELECT 0
@@ -7573,6 +7579,12 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
             {
                 rawcurses_fput_request_winsize(stdout);
                 rawcurses_winsize_pending = 1;
+                if ((! rawcurses_after_endwin)
+                    &&
+                    (rawcurses_stdio_wide || rawcurses_stdio_tall))
+                {
+                    rawcurses_winsize_pending = 2;
+                }
             }
             fflush(stdout);
         }
@@ -9160,9 +9172,15 @@ static int rawcurses_getch(void)
                         int w, h;
                         size_t i;
                         int scanstate;
+                        int widthmul;
 
                         /* cursor position report */
                         rawcurses_input_state = RAWCURSES_INPUT_STATE_IGNORE_CR;
+                        widthmul = rawcurses_winsize_pending;
+                        if (! widthmul)
+                        {
+                            widthmul = 1;
+                        }
                         rawcurses_winsize_pending = 0;
                         rawcurses_got_winsize = 1;
                         w = 0;
@@ -9206,7 +9224,7 @@ static int rawcurses_getch(void)
                             &&
                             ! (rawcurses_nw && rawcurses_nh))
                         {
-                            rawcurses_nw = w;
+                            rawcurses_nw = w * widthmul;
                             rawcurses_nh = h;
                             ret = KEY_RESIZE;
                         }
@@ -10670,6 +10688,10 @@ static int clear(void)
         rawcurses_fput_request_winsize(stdout);
         fflush(stdout);
         rawcurses_winsize_pending = 1;
+        if (rawcurses_stdio_wide || rawcurses_stdio_tall)
+        {
+            rawcurses_winsize_pending = 2;
+        }
     }
     return erase();
 }

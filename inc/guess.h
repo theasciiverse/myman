@@ -250,6 +250,12 @@
 #define HAVE_SYS_SOCKET_H 0
 #endif
 
+/* HAVE_SYS_SELECT_H: do we have <sys/select.h>? */
+
+#ifndef HAVE_SYS_SELECT_H
+#define HAVE_SYS_SELECT_H 0
+#endif
+
 /* HAVE_SYS_STAT_H: do we have <sys/stat.h>? */
 
 #ifndef HAVE_SYS_STAT_H

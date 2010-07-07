@@ -806,7 +806,7 @@ rawcurses_usleep(my_ulong usecs)
         if (myman_gettimeofday(&tv0, NULL)) break;
         ret = 0;
 #if USE_WDEFWIN
-	_dwYield();
+        _dwYield();
 #endif
 #if HAVE_SLEEP
 #if ! (defined(__DMC__) || defined(__TURBOC__))
@@ -1066,7 +1066,7 @@ typedef int rawcurses_wchar_t;
 #endif
 
 #ifndef SWAPDOTS
-#define SWAPDOTS (! (rawcurses_stdio && rawcurses_stdio_acs && (rawcurses_stdio_atascii || (rawcurses_stdio_petscii && ! rawcurses_stdio_petscii_shifted) || (rawcurses_stdio_petscii_shifted && rawcurses_stdio_acs_c128 && (rawcurses_w == 80) && rawcurses_color && rawcurses_stdio_petscii_shifted) || rawcurses_stdio_acs_h19 || rawcurses_stdio_acs_wy60 || rawcurses_stdio_cp437 || rawcurses_stdio_noswapdots)))
+#define SWAPDOTS (! (rawcurses_stdio && rawcurses_stdio_acs && (rawcurses_stdio_atascii || (rawcurses_stdio_petscii && ! rawcurses_stdio_petscii_shifted) || (rawcurses_stdio_petscii_shifted && rawcurses_stdio_acs_c128 && (rawcurses_w == 80) && rawcurses_color && rawcurses_stdio_petscii_shifted) || rawcurses_stdio_acs_h19 || rawcurses_stdio_acs_wy60 || rawcurses_stdio_cp437 || rawcurses_stdio_cp850 || rawcurses_stdio_koi8r || rawcurses_stdio_koi8u || rawcurses_stdio_noswapdots)))
 #endif
 
 #ifndef USE_RAW_UCS
@@ -1596,6 +1596,9 @@ RAWCURSES_GLOBAL(int rawcurses_stdio_wy60, = 0);
 RAWCURSES_GLOBAL(int rawcurses_stdio_kaypro2x, = 0);
 RAWCURSES_GLOBAL(int rawcurses_stdio_noswapdots, = 0);
 RAWCURSES_GLOBAL(int rawcurses_stdio_cp437, = 0);
+RAWCURSES_GLOBAL(int rawcurses_stdio_cp850, = 0);
+RAWCURSES_GLOBAL(int rawcurses_stdio_koi8r, = 0);
+RAWCURSES_GLOBAL(int rawcurses_stdio_koi8u, = 0);
 RAWCURSES_GLOBAL(int rawcurses_stdio_acs_nobullet, = 0);
 RAWCURSES_GLOBAL(int rawcurses_stdio_vwmterm, = 0);
 RAWCURSES_GLOBAL(int rawcurses_stdio_nocolorbold, = 0);
@@ -2172,6 +2175,29 @@ static const char *RAWCURSES_CP437LIKE =
     "wyse60-AT" "\0"
     "wyse60-PC" "\0"
     "xenix" "\0"
+    "\0\0";
+
+/* list of terminals for which we assume an KOI8-R-style alternate
+ * character set */
+static const char *RAWCURSES_KOI8RLIKE =
+    "cons25r" "\0"
+    "cons25r-m" "\0"
+    "cons25-koi8-r" "\0"
+    "cons25-koi8-r-m" "\0"
+    "cons50r" "\0"
+    "cons50r-m" "\0"
+    "cons50-koi8-r" "\0"
+    "cons50-koi8-r-m" "\0"
+    "cons60r" "\0"
+    "cons60r-m" "\0"
+    "cons60-koi8-r" "\0"
+    "cons60-koi8-r-m" "\0"
+    "ibmpc3r" "\0"
+    "ibmpc3r-mono" "\0"
+    "linux-koi8" "\0"
+    "linux-koi8r" "\0"
+    "pc3r" "\0"
+    "pc3r-m" "\0"
     "\0\0";
 
 /* list of terminals for which we assume Amiga-style quirks */
@@ -3257,7 +3283,7 @@ static int rawcurses_fput_enacs(FILE *fh)
     }
 #endif
     if (rawcurses_stdio_adm3a) return 0;
-    if (rawcurses_stdio_vt52 || rawcurses_stdio_acs_h19 || rawcurses_stdio_atascii || rawcurses_stdio_acs_wy60 || rawcurses_stdio_acs_kaypro2x || rawcurses_stdio_cp437 || rawcurses_stdio_petscii) return 1;
+    if (rawcurses_stdio_vt52 || rawcurses_stdio_acs_h19 || rawcurses_stdio_atascii || rawcurses_stdio_acs_wy60 || rawcurses_stdio_acs_kaypro2x || rawcurses_stdio_cp437 || rawcurses_stdio_cp850 || rawcurses_stdio_koi8r || rawcurses_stdio_koi8u || rawcurses_stdio_petscii) return 1;
     if (! rawcurses_stdio_iso2022) return 1;
     return fputs(ESCAPE("(B") ESCAPE(")0"), fh) != EOF;
 }
@@ -3285,7 +3311,9 @@ static int rawcurses_fput_smacs(FILE *fh)
         return fputs("\216", fh) != EOF;
     }
     if (rawcurses_stdio_kaypro2x || rawcurses_stdio_acs_kaypro2x || rawcurses_stdio_atascii || rawcurses_stdio_petscii) return 1;
-    if (rawcurses_stdio_cp437 && ! rawcurses_stdio_adm3a)
+    if ((rawcurses_stdio_cp437 || rawcurses_stdio_cp850 || rawcurses_stdio_koi8r || rawcurses_stdio_koi8u)
+        &&
+        ! rawcurses_stdio_adm3a)
     {
         if (rawcurses_stdio_utf8) return 1;
         if (rawcurses_stdio_iso2022) fputs("\x0e" ESCAPE("(0"), fh);
@@ -3318,7 +3346,9 @@ static int rawcurses_fput_rmacs(FILE *fh)
         return fputs("\016", fh) != EOF;
     }
     if (rawcurses_stdio_kaypro2x || rawcurses_stdio_acs_kaypro2x || rawcurses_stdio_atascii || rawcurses_stdio_petscii) return 1;
-    if (rawcurses_stdio_cp437 && ! rawcurses_stdio_adm3a)
+    if ((rawcurses_stdio_cp437 || rawcurses_stdio_cp850 || rawcurses_stdio_koi8r || rawcurses_stdio_koi8u)
+        &&
+        ! rawcurses_stdio_adm3a)
     {
         if (rawcurses_stdio_utf8) return 1;
         if (fputs(CSI("10m"), fh) != EOF)
@@ -4153,7 +4183,7 @@ static chtype rawcurses_map_acs(chtype ch)
             return ERR;
         }
     }
-    if (rawcurses_stdio_cp437)
+    if (rawcurses_stdio_cp437 || rawcurses_stdio_cp850 || rawcurses_stdio_koi8r || rawcurses_stdio_koi8u)
     {
         switch (ch)
         {
@@ -4542,7 +4572,7 @@ static LONG rawcurses_win32_RegOpenKeyExA(HKEY key, LPCSTR sub_key, DWORD option
     rawcurses_RegOpenKeyExA = (rawcurses_advapi32_RegOpenKeyExA_t)(GetProcAddress(advapi32, "RegOpenKeyExA"));
     if (rawcurses_RegOpenKeyExA)
       {
-	ret = rawcurses_RegOpenKeyExA(key, sub_key, options, desired, result);
+        ret = rawcurses_RegOpenKeyExA(key, sub_key, options, desired, result);
       }
     FreeLibrary(advapi32);
   }
@@ -4569,7 +4599,7 @@ static LONG rawcurses_win32_RegOpenKeyExW(HKEY key, LPCWSTR sub_key, DWORD optio
     rawcurses_RegOpenKeyExW = (rawcurses_advapi32_RegOpenKeyExW_t)(GetProcAddress(advapi32, "RegOpenKeyExW"));
     if (rawcurses_RegOpenKeyExW)
       {
-	ret = rawcurses_RegOpenKeyExW(key, sub_key, options, desired, result);
+        ret = rawcurses_RegOpenKeyExW(key, sub_key, options, desired, result);
       }
     FreeLibrary(advapi32);
   }
@@ -4605,7 +4635,7 @@ static LONG rawcurses_win32_RegCloseKey(HKEY key)
     rawcurses_RegCloseKey = (rawcurses_advapi32_RegCloseKey_t)(GetProcAddress(advapi32, "RegCloseKey"));
     if (rawcurses_RegCloseKey)
       {
-	ret = rawcurses_RegCloseKey(key);
+        ret = rawcurses_RegCloseKey(key);
       }
     FreeLibrary(advapi32);
   }
@@ -4630,7 +4660,7 @@ static LONG rawcurses_win32_RegQueryValueExW(HKEY key, LPCWSTR value_name, LPDWO
     rawcurses_RegQueryValueExW = (rawcurses_advapi32_RegQueryValueExW_t)(GetProcAddress(advapi32, "RegQueryValueExW"));
     if (rawcurses_RegQueryValueExW)
       {
-	ret = rawcurses_RegQueryValueExW(key, value_name, reserved, type, data, data_size);
+        ret = rawcurses_RegQueryValueExW(key, value_name, reserved, type, data, data_size);
       }
     FreeLibrary(advapi32);
   }
@@ -5791,6 +5821,40 @@ static const char *rawcurses_term_type(void)
 #endif
 static int locale_is_utf8(void);
 
+#ifndef NEED_CP437_TO_ASCII
+#define NEED_CP437_TO_ASCII 1
+#endif
+static chtype cp437_to_ascii(my_uchar ch);
+
+/* mapping from the upper half of cp437 to koi8-r; 0 will be replaced
+ * with an ASCII approximation from cp437_to_ascii() */
+static const my_uchar rawcurses_cp437_koi8[128] = {
+    /* 0x80 */
+       0,    0,    0,    0,    0,    0,    0,    0,
+       0, 0xa3,    0,    0,    0,    0,    0,    0,
+    /* 0x90 */
+       0,    0,    0,    0,    0,    0,    0,    0,
+       0,    0,    0,    0,    0,    0,    0,    0,
+    /* 0xA0 */
+       0,    0,    0,    0,    0,    0,    0,    0,
+       0,    0,    0,    0,    0,    0,    0,    0,
+    /* 0xB0 */
+    0x90, 0x91, 0x92, 0x81, 0x87, 0xb2, 0xb4, 0xa7,
+    0xa6, 0xb5, 0xa1, 0xa8, 0xae, 0xad, 0xac, 0x83,
+    /* 0xC0 */
+    0x84, 0x89, 0x88, 0x86, 0x80, 0x8a, 0xaf, 0xb0,
+    0xab, 0xa5, 0xbb, 0xb8, 0xb1, 0xa0, 0xbe, 0xb9,
+    /* 0xD0 */
+    0xba, 0xb6, 0xb7, 0xaa, 0xa9, 0xa2, 0xa4, 0xbd,
+    0xbc, 0x85, 0x82, 0x8d, 0x8c, 0x8e, 0x8f, 0x8b,
+    /* 0xE0 */
+       0,    0, 0xe7, 0xd0,    0,    0,    0, 0xd4,
+    0xe6,    0,    0, 0xc2,    0, 0xc6,    0,    0,
+    /* 0xF0 */
+       0,    0, 0x99, 0x98, 0x93, 0x9b, 0x9f, 0x97,
+    0x9c, 0x95, 0x9e, 0x96,    0, 0x9d, 0x94, 0x9a
+};
+
 static void initscrWithHints(int h, int w, const char *title, const char *shortname)
 {
     const char *termType;
@@ -6610,7 +6674,44 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
             cp437like += strlen(cp437like) + 1;
         }
     }
-    if (rawcurses_stdio_cp437 && ! rawcurses_getenv_boolean("RAWCURSES_ACS"))
+    if (rawcurses_getenv_boolean("RAWCURSES_CP850"))
+    {
+        rawcurses_stdio_cp850 = *(rawcurses_getenv_boolean("RAWCURSES_CP850")) ? 1 : 0;
+    }
+    else
+    {
+        rawcurses_stdio_cp850 = 0;
+    }
+    if (rawcurses_getenv_boolean("RAWCURSES_KOI8U"))
+    {
+        rawcurses_stdio_koi8u = *(rawcurses_getenv_boolean("RAWCURSES_KOI8U")) ? 1 : 0;
+    }
+    else
+    {
+        rawcurses_stdio_koi8u = 0;
+    }
+    if (rawcurses_getenv_boolean("RAWCURSES_KOI8R"))
+    {
+        rawcurses_stdio_koi8r = *(rawcurses_getenv_boolean("RAWCURSES_KOI8R")) ? 1 : 0;
+    }
+    else
+    {
+        const char *koi8rlike = RAWCURSES_KOI8RLIKE;
+
+        rawcurses_stdio_koi8r = 0;
+        while (strlen(koi8rlike))
+        {
+            if (RAWCURSES__EQ(termType, koi8rlike))
+            {
+                rawcurses_stdio_koi8r = 1;
+                break;
+            }
+            koi8rlike += strlen(koi8rlike) + 1;
+        }
+    }
+    if ((rawcurses_stdio_cp437 || rawcurses_stdio_cp850 || rawcurses_stdio_koi8r || rawcurses_stdio_koi8u)
+        &&
+        ! rawcurses_getenv_boolean("RAWCURSES_ACS"))
     {
         rawcurses_stdio_acs = 1;
     }
@@ -7316,7 +7417,16 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
     {
         if (rawcurses_stdio_utf8) rawcurses_raw = 1;
 #ifndef UNICODE
-        if (rawcurses_stdio_cp437) rawcurses_raw = 1;
+        if (rawcurses_stdio_cp437
+            ||
+            rawcurses_stdio_cp850
+            ||
+            rawcurses_stdio_koi8r
+            ||
+            rawcurses_stdio_koi8u)
+        {
+            rawcurses_raw = 1;
+        }
 #endif
     }
     {
@@ -9667,6 +9777,12 @@ static int wctoa(chtype ch)
                 &&
                 (! rawcurses_stdio_cp437)
                 &&
+                (! rawcurses_stdio_cp850)
+                &&
+                (! rawcurses_stdio_koi8r)
+                &&
+                (! rawcurses_stdio_koi8u)
+                &&
                 (! rawcurses_stdio_acs_wy60)
                 &&
                 (ch >= 0x2800) && (ch <= 0x28ff))
@@ -9813,6 +9929,12 @@ static int rawcurses_wcwidth(wchar_t wc)
         rawcurses_stdio_acs_kaypro2x
         &&
         (! rawcurses_stdio_cp437)
+        &&
+        (! rawcurses_stdio_cp850)
+        &&
+        (! rawcurses_stdio_koi8r)
+        &&
+        (! rawcurses_stdio_koi8u)
         &&
         (! rawcurses_stdio_acs_wy60)
         &&
@@ -10352,7 +10474,15 @@ static int addch(chtype ch)
                 if ((rawcurses_raw) && (ch != (chtype) (0x7f & (int) (my_uchar) ch)))
             {
 #ifdef UNICODE
-                if (rawcurses_stdio_utf8 && ! (switch_to_acs && rawcurses_stdio_cp437))
+                if (rawcurses_stdio_utf8
+                    &&
+                    ! (switch_to_acs && (rawcurses_stdio_cp437
+                                         ||
+                                         rawcurses_stdio_cp850
+                                         ||
+                                         rawcurses_stdio_koi8r
+                                         ||
+                                         rawcurses_stdio_koi8u)))
                 {
                     fputc_utf8(ch, stdout);
                     if (wcw > 1)
@@ -10375,6 +10505,95 @@ static int addch(chtype ch)
                         if (ch != (chtype) (0xff & (int) (my_uchar) ch))
                         {
                             ch = RAWCURSES_ASCII_REPLACEMENT_CHARACTER;
+                        }
+                        if (rawcurses_stdio_cp850)
+                        {
+                            switch ((int) (my_uchar) ch)
+                            {
+                            case 155: case 157: case 158: case 169:
+                            case 221: case 222: case 224: case 226:
+                            case 227: case 228: case 229: case 231:
+                            case 232: case 233: case 234: case 235:
+                            case 236: case 237: case 238: case 239:
+                            case 240: case 242: case 243: case 244:
+                            case 245: case 247: case 251: case 252:
+                                ch = cp437_to_ascii(ch) & 0x7f;
+                                break;
+                            case 181: case 182:
+                                ch = 180;
+                                break;
+                            case 183: case 184:
+                                ch = 191;
+                                break;
+                            case 189: case 190:
+                                ch = 217;
+                                break;
+                            case 198: case 199:
+                                ch = 195;
+                                break;
+                            case 207: case 208:
+                                ch = 193;
+                                break;
+                            case 209: case 210:
+                                ch = 194;
+                                break;
+                            case 211: case 212:
+                                ch = 192;
+                                break;
+                            case 213: case 214:
+                                ch = 218;
+                                break;
+                            case 215: case 216:
+                                ch = 197;
+                                break;
+                            case 249:
+                                ch = 250;
+                            }
+                        }
+                        if (rawcurses_stdio_koi8r || rawcurses_stdio_koi8u)
+                        {
+                            if ((ch < 0x20) || (ch >= 0x7f))
+                            {
+                                int koimapped = 0;
+
+                                if ((ch >= 0x80) && (ch <= 0xff))
+                                {
+                                    koimapped = (int) (my_uchar) rawcurses_cp437_koi8[ch - 0x80];
+                                }
+                                ch = cp437_to_ascii(ch) & 0x7f;
+                                if (rawcurses_stdio_koi8u)
+                                {
+                                    switch ((int) (my_uchar) koimapped)
+                                    {
+                                    case 164:
+                                        ch = 130;
+                                        break;
+                                    case 166:
+                                    case 167:
+                                        ch = 131;
+                                        break;
+                                    case 173:
+                                        ch = 133;
+                                        break;
+                                    case 180:
+                                        ch = 135;
+                                        break;
+                                    case 182:
+                                    case 183:
+                                        ch = 136;
+                                        break;
+                                    case 189:
+                                        ch = 138;
+                                        break;
+                                    default:
+                                        if (koimapped) ch = koimapped;
+                                    }
+                                }
+                                else
+                                {
+                                    if (koimapped) ch = koimapped;
+                                }
+                            }
                         }
                         fputc((int) (my_uchar) ch, stdout);
                         wcw --;

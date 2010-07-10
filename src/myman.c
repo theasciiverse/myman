@@ -2586,7 +2586,7 @@ init_trans(int use_bullet_for_dots)
     altcharset_cp437[0] = NULL;
 #endif
     ascii_cp437[227] =
-        '*';
+        'n';
     altcharset_cp437[156] =
 #ifdef MY_ACS_STERLING
         MY_ACS_STERLING;
@@ -6093,6 +6093,14 @@ gamerender(void)
 #ifdef MY_A_BOLD
                             a |= use_dim_and_bright ? MY_A_BOLD : 0;
 #endif
+#ifdef MY_A_REVERSE
+                            if ((sprite_color[life_sprite] >= 0x10)
+                                &&
+                                ! (a & MY_A_REVERSE))
+                            {
+                                a |= MY_A_REVERSE;
+                            }
+#endif
 #endif
                         }
                         if ((col + (reflect ? r_off : c_off) - hud_life_anchor) >= 0)
@@ -6247,6 +6255,14 @@ gamerender(void)
 #endif
                             {
 #if USE_ATTR
+#ifdef MY_A_REVERSE
+                                if ((sprite_color[t] >= 0x10)
+                                    &&
+                                    ! (a & MY_A_REVERSE))
+                                {
+                                    a |= MY_A_REVERSE;
+                                }
+#endif
 #ifdef MY_A_BOLD
                                 if ((s == HERO) || (((unsigned) sprite_register[s]) == SPRITE_WHITE) || iseyes)
                                 {
@@ -6282,6 +6298,14 @@ gamerender(void)
 #endif
                             {
 #if USE_ATTR
+#ifdef MY_A_REVERSE
+                                if ((sprite_color[t] >= 0x10)
+                                    &&
+                                    ! (a & MY_A_REVERSE))
+                                {
+                                    a |= MY_A_REVERSE;
+                                }
+#endif
 #ifdef MY_A_BOLD
                                 if ((s == HERO) || (((unsigned) sprite_register[s]) == SPRITE_WHITE) || iseyes)
                                 {
@@ -6422,6 +6446,7 @@ gamerender(void)
                             }
                             if (debug) {
                                 int s = WHOSE_HOME_DIR(ytile, xtile);
+                                unsigned sf;
                                 my_uchar d;
                                             
                                 d = home_dir[(s % ghosts*maze_h+ytile)*(maze_w+1)+xtile];
@@ -6434,14 +6459,28 @@ gamerender(void)
                                     : ISOPEN(c) ? ' '
                                     : ISDOOR(c) ? 'X'
                                     : '@';
+                                sf = ((unsigned) sprite_register[MEANGHOST(s)]) + sprite_register_frame[MEANGHOST(s)];
 #if USE_COLOR
                                 if (use_color && ((unsigned) d)) {
-                                    a = sprite_color[((unsigned) sprite_register[MEANGHOST(s)]) + sprite_register_frame[MEANGHOST(s)]];
+                                    a = sprite_color[sf];
                                     if (! a)
                                         a = sprite_register_color[MEANGHOST(s)];
                                     a = pen[a];
                                 }
+                                else
 #endif
+                                {
+#if USE_ATTR
+#ifdef MY_A_REVERSE
+                                    if ((sprite_color[sf] >= 0x10)
+                                        &&
+                                        ! (a & MY_A_REVERSE))
+                                    {
+                                        a |= MY_A_REVERSE;
+                                    }
+#endif
+#endif
+                                }
                             }
                             else
                             {
@@ -6630,7 +6669,20 @@ gamerender(void)
                             }
                             a = pen[a];
                         }
+                        else
 #endif
+                        {
+#if USE_ATTR
+#ifdef MY_A_REVERSE
+                            if ((sprite_color[level_sprite] >= 0x10)
+                                &&
+                                ! (a & MY_A_REVERSE))
+                            {
+                                a |= MY_A_REVERSE;
+                            }
+#endif
+#endif
+                        }
                         my_move(vline + (reflect ? c_off : r_off), col * (use_fullwidth ? 2 : 1));
                         my_addch((my_ulong) (my_uchar) c, a);
                         continue;
@@ -6702,6 +6754,14 @@ gamerender(void)
 #ifdef MY_A_BOLD
                                 a |= use_dim_and_bright ? MY_A_BOLD : 0;
 #endif
+#ifdef MY_A_REVERSE
+                                if ((sprite_color[life_sprite] >= 0x10)
+                                    &&
+                                    ! (a & MY_A_REVERSE))
+                                {
+                                    a |= MY_A_REVERSE;
+                                }
+#endif
 #endif
                             }
                             my_addch((my_ulong) (my_uchar) c, a);
@@ -6735,7 +6795,20 @@ gamerender(void)
                                 }
                                 a = pen[a];
                             }
+                            else
 #endif
+                            {
+#if USE_ATTR
+#ifdef MY_A_REVERSE
+                                if ((sprite_color[level_sprite] >= 0x10)
+                                    &&
+                                    ! (a & MY_A_REVERSE))
+                                {
+                                    a |= MY_A_REVERSE;
+                                }
+#endif
+#endif
+                            }
                             my_addch((my_ulong) (my_uchar) c, a);
                             continue;
                         }

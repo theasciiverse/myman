@@ -139,6 +139,12 @@
 #include "utils.h"
 #endif
 
+#define MYMAN__ENDSWITH(s1,s2) (myman_strrstr((s1), (s2)) && ! strcmp(myman_strrstr((s1), (s2)), (s2)))
+#define MYMAN__CONTAINS(s1,s2) (strstr((s1), (s2)))
+/* NOTE: s2 must be a string literal, and this relies on the compiler
+ * merging successive string literals, as in ANSI C */
+#define MYMAN__HASFLAG(s1,s2) (MYMAN__CONTAINS((s1), ("-"s2"-")) || MYMAN__ENDSWITH((s1), ("-"s2)))
+
 #if HAVE_LANGINFO_H
 #include <langinfo.h>
 #endif
@@ -728,6 +734,7 @@ static wchar_t ucs_to_wchar(my_ulong ucs)
 #endif
 
 /* resize handler */
+static int ever_got_sigwinch = 0;
 static volatile int got_sigwinch = 0;
 
 #if USE_SIGWINCH
@@ -5314,6 +5321,7 @@ pager(void)
                         {
                             if (got_sigwinch)
                             {
+                                ever_got_sigwinch = 1;
                                 use_env(FALSE);
                             }
                             got_sigwinch = 0;
@@ -5646,6 +5654,7 @@ pager(void)
                 {
                     if (got_sigwinch)
                     {
+                        ever_got_sigwinch = 1;
                         use_env(FALSE);
                     }
                     got_sigwinch = 0;
@@ -7001,6 +7010,7 @@ gameinput(void)
         {
             if (got_sigwinch)
             {
+                ever_got_sigwinch = 1;
                 use_env(FALSE);
             }
             got_sigwinch = 0;
@@ -7420,13 +7430,24 @@ myman(void)
 #ifdef TIOCGSIZE
                 struct ttysize tsz;
 #endif
+                int widthmul;
 
+                widthmul = 1;
+                if (ever_got_sigwinch)
+                {
+                    const char *termType;
 
+                    termType = myman_getenv("TERM");
+                    if (termType && MYMAN__HASFLAG(termType, "dwl"))
+                    {
+                        widthmul = 2;
+                    }
+                }
 #ifdef TIOCGWINSZ
                 if (! ioctl(fileno(stdout), TIOCGWINSZ, &wsz))
                 {
                     myman_lines = wsz.ws_row;
-                    myman_columns = wsz.ws_col;
+                    myman_columns = wsz.ws_col / widthmul;
                 }
                 else
 #endif
@@ -7434,7 +7455,7 @@ myman(void)
                 if (! ioctl(fileno(stdout), TIOCGSIZE, &tsz))
                 {
                     myman_lines = tsz.ts_lines;
-                    myman_columns = tsz.ts_cols;
+                    myman_columns = tsz.ts_cols / widthmul;
                 }
                 else
 #endif

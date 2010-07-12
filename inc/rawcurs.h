@@ -1275,7 +1275,7 @@ typedef chtype attr_t;
 
 #define LINES rawcurses_h
 
-#define COLS (rawcurses_w / (((rawcurses_stdio_tall || rawcurses_stdio_wide) && ! rawcurses_after_endwin) ? 2 : 1))
+#define COLS (rawcurses_w / ((((rawcurses_stdio_tall || rawcurses_stdio_wide) && ! rawcurses_after_endwin) || (rawcurses_stdio_dwl && rawcurses_after_endwin)) ? 2 : 1))
 
 #define _PAIR_SHIFT 21
 
@@ -3124,10 +3124,7 @@ static int rawcurses_fput_clear(FILE *fh)
     if (rawcurses_stdio_vt52) return fputs("\f" ESCAPE("H") ESCAPE("J"), fh) != EOF;
     if (rawcurses_stdio_amiga) ret = fputs(CSI("H") CSI("J"), fh) != EOF;
     else ret = fputs(CSI("1;1H") CSI("2J"), fh) != EOF;
-    if ((rawcurses_stdio_wide ||
-         rawcurses_stdio_tall)
-        &&
-        (! rawcurses_after_endwin))
+    if (rawcurses_stdio_wide || rawcurses_stdio_tall || rawcurses_stdio_dwl)
     {
         int y;
 
@@ -3138,7 +3135,11 @@ static int rawcurses_fput_clear(FILE *fh)
                 if (y) rawcurses_fput_relcup(fh, 1, 0);
             }
             else rawcurses_fput_cup(fh, y, 0);
-            if (rawcurses_stdio_tall)
+            if (rawcurses_after_endwin || ! (rawcurses_stdio_wide || rawcurses_stdio_tall))
+            {
+                fprintf(fh, (rawcurses_stdio_dwl && rawcurses_after_endwin) ? ESCAPE("#6") : ESCAPE("#5"));
+            }
+            else if (rawcurses_stdio_tall)
             {
                 if (y % 2)
                 {
@@ -3482,10 +3483,7 @@ static int rawcurses_fput_clrtobot(FILE *fh)
     if (rawcurses_stdio_vt52) return fputs(ESCAPE("J"), fh) != EOF;
     if (rawcurses_stdio_amiga) ret = (fputs(CSI("J"), fh) != EOF);
     else ret = (fputs(CSI("0J"), fh) != EOF);
-    if ((rawcurses_stdio_wide ||
-         rawcurses_stdio_tall)
-        &&
-        (! rawcurses_after_endwin))
+    if (rawcurses_stdio_wide || rawcurses_stdio_tall || rawcurses_stdio_dwl)
     {
         int y;
         int ox, oy;
@@ -3498,7 +3496,11 @@ static int rawcurses_fput_clrtobot(FILE *fh)
                 if (y) rawcurses_fput_relcup(fh, 1, 0);
             }
             else rawcurses_fput_cup(fh, y, ox);
-            if (rawcurses_stdio_tall)
+            if (rawcurses_after_endwin || ! (rawcurses_stdio_wide || rawcurses_stdio_tall))
+            {
+                fprintf(fh, (rawcurses_stdio_dwl && rawcurses_after_endwin) ? ESCAPE("#6") : ESCAPE("#5"));
+            }
+            else if (rawcurses_stdio_tall)
             {
                 if (y % 2)
                 {
@@ -3534,15 +3536,16 @@ static int rawcurses_fput_clrtoeol(FILE *fh)
     if (rawcurses_stdio_adm3a || rawcurses_stdio_atascii || rawcurses_stdio_petscii) return 0;
     if (rawcurses_stdio_vt52) return fputs(ESCAPE("K"), fh) != EOF;
     ret = (fputs(CSI("0K"), fh) != EOF);
-    if ((rawcurses_stdio_wide ||
-         rawcurses_stdio_tall)
-        &&
-        (! rawcurses_after_endwin))
+    if (rawcurses_stdio_wide || rawcurses_stdio_tall || rawcurses_stdio_dwl)
     {
         int x, y;
 
         rawcurses_getyx(&y, &x);
-        if (rawcurses_stdio_tall)
+        if (rawcurses_after_endwin || ! (rawcurses_stdio_wide || rawcurses_stdio_tall))
+        {
+            fprintf(fh, (rawcurses_stdio_dwl && rawcurses_after_endwin) ? ESCAPE("#6") : ESCAPE("#5"));
+        }
+        else if (rawcurses_stdio_tall)
         {
             if (y % 2)
             {
@@ -6807,7 +6810,7 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
     {
         rawcurses_w = (columns && atoi(columns)) ? atoi(columns) : 0;
         rawcurses_h = (lines && atoi(lines)) ? atoi(lines) : 0;
-        if ((rawcurses_stdio_wide || rawcurses_stdio_tall) && rawcurses_stdio_dwl)
+        if (rawcurses_stdio_dwl)
         {
             rawcurses_w *= 2;
         }
@@ -6816,6 +6819,7 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
     rawcurses_y = -1;
     rawcurses_attr = -1;
     rawcurses_old_attr_rgb = FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE;
+    rawcurses_stdio = 1;
 #if USE_WINCONSOLE
     if (rawcurses_getenv_boolean("RAWCURSES_STDIO"))
     {
@@ -7068,7 +7072,7 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
             if (! rawcurses_w)
             {
                 rawcurses_w = wsz.ws_col;
-                if ((rawcurses_stdio_wide || rawcurses_stdio_tall) && rawcurses_stdio_dwl)
+                if (rawcurses_stdio_dwl)
                 {
                     rawcurses_w *= 2;
                 }
@@ -7084,7 +7088,7 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
             if (! rawcurses_w)
             {
                 rawcurses_w = tsz.ts_cols;
-                if ((rawcurses_stdio_wide || rawcurses_stdio_tall) && rawcurses_stdio_dwl)
+                if (rawcurses_stdio_dwl)
                 {
                     rawcurses_w *= 2;
                 }
@@ -7385,7 +7389,6 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
 #endif /* USE_CONIO || USE_CONIO_INPUT */
     if (rawcurses_stdio)
     {
-        rawcurses_stdio = 1;
 #ifdef SIGTSTP
         rawcurses_got_sigtstp = 0;
         rawcurses_old_sigtstp_handler = signal(SIGTSTP, rawcurses_sigtstp_handler);
@@ -7433,9 +7436,9 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
         int got_winsize;
 
         got_winsize = 1;
-        if ((rawcurses_w < 1)
-            &&
-            (rawcurses_h < 1)
+        if (((rawcurses_w < 1)
+             ||
+             (rawcurses_h < 1))
             &&
             (*termType))
         {
@@ -7691,7 +7694,9 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
                 rawcurses_winsize_pending = 1;
                 if ((! rawcurses_after_endwin)
                     &&
-                    (rawcurses_stdio_wide || rawcurses_stdio_tall))
+                    ((rawcurses_stdio_wide || rawcurses_stdio_tall)
+                     &&
+                     (! rawcurses_stdio_dwl)))
                 {
                     rawcurses_winsize_pending = 2;
                 }
@@ -10775,9 +10780,11 @@ static int mvprintw(int y, int x, const char *s)
 #define resizeterm rawcurses_resizeterm
 static int resizeterm(int y, int x)
 {
-    if ((rawcurses_stdio_wide || rawcurses_stdio_tall)
-        &&
-        ! rawcurses_after_endwin)
+    if (((rawcurses_stdio_wide || rawcurses_stdio_tall)
+         &&
+         ! rawcurses_after_endwin)
+        ||
+        rawcurses_stdio_dwl)
     {
         x *= 2;
     }

@@ -2053,7 +2053,9 @@ mazeman2 \
 pakus \
 and \
 and2 \
-and3
+and3 \
+mazeoid \
+pocketmn
 
 all_sizes = \
 small \
@@ -3687,6 +3689,8 @@ lvl/mazeman.asc \
 lvl/mazeman.txt \
 lvl/mazeman2.asc \
 lvl/mazeman2.txt \
+lvl/mazeoid.asc \
+lvl/mazeoid.txt \
 lvl/mazewar.asc \
 lvl/mazewar.txt \
 lvl/mc10.asc \
@@ -3917,6 +3921,8 @@ lvl/pman2.asc \
 lvl/pman2.txt \
 lvl/pocket.asc \
 lvl/pocket.txt \
+lvl/pocketmn.asc \
+lvl/pocketmn.txt \
 lvl/portable.asc \
 lvl/portable.txt \
 lvl/psppac.asc \

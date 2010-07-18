@@ -381,6 +381,28 @@ the underlying display libraries:
                         RAWCURSES_KOI8U     Nonzero value forces use of KOI8-U
                                             alternate character set when using
                                             stdio (ESC[11m)
+                        RAWCURSES_ATASCII   Nonzero value forces use of
+                                            ATASCII terminal codes when
+                                            using stdio
+                        RAWCURSES_PETSCII   Nonzero value forces use of
+                                            PETSCII terminal codes when
+                                            using stdio
+                        RAWCURSES_PETSCII_SHIFTED
+                                            Zero value forces use of
+                                            the unshifted PETSCII
+                                            characters by default
+                        RAWCURSES_ACS_C128  Nonzero value allows mixing of
+                                            shifted and unshifted PETSCII in
+                                            a single screen when the screen
+                                            is 80 columns wide
+                        RAWCURSES_PETSCII_PALETTE
+                                            Selects color palette for PETSCII
+                                            terminal codes:
+                                                0 for VIC+
+                                                1 for C64 / C128 (40-column)
+                                                2 for 264 series
+                                                3 for C128 (80-column)
+                                                4 for C128 RGB (80-column) (SyncTERM)
                         RAWCURSES_ISO2022   Zero value disables use of ISO 2022
                                             character set selection sequences
                         RAWCURSES_DWL       Nonzero value forces doubling of
@@ -415,6 +437,9 @@ the underlying display libraries:
                         RAWCURSES_ADM3A     Nonzero value forces use of the
                                             ADM3A escape sequences when
                                             using stdio
+                        RAWCURSES_DUMB      Nonzero value forces use of
+                                            dumb-terminal codes (actually Tek4014)
+                                            when using stdio
                         RAWCURSES_COLOR     Nonzero value enables color
                         RAWCURSES_16COLOR   Nonzero value enables use of the
                                             16 colors rather than 8

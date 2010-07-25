@@ -2278,6 +2278,28 @@ parse_sprite_args(const char *spritefile, const char *sprite_args)
                 }
                 argp = endp;
             }
+            else if (! strncmp(argp, "GHOST_COLORS", endp - argp))
+            {
+                argp = endp + 1;
+                sprite_GHOST_COLORS = strword(argp, &endp, &sprite_GHOST_COLORS_len);
+                if (! sprite_GHOST_COLORS)
+                {
+                    perror("GHOST_COLORS");
+                    return 1;
+                }
+                argp = endp;
+            }
+            else if (! strncmp(argp, "EXTRA_GHOST_COLORS", endp - argp))
+            {
+                argp = endp + 1;
+                sprite_EXTRA_GHOST_COLORS = strword(argp, &endp, &sprite_EXTRA_GHOST_COLORS_len);
+                if (! sprite_EXTRA_GHOST_COLORS)
+                {
+                    perror("EXTRA_GHOST_COLORS");
+                    return 1;
+                }
+                argp = endp;
+            }
             else
             {
                 fprintf(stderr, "%s: unrecognized sprite argument: ",
@@ -2900,7 +2922,7 @@ parse_maze_args(const char *mazefile, const char *maze_args)
             {
                 argp = endp + 1;
                 maze_DOT_COLORS = strword(argp, &endp, &maze_DOT_COLORS_len);
-                if (! maze_MORTAR_COLORS)
+                if (! maze_DOT_COLORS)
                 {
                     perror("DOT_COLORS");
                     return 1;
@@ -2911,7 +2933,7 @@ parse_maze_args(const char *mazefile, const char *maze_args)
             {
                 argp = endp + 1;
                 maze_PELLET_COLORS = strword(argp, &endp, &maze_PELLET_COLORS_len);
-                if (! maze_MORTAR_COLORS)
+                if (! maze_PELLET_COLORS)
                 {
                     perror("PELLET_COLORS");
                     return 1;
@@ -3364,11 +3386,11 @@ gameintro(void)
 #define MEANCOLOR (use_color ? sprite_register_color[mean] : 0xF)
             sprite_register_x[HERO] = name_col * gfx_w + gfx_w / 2;
             maze_puts(name_row, name_col,
-                      sprite_color[((unsigned) sprite_register[mean]) + sprite_register_frame[mean]]
-                      ?
-                      sprite_color[((unsigned) sprite_register[mean]) + sprite_register_frame[mean]]
-                      :
-                      MEANCOLOR
+                      (sprite_color[((unsigned) sprite_register[mean]) + sprite_register_frame[mean]]
+                       ?
+                       sprite_color[((unsigned) sprite_register[mean]) + sprite_register_frame[mean]]
+                       :
+                       MEANCOLOR) & 0xF
                       ,
                       ghost_name);
         }
@@ -3383,11 +3405,11 @@ gameintro(void)
         {
             sprite_register_x[HERO] = nick_col * gfx_w + gfx_w / 2;
             maze_puts(nick_row, nick_col,
-                      sprite_color[((unsigned) sprite_register[mean]) + sprite_register_frame[mean]]
-                      ?
-                      sprite_color[((unsigned) sprite_register[mean]) + sprite_register_frame[mean]]
-                      :
-                      MEANCOLOR
+                      (sprite_color[((unsigned) sprite_register[mean]) + sprite_register_frame[mean]]
+                       ?
+                       sprite_color[((unsigned) sprite_register[mean]) + sprite_register_frame[mean]]
+                       :
+                       MEANCOLOR) & 0xF
                       ,
                       ghost_nick);
         }
@@ -3472,8 +3494,7 @@ gameintro(void)
             int mean;
             int blue;
             int ghost;
-            const char *extra_ghost_colors = EXTRA_GHOST_COLORS;
-                            
+
             ghost = MAXGHOSTS - 4 + ((s == 0) ? GHOST1 : (s == 1) ? GHOST2 : (s == 2) ? GHOST0 : (s == 3) ? GHOST3 : s);
             if ((ghost < ghosts) || (ghost >= MAXGHOSTS)) continue;
             eyes = GHOSTEYES(ghost);
@@ -3528,13 +3549,17 @@ gameintro(void)
                     sprite_register_x[mean] =
                     sprite_register_x[blue] ++;
             }
-            sprite_register_color[eyes] = 0xF;
-            sprite_register_color[blue] = 0x9;
-            sprite_register_color[mean] = extra_ghost_colors[(s % strlen(extra_ghost_colors))];
-            if (s == 2) sprite_register_color[mean] = 0xB;
-            if (s == 0) sprite_register_color[mean] = 0xC;
-            if (s == 1) sprite_register_color[mean] = 0xD;
-            if (s == 3) sprite_register_color[mean] = 0x6;
+            sprite_register_color[eyes] = GHOSTEYES_COLOR;
+            sprite_register_color[blue] = BLUEGHOST_COLOR;
+            sprite_register_color[mean] = MEANGHOST_COLOR;
+            if (sprite_EXTRA_GHOST_COLORS_len)
+            {
+                sprite_register_color[mean] = (int) (my_uchar) sprite_EXTRA_GHOST_COLORS[s % sprite_EXTRA_GHOST_COLORS_len];
+            }
+            if (s < sprite_GHOST_COLORS_len)
+            {
+                sprite_register_color[mean] = (int) (my_uchar) sprite_GHOST_COLORS[s];
+            }
         }
     }
     if (! ghost_eaten_timer)
@@ -3975,7 +4000,7 @@ gamereset(void)
 
     for (i = 0; i < MAXGHOSTS; i++) {
         int eyes, mean, blue;
-        const char *extra_ghost_colors = EXTRA_GHOST_COLORS;
+        int s;
 
         eyes = GHOSTEYES(i);
         mean = MEANGHOST(i);
@@ -3992,15 +4017,35 @@ gamereset(void)
         ghost_mem[i] = 0;
         ghost_timer[i] = TWOSECS;
         ghost_man[i] = 0;
-        sprite_register_color[eyes] = 0xF;
-        sprite_register_color[blue] = 0x9;
-        sprite_register_color[mean] = extra_ghost_colors[(i % strlen(extra_ghost_colors))];
+        sprite_register_color[eyes] = GHOSTEYES_COLOR;
+        sprite_register_color[blue] = BLUEGHOST_COLOR;
+        sprite_register_color[mean] = MEANGHOST_COLOR;
+        if (sprite_EXTRA_GHOST_COLORS_len)
+        {
+            sprite_register_color[mean] = (int) (my_uchar) sprite_EXTRA_GHOST_COLORS[s % sprite_EXTRA_GHOST_COLORS_len];
+        }
+        s = i;
+        if (i == GHOST0)
+        {
+            s = 0;
+        }
+        else if (i == GHOST1)
+        {
+            s = 1;
+        }
+        else if (i == GHOST2)
+        {
+            s = 2;
+        }
+        else if (i == GHOST3)
+        {
+            s = 3;
+        }
+        if (s < sprite_GHOST_COLORS_len)
+        {
+            sprite_register_color[mean] = (int) (my_uchar) sprite_GHOST_COLORS[s];
+        }
     }
-
-    if (GHOST0 < MAXGHOSTS) sprite_register_color[MEANGHOST(GHOST0)] = 0xB;
-    if (GHOST1 < MAXGHOSTS) sprite_register_color[MEANGHOST(GHOST1)] = 0xC;
-    if (GHOST2 < MAXGHOSTS) sprite_register_color[MEANGHOST(GHOST2)] = 0xD;
-    if (GHOST3 < MAXGHOSTS) sprite_register_color[MEANGHOST(GHOST3)] = 0x6;
 }
 
 char *tmp_notice = 0;
@@ -4013,6 +4058,10 @@ const char * tile_NOTE = 0;
 const char * sprite_ABOUT = 0;
 const char * sprite_FIXME = 0;
 const char * sprite_NOTE = 0;
+const char *sprite_GHOST_COLORS = GHOST_COLORS;
+size_t sprite_GHOST_COLORS_len = sizeof(GHOST_COLORS) - 1;
+const char *sprite_EXTRA_GHOST_COLORS = EXTRA_GHOST_COLORS;
+size_t sprite_EXTRA_GHOST_COLORS_len = sizeof(EXTRA_GHOST_COLORS) - 1;
 const char *msg_READY = READY;
 const char *msg_GAMEOVER = GAMEOVER;
 const char *msg_PLAYER1 = PLAYER1;

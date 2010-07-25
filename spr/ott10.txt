@@ -1,4 +1,4 @@
-﻿10x10 ABOUT="Bitmap sprites for 'kpacman' (in the style of GCC's Crazy Otto), 62.5% scaled 'otto, 1:1 aspect ratio"
+﻿10x10 ABOUT="Bitmap sprites for 'kpacman' (in the style of GCC's Crazy Otto), 62.5% scaled 'otto, 1:1 aspect ratio" GHOST_COLORS="\x2B\x8C\x5D\xC6" EXTRA_GHOST_COLORS="\x2A\xD5\xC4\xB3"
 
 FF~0
 :          

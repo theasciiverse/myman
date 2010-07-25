@@ -960,9 +960,13 @@ home (after being eaten.) Setting the "1" flag bit is a good idea if
 your ghost eye sprite totally obsures your "mean" ghost sprite.
 
 Sprite Argument         Description
-ABOUT                   Textual description of this sprite file
-NOTE                    Additional notes for this sprite file
-FIXME                   Known problems with this sprite file
+ABOUT                   Textual description of this sprite file.
+NOTE                    Additional notes for this sprite file.
+FIXME                   Known problems with this sprite file.
+GHOST_COLORS            Colors for first ghosts (as many as are
+                        covered by GHOST_COLORS) in VGA byte format.
+EXTRA_GHOST_COLORS      Colors for extra ghosts (not covered by
+                        GHOST_COLORS) in VGA byte format.
 
 The sprite frame format is similar to the maze tile format, with the
 following differences: a literal NUL (ASCII 0) in the description is

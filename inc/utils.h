@@ -894,6 +894,10 @@ extern const char * tile_NOTE;
 extern const char * sprite_ABOUT;
 extern const char * sprite_FIXME;
 extern const char * sprite_NOTE;
+extern const char *sprite_GHOST_COLORS;
+extern size_t sprite_GHOST_COLORS_len;
+extern const char *sprite_EXTRA_GHOST_COLORS;
+extern size_t sprite_EXTRA_GHOST_COLORS_len;
 extern const char *msg_READY;
 extern const char *msg_GAMEOVER;
 extern const char *msg_PLAYER1;
@@ -1021,6 +1025,22 @@ extern int visible_frame;
 
 #ifndef PAUSE_COLOR
 #define PAUSE_COLOR 0xF0
+#endif
+
+#ifndef MEANGHOST_COLOR
+#define MEANGHOST_COLOR 0xC
+#endif
+
+#ifndef BLUEGHOST_COLOR
+#define BLUEGHOST_COLOR 0x9
+#endif
+
+#ifndef GHOSTEYES_COLOR
+#define GHOSTEYES_COLOR 0xF
+#endif
+
+#ifndef GHOST_COLORS
+#define GHOST_COLORS "\x0B\x0C\x0D\x06"
 #endif
 
 #ifndef EXTRA_GHOST_COLORS

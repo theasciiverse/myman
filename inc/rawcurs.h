@@ -1600,6 +1600,7 @@ RAWCURSES_GLOBAL(int rawcurses_stdio_cp850, = 0);
 RAWCURSES_GLOBAL(int rawcurses_stdio_koi8r, = 0);
 RAWCURSES_GLOBAL(int rawcurses_stdio_koi8u, = 0);
 RAWCURSES_GLOBAL(int rawcurses_stdio_acs_nobullet, = 0);
+RAWCURSES_GLOBAL(int rawcurses_stdio_acs_revblock, = 0);
 RAWCURSES_GLOBAL(int rawcurses_stdio_vwmterm, = 0);
 RAWCURSES_GLOBAL(int rawcurses_stdio_nocolorbold, = 0);
 RAWCURSES_GLOBAL(int rawcurses_stdio_bterm, = 0);
@@ -3945,11 +3946,73 @@ static int rawcurses_fput_sgr(FILE *fh, attr_t a, attr_t a_rgb)
     }
     if (rawcurses_stdio_wy60)
     {
-        fprintf(fh, ESCAPE("G0"));
-        if (a & A_BOLD) fprintf(fh, ESCAPE("Gt"));
-        if (a & A_DIM) fprintf(fh, ESCAPE("G7"));
-        if (a & A_UNDERLINE) fprintf(fh, ESCAPE("G8"));
-        if (a & (A_REVERSE | A_STANDOUT)) fprintf(fh, ESCAPE("G6"));
+        int wyco = 0;
+
+        if (a & RAWCURSES__A_COLOR)
+        {
+            /* HACK: colors likely unique to the "wy60" emulator */
+            int ansifg, ansibg;
+            
+            ansifg = (((a_rgb & FOREGROUND_RED) ? 1 : 0)
+                      |
+                      ((a_rgb & FOREGROUND_GREEN) ? 2 : 0)
+                      |
+                      ((a_rgb & FOREGROUND_BLUE) ? 4 : 0)
+                      |
+                      ((a_rgb & FOREGROUND_INTENSITY) ? 8 : 0));
+            ansibg = (((a_rgb & BACKGROUND_RED) ? 1 : 0)
+                      |
+                      ((a_rgb & BACKGROUND_GREEN) ? 2 : 0)
+                      |
+                      ((a_rgb & BACKGROUND_BLUE) ? 4 : 0)
+                      |
+                      ((a_rgb & BACKGROUND_INTENSITY) ? 8 : 0));
+            if (ansibg)
+            {
+                /* reverse */
+                wyco |= 4;
+                ansifg = ansibg;
+                ansibg = 0;
+            }
+            ansifg &= 7;
+            /* only seven colors (no black, white is first) */
+            ansifg %= 7;
+            if (ansifg & 1)
+            {
+                /* red, a.k.a. blink */
+                wyco |= 2;
+            }
+            if (ansifg & 2)
+            {
+                /* green, a.k.a. underline */
+                wyco |= 8;
+            }
+            if (ansifg & 4)
+            {
+                /* blue, a.k.a. dim */
+                wyco |= 64;
+            }
+        }
+        else
+        {
+            if (a & A_BOLD)
+            {
+                if (rawcurses_stdio_blink)
+                {
+                    /* bold = blink + reverse, a.k.a. red + reverse */
+                    wyco ^= 4 + 2;
+                }
+                else
+                {
+                    /* bold = dim + underline, a.k.a. cyan */
+                    wyco ^= 64 + 8;
+                }
+            }
+            if (a & A_DIM) wyco ^= 64;
+            if (a & A_UNDERLINE) wyco ^= 8;
+            if (a & (A_REVERSE | A_STANDOUT)) wyco ^= 4;
+        }
+        fprintf(fh, ESCAPE("G%c"), '0' + wyco);
         return 1;
     }
     if (rawcurses_stdio_adm3a || rawcurses_stdio_dumb) return 0;
@@ -4097,6 +4160,13 @@ static int rawcurses_fput_sgr(FILE *fh, attr_t a, attr_t a_rgb)
  * XOR'ed with the A_REVERSE bit in the active attribute mask */
 static chtype rawcurses_map_acs(chtype ch)
 {
+    if (rawcurses_stdio_acs_revblock)
+    {
+        if (ch == ACS_BLOCK)
+        {
+            return ' ' ^ A_REVERSE;
+        }
+    }
     if (rawcurses_stdio_petscii)
     {
         switch (ch)
@@ -4250,7 +4320,7 @@ static chtype rawcurses_map_acs(chtype ch)
             ch = '8';
             break;
         case ACS_HLINE:
-            ch = '<';
+            ch = ':';
             break;
         case ACS_LTEE:
             ch = '4';
@@ -4265,7 +4335,7 @@ static chtype rawcurses_map_acs(chtype ch)
             ch = '0';
             break;
         case ACS_VLINE:
-            ch = '>';
+            ch = '6';
             break;
         default:
             ch = (chtype) ERR;
@@ -5749,6 +5819,25 @@ static const char *rawcurses_term_type(void)
     }
     else if (termType
              &&
+             RAWCURSES__EQ(termType, "vt102")
+             &&
+             termProgram
+             &&
+             RAWCURSES__EQ(termProgram, "MacTelnet"))
+    {
+        if (termProgramVersion
+            &&
+            (atoi(termProgramVersion) >= 4))
+        {
+            termType = "ncsa-256color";
+        }
+        else
+        {
+            termType = "ncsa";
+        }
+    }
+    else if (termType
+             &&
              RAWCURSES__EQ(termType, "xterm")
              &&
              mlterm)
@@ -6353,6 +6442,8 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
             ||
             rawcurses_stdio_vt52
             ||
+            RAWCURSES__STARTSWITH(termType, "ncsa")
+            ||
             RAWCURSES__STARTSWITH(termType, "pcansi")
             ||
             RAWCURSES__STARTSWITH(termType, "ansi")
@@ -6433,6 +6524,10 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
              ||
              RAWCURSES__STARTSWITH(termType, "xterm")
              ||
+             RAWCURSES__STARTSWITH(termType, "ncsa")
+             ||
+             RAWCURSES__STARTSWITH(termType, "teraterm")
+             ||
              RAWCURSES__HASFLAG(termType, "acs"))
             &&
             (! RAWCURSES__HASFLAG(termType, "noacs"))
@@ -6459,6 +6554,14 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
         {
             rawcurses_stdio_acs_nobullet = 1;
         }
+    }
+    if (rawcurses_getenv_boolean("RAWCURSES_REVBLOCK"))
+    {
+        rawcurses_stdio_acs_revblock = *(rawcurses_getenv_boolean("RAWCURSES_REVBLOCK")) ? 1 : 0;
+    }
+    else
+    {
+        rawcurses_stdio_acs_revblock = 0;
     }
     if (rawcurses_getenv_boolean("RAWCURSES_NOCOLORBOLD"))
     {

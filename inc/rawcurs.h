@@ -3672,7 +3672,7 @@ static int rawcurses_fput_cup(FILE *fh, int y, int x)
             fh,
             "\x1d%c%c%c%c%c\x1f%s",
             0x20 + ((teky / 4) / 32),
-            0x60 + ((teky % 4) + 4 * (tekx % 4)),
+            0x60 + ((tekx % 4) + 4 * (teky % 4)),
             0x60 + ((teky / 4) % 32),
             0x20 + ((tekx / 4) / 32),
             0x40 + ((tekx / 4) % 32),

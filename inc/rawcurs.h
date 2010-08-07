@@ -1616,10 +1616,12 @@ RAWCURSES_GLOBAL(int rawcurses_stdio_wide, = 0);
 RAWCURSES_GLOBAL(int rawcurses_stdio_amiga, = 0);
 RAWCURSES_GLOBAL(int rawcurses_stdio_tw52, = 0);
 RAWCURSES_GLOBAL(int rawcurses_stdio_adm3a, = 0);
+RAWCURSES_GLOBAL(int rawcurses_stdio_emacs, = 0);
 RAWCURSES_GLOBAL(int rawcurses_stdio_dumb, = 0);
 RAWCURSES_GLOBAL(int rawcurses_stdio_tek, = 0);
 RAWCURSES_GLOBAL(int rawcurses_stdio_nocud, = 0);
 RAWCURSES_GLOBAL(int rawcurses_stdio_nocuu, = 0);
+RAWCURSES_GLOBAL(int rawcurses_stdio_nocuf, = 0);
 RAWCURSES_GLOBAL(int rawcurses_stdio_atascii, = 0);
 RAWCURSES_GLOBAL(int rawcurses_stdio_petscii, = 0);
 RAWCURSES_GLOBAL(int rawcurses_stdio_petscii_shifted, = 1);
@@ -3001,6 +3003,15 @@ static int rawcurses_fput_ich(FILE *fh, int n)
         }
         return 1;
     }
+    if (rawcurses_stdio_emacs)
+    {
+        while (n > 0x5e)
+        {
+            fprintf(fh, "\020_%c", 0x5e + 0x20);
+            n -= 0x5e;
+        }
+        return (fprintf(fh, "\020_%c", n + 0x20) > 0);
+    }
     if (rawcurses_stdio_adm3a || rawcurses_stdio_dumb || rawcurses_stdio_tek || rawcurses_stdio_vt52) return 0;
     return (fprintf(fh, CSI("%d@"), n) > 0);
 }
@@ -3047,6 +3058,15 @@ static int rawcurses_fput_dch(FILE *fh, int n)
         }
         return 1;
     }
+    if (rawcurses_stdio_emacs)
+    {
+        while (n > 0x5e)
+        {
+            fprintf(fh, "\020d%c", 0x5e + 0x20);
+            n -= 0x5e;
+        }
+        return (fprintf(fh, "\020d%c", n + 0x20) > 0);
+    }
     if (rawcurses_stdio_adm3a || rawcurses_stdio_dumb || rawcurses_stdio_tek || rawcurses_stdio_vt52) return 0;
     return (fprintf(fh, CSI("%dP"), n) > 0);
 }
@@ -3062,7 +3082,7 @@ static int rawcurses_fput_request_palette(FILE *fh)
         return 0;
     }
 #endif
-    if (rawcurses_stdio_adm3a || rawcurses_stdio_dumb || rawcurses_stdio_tek || rawcurses_stdio_vt52 || rawcurses_stdio_atascii || rawcurses_stdio_petscii) return 0;
+    if (rawcurses_stdio_adm3a || rawcurses_stdio_emacs || rawcurses_stdio_dumb || rawcurses_stdio_tek || rawcurses_stdio_vt52 || rawcurses_stdio_atascii || rawcurses_stdio_petscii) return 0;
     if (! rawcurses_stdio_ccc) return 0;
     if (fputs(OSC("4"), fh) == EOF) ret = 0;
     for (i = 0; i < COLORS; i ++)
@@ -3084,7 +3104,7 @@ static int rawcurses_fput_palette(FILE *fh, rawcurses_rgb_t *palette)
         return 0;
     }
 #endif
-    if (rawcurses_stdio_adm3a || rawcurses_stdio_dumb || rawcurses_stdio_tek || rawcurses_stdio_vt52 || rawcurses_stdio_atascii || rawcurses_stdio_petscii) return 0;
+    if (rawcurses_stdio_adm3a || rawcurses_stdio_emacs || rawcurses_stdio_dumb || rawcurses_stdio_tek || rawcurses_stdio_vt52 || rawcurses_stdio_atascii || rawcurses_stdio_petscii) return 0;
     if (! (rawcurses_stdio_ccc || rawcurses_stdio_ccc_linux)) return (rawcurses_stdio_256color || rawcurses_stdio_88color);
     if ((! rawcurses_stdio_ccc_linux) && (fputs(OSC("4"), fh) == EOF)) ret = 0;
     for (i = 0; i < COLORS; i ++)
@@ -3150,7 +3170,7 @@ static int rawcurses_fput_palette_reset(FILE *fh)
         return 0;
     }
 #endif
-    if (rawcurses_stdio_adm3a || rawcurses_stdio_dumb || rawcurses_stdio_tek || rawcurses_stdio_vt52 || rawcurses_stdio_atascii || rawcurses_stdio_petscii) return 0;
+    if (rawcurses_stdio_adm3a || rawcurses_stdio_emacs || rawcurses_stdio_dumb || rawcurses_stdio_tek || rawcurses_stdio_vt52 || rawcurses_stdio_atascii || rawcurses_stdio_petscii) return 0;
     if (! rawcurses_stdio_ccc_linux) return (rawcurses_stdio_256color || rawcurses_stdio_88color);
     return fputs(OSC("R") ST, fh) != EOF;
 }
@@ -3193,6 +3213,7 @@ static int rawcurses_fput_clear(FILE *fh)
         return ret;
     }
     if (rawcurses_stdio_adm3a) return fputs(ESCAPE(";") ESCAPE("*") ESCAPE("+") "\x1a", fh) != EOF;
+    if (rawcurses_stdio_emacs) return fputs("\020\f", fh) != EOF;
     if (rawcurses_stdio_vt52) return fputs("\f" ESCAPE("H") ESCAPE("J"), fh) != EOF;
     if (rawcurses_stdio_amiga) ret = fputs(CSI("H") CSI("J"), fh) != EOF;
     else ret = fputs(CSI("1;1H") CSI("2J"), fh) != EOF;
@@ -3232,7 +3253,7 @@ static int rawcurses_fput_civis(FILE *fh)
     if (rawcurses_stdio_wy60) return fputs(ESCAPE("`0"), fh) != EOF;
     if (rawcurses_stdio_kaypro2x) return fputs(ESCAPE("C4"), fh) != EOF;
     if (rawcurses_stdio_petscii && rawcurses_color && (rawcurses_w == 80)) return fputs(ESCAPE("U"), fh) != EOF;
-    if (rawcurses_stdio_vt52 || rawcurses_stdio_adm3a || rawcurses_stdio_dumb || rawcurses_stdio_tek || rawcurses_stdio_atascii || rawcurses_stdio_petscii) return 0;
+    if (rawcurses_stdio_vt52 || rawcurses_stdio_adm3a || rawcurses_stdio_emacs || rawcurses_stdio_dumb || rawcurses_stdio_tek || rawcurses_stdio_atascii || rawcurses_stdio_petscii) return 0;
     if (rawcurses_stdio_amiga) return fputs(CSI("0 p"), fh) != EOF;
     return fputs(CSI("\?25l"), fh) != EOF;
 }
@@ -3254,7 +3275,7 @@ static int rawcurses_fput_cnorm(FILE *fh)
     if (rawcurses_stdio_wy60) return fputs(ESCAPE("`1"), fh) != EOF;
     if (rawcurses_stdio_kaypro2x) return fputs(ESCAPE("B4"), fh) != EOF;
     if (rawcurses_stdio_petscii && rawcurses_color && (rawcurses_w == 80)) return fputs(ESCAPE("S"), fh) != EOF;
-    if (rawcurses_stdio_vt52 || rawcurses_stdio_adm3a || rawcurses_stdio_dumb || rawcurses_stdio_tek || rawcurses_stdio_atascii || rawcurses_stdio_petscii) return 0;
+    if (rawcurses_stdio_vt52 || rawcurses_stdio_adm3a || rawcurses_stdio_emacs || rawcurses_stdio_dumb || rawcurses_stdio_tek || rawcurses_stdio_atascii || rawcurses_stdio_petscii) return 0;
     if (rawcurses_stdio_amiga) return fputs(CSI(" p"), fh) != EOF;
     return fputs(CSI("\?25h"), fh) != EOF;
 }
@@ -3292,7 +3313,7 @@ static int rawcurses_fput_smcup(FILE *fh)
         usleep(RAWCURSES_PETSCII_RESET_USECS);
         return 1;
     }
-    if (rawcurses_stdio_vt52 || rawcurses_stdio_adm3a || rawcurses_stdio_dumb || rawcurses_stdio_tek || rawcurses_stdio_amiga || rawcurses_stdio_atascii) return rawcurses_fput_clear(fh);
+    if (rawcurses_stdio_vt52 || rawcurses_stdio_adm3a || rawcurses_stdio_emacs || rawcurses_stdio_dumb || rawcurses_stdio_tek || rawcurses_stdio_amiga || rawcurses_stdio_atascii) return rawcurses_fput_clear(fh);
     return (fprintf(fh, ESCAPE("7") CSI("s") "%s" CSI("\?7l") CSI("r"),
                     rawcurses_stdio_amiga ? "" : (CSI("\?47h"))) > 0);
 }
@@ -3323,7 +3344,7 @@ static int rawcurses_fput_rmcup(FILE *fh, int lines)
         usleep(RAWCURSES_PETSCII_RESET_USECS);
         return 1;
     }
-    if (rawcurses_stdio_vt52 || rawcurses_stdio_adm3a || rawcurses_stdio_dumb || rawcurses_stdio_tek || rawcurses_stdio_atascii) return 1;
+    if (rawcurses_stdio_vt52 || rawcurses_stdio_adm3a || rawcurses_stdio_emacs || rawcurses_stdio_dumb || rawcurses_stdio_tek || rawcurses_stdio_atascii) return 1;
     return (fprintf(fh, CSI("%d;1H") CSI("39;49m") CSI("0m") CSI("\?7h") "%s" CSI("u") ESCAPE("8"),
                     lines,
                     rawcurses_stdio_amiga ? "" : (CSI("\?47l"))) > 0);
@@ -3337,7 +3358,7 @@ static int rawcurses_fput_enacs(FILE *fh)
         return 1;
     }
 #endif
-    if (rawcurses_stdio_adm3a || rawcurses_stdio_dumb || rawcurses_stdio_tek) return 0;
+    if (rawcurses_stdio_adm3a || rawcurses_stdio_emacs || rawcurses_stdio_dumb || rawcurses_stdio_tek) return 0;
     if (rawcurses_stdio_vt52 || rawcurses_stdio_acs_h19 || rawcurses_stdio_atascii || rawcurses_stdio_acs_wy60 || rawcurses_stdio_acs_kaypro2x || rawcurses_stdio_cp437 || rawcurses_stdio_cp850 || rawcurses_stdio_koi8r || rawcurses_stdio_koi8u || rawcurses_stdio_petscii) return 1;
     if (! rawcurses_stdio_iso2022) return 1;
     return fputs(ESCAPE("(B") ESCAPE(")0"), fh) != EOF;
@@ -3368,7 +3389,7 @@ static int rawcurses_fput_smacs(FILE *fh)
     if (rawcurses_stdio_kaypro2x || rawcurses_stdio_acs_kaypro2x || rawcurses_stdio_atascii || rawcurses_stdio_petscii) return 1;
     if ((rawcurses_stdio_cp437 || rawcurses_stdio_cp850 || rawcurses_stdio_koi8r || rawcurses_stdio_koi8u)
         &&
-        ! (rawcurses_stdio_adm3a || rawcurses_stdio_dumb || rawcurses_stdio_tek))
+        ! (rawcurses_stdio_adm3a || rawcurses_stdio_emacs || rawcurses_stdio_dumb || rawcurses_stdio_tek))
     {
         if (rawcurses_stdio_utf8) return 1;
         if (rawcurses_stdio_iso2022) fputs("\x0e" ESCAPE("(0"), fh);
@@ -3403,7 +3424,7 @@ static int rawcurses_fput_rmacs(FILE *fh)
     if (rawcurses_stdio_kaypro2x || rawcurses_stdio_acs_kaypro2x || rawcurses_stdio_atascii || rawcurses_stdio_petscii) return 1;
     if ((rawcurses_stdio_cp437 || rawcurses_stdio_cp850 || rawcurses_stdio_koi8r || rawcurses_stdio_koi8u)
         &&
-        ! (rawcurses_stdio_adm3a || rawcurses_stdio_dumb || rawcurses_stdio_tek))
+        ! (rawcurses_stdio_adm3a || rawcurses_stdio_emacs || rawcurses_stdio_dumb || rawcurses_stdio_tek))
     {
         if (rawcurses_stdio_utf8) return 1;
         if (fputs(CSI("10m"), fh) != EOF)
@@ -3430,7 +3451,7 @@ static int rawcurses_fput_request_identity(FILE *fh)
         return 0;
     }
 #endif
-    if (rawcurses_stdio_adm3a || rawcurses_stdio_dumb || rawcurses_stdio_tek || rawcurses_stdio_atascii || rawcurses_stdio_petscii) return 0;
+    if (rawcurses_stdio_adm3a || rawcurses_stdio_emacs || rawcurses_stdio_dumb || rawcurses_stdio_tek || rawcurses_stdio_atascii || rawcurses_stdio_petscii) return 0;
     return fputs(ESCAPE("Z"), fh) != EOF;
 }
 
@@ -3444,7 +3465,7 @@ static int rawcurses_fput_request_winsize(FILE *fh)
         return 0;
     }
 #endif
-    if (rawcurses_stdio_vt52 || rawcurses_stdio_adm3a || rawcurses_stdio_dumb || rawcurses_stdio_tek || rawcurses_stdio_atascii || rawcurses_stdio_petscii) return 0;
+    if (rawcurses_stdio_vt52 || rawcurses_stdio_adm3a || rawcurses_stdio_emacs || rawcurses_stdio_dumb || rawcurses_stdio_tek || rawcurses_stdio_atascii || rawcurses_stdio_petscii) return 0;
     if (rawcurses_stdio_amiga) return fputs(rawcurses_stdio_utf8 ? CSI("0 q") : CSI8("0 q"), fh) != EOF;
     return fputs(CSI("999B") CSI("999C") CSI("999;999H") CSI("6n"), fh) != EOF;
 }
@@ -3457,7 +3478,7 @@ static int rawcurses_fput_request_title(FILE *fh)
         return 0;
     }
 #endif
-    if (rawcurses_stdio_vt52 || rawcurses_stdio_adm3a || rawcurses_stdio_dumb || rawcurses_stdio_tek || rawcurses_stdio_atascii || rawcurses_stdio_petscii) return 0;
+    if (rawcurses_stdio_vt52 || rawcurses_stdio_adm3a || rawcurses_stdio_emacs || rawcurses_stdio_dumb || rawcurses_stdio_tek || rawcurses_stdio_atascii || rawcurses_stdio_petscii) return 0;
     if (rawcurses_stdio_decterm) return 0;
     return fputs(CSI("21t"), fh) != EOF;
 }
@@ -3474,7 +3495,7 @@ static int rawcurses_fput_title(FILE *fh, const char *title)
     {
         return (fprintf(fh, ESCAPE("S%s\r"), (title)) > 0);
     }
-    if (rawcurses_stdio_vt52 || rawcurses_stdio_adm3a || rawcurses_stdio_dumb || rawcurses_stdio_tek || rawcurses_stdio_atascii || rawcurses_stdio_petscii) return 0;
+    if (rawcurses_stdio_vt52 || rawcurses_stdio_adm3a || rawcurses_stdio_emacs || rawcurses_stdio_dumb || rawcurses_stdio_tek || rawcurses_stdio_atascii || rawcurses_stdio_petscii) return 0;
     if (rawcurses_stdio_decterm) return (fprintf(fh, OSC("21;%s" ST), (title)) > 0);
     return (fprintf(fh, OSC("2;%s" ST), (title)) > 0);
 }
@@ -3487,7 +3508,7 @@ static int rawcurses_fput_request_icon_name(FILE *fh)
         return 0;
     }
 #endif
-    if (rawcurses_stdio_vt52 || rawcurses_stdio_adm3a || rawcurses_stdio_dumb || rawcurses_stdio_tek || rawcurses_stdio_atascii || rawcurses_stdio_petscii) return 0;
+    if (rawcurses_stdio_vt52 || rawcurses_stdio_adm3a || rawcurses_stdio_emacs || rawcurses_stdio_dumb || rawcurses_stdio_tek || rawcurses_stdio_atascii || rawcurses_stdio_petscii) return 0;
     if (rawcurses_stdio_decterm) return 0;
     return fputs(CSI("20t"), fh) != EOF;
 }
@@ -3500,7 +3521,7 @@ static int rawcurses_fput_icon_name(FILE *fh, const char *icon_name)
         return 0;
     }
 #endif
-    if (rawcurses_stdio_vt52 || rawcurses_stdio_adm3a || rawcurses_stdio_dumb || rawcurses_stdio_tek || rawcurses_stdio_atascii || rawcurses_stdio_petscii) return 0;
+    if (rawcurses_stdio_vt52 || rawcurses_stdio_adm3a || rawcurses_stdio_emacs || rawcurses_stdio_dumb || rawcurses_stdio_tek || rawcurses_stdio_atascii || rawcurses_stdio_petscii) return 0;
     if (rawcurses_stdio_decterm) return (fprintf(fh, OSC("2L;%s" ST), (icon_name)) > 0);
     return (fprintf(fh, OSC("1;%s" ST), (icon_name)) > 0);
 }
@@ -3518,6 +3539,10 @@ static int rawcurses_fput_bel(FILE *fh)
     {
         return fputc('\376', fh) != EOF;
     }
+    if (rawcurses_stdio_emacs)
+    {
+        return fputs("\020\7", fh) != EOF;
+    }
     return fputc('\7', fh) != EOF;
 }
 
@@ -3534,6 +3559,7 @@ static int rawcurses_fput_clrtobot(FILE *fh)
     }
 #endif
     if (rawcurses_stdio_adm3a || rawcurses_stdio_dumb || rawcurses_stdio_tek || rawcurses_stdio_atascii || rawcurses_stdio_petscii) return 0;
+    if (rawcurses_stdio_emacs) return fputs("\020C", fh) != EOF;
     if (rawcurses_stdio_vt52) return fputs(ESCAPE("J"), fh) != EOF;
     if (rawcurses_stdio_amiga) ret = (fputs(CSI("J"), fh) != EOF);
     else ret = (fputs(CSI("0J"), fh) != EOF);
@@ -3570,6 +3596,7 @@ static int rawcurses_fput_clrtoeol(FILE *fh)
     }
 #endif
     if (rawcurses_stdio_adm3a || rawcurses_stdio_dumb || rawcurses_stdio_tek || rawcurses_stdio_atascii || rawcurses_stdio_petscii) return 0;
+    if (rawcurses_stdio_emacs) return fputs("\020c", fh) != EOF;
     if (rawcurses_stdio_vt52) return fputs(ESCAPE("K"), fh) != EOF;
     ret = (fputs(CSI("0K"), fh) != EOF);
     if (rawcurses_stdio_wide || rawcurses_stdio_tall || rawcurses_stdio_dwl)
@@ -3610,13 +3637,23 @@ static int rawcurses_fput_relcup(FILE *fh, int dy, int dx, int y, int x)
             dy = 0;
         }
     }
-    if (rawcurses_stdio_vt52 || rawcurses_stdio_adm3a || rawcurses_stdio_dumb || rawcurses_stdio_tek || rawcurses_stdio_atascii || rawcurses_stdio_petscii)
+    if (rawcurses_stdio_nocuf && (dx > 0))
+    {
+        ret = rawcurses_fput_relcup(fh, dy, 0, y, x - dx);
+        dy = 0;
+        while ((dx > 0) && (8 * ((x - dx + 8) / 8) < (rawcurses_w - ((y + 1) == rawcurses_h))))
+        {
+            fputs("\t", fh);
+            dx = x - 8 * ((x - dx + 8) / 8);
+        }
+    }
+    if (rawcurses_stdio_vt52 || rawcurses_stdio_adm3a || rawcurses_stdio_emacs || rawcurses_stdio_dumb || rawcurses_stdio_tek || rawcurses_stdio_atascii || rawcurses_stdio_petscii)
     {
         while (dy < 0)
         {
             if (rawcurses_stdio_atascii) ret = ret && (fputc('\034', fh) != EOF);
             else if (rawcurses_stdio_petscii) ret = ret && (fputc('\221', fh) != EOF);
-            else if (rawcurses_stdio_adm3a || rawcurses_stdio_dumb || rawcurses_stdio_tek) ret = ret && (fputc('\v', fh) != EOF);
+            else if (rawcurses_stdio_adm3a || rawcurses_stdio_emacs || rawcurses_stdio_dumb || rawcurses_stdio_tek) ret = ret && (fputc('\v', fh) != EOF);
             else ret = ret && (fputs(ESCAPE("A"), fh) != EOF);
             dy ++;
         }
@@ -3624,6 +3661,7 @@ static int rawcurses_fput_relcup(FILE *fh, int dy, int dx, int y, int x)
         {
             if (rawcurses_stdio_atascii) ret = ret && (fputc('\036', fh) != EOF);
             else if (rawcurses_stdio_petscii) ret = ret && (fputc('\235', fh) != EOF);
+            else if (rawcurses_stdio_emacs) ret = ret && (fputs("\020\002", fh) != EOF);
             else if (rawcurses_stdio_adm3a || rawcurses_stdio_dumb || rawcurses_stdio_tek) ret = ret && (fputc('\b', fh) != EOF);
             else ret = ret && (fputs(ESCAPE("D"), fh) != EOF);
             dx ++;
@@ -3632,6 +3670,7 @@ static int rawcurses_fput_relcup(FILE *fh, int dy, int dx, int y, int x)
         {
             if (rawcurses_stdio_atascii) ret = ret && (fputc('\035', fh) != EOF);
             else if (rawcurses_stdio_petscii) ret = ret && (fputc('\021', fh) != EOF);
+            else if (rawcurses_stdio_emacs) ret = ret && (fputs("\020\n", fh) != EOF);
             else if (rawcurses_stdio_adm3a || rawcurses_stdio_dumb || rawcurses_stdio_tek) ret = ret && (fputc('\n', fh) != EOF);
             else ret = ret && (fputs(ESCAPE("B"), fh) != EOF);
             dy --;
@@ -3641,6 +3680,7 @@ static int rawcurses_fput_relcup(FILE *fh, int dy, int dx, int y, int x)
             if (rawcurses_stdio_atascii) ret = ret && (fputc('\037', fh) != EOF);
             else if (rawcurses_stdio_petscii) ret = ret && (fputc('\035', fh) != EOF);
             else if (rawcurses_stdio_adm3a) ret = ret && (fputc('\f', fh) != EOF);
+            else if (rawcurses_stdio_emacs) ret = ret && (fputs("\020\006", fh) != EOF);
             else if (rawcurses_stdio_dumb || rawcurses_stdio_tek) ret = ret && (fputc(' ', fh) != EOF);
             else ret = ret && (fputs(ESCAPE("C"), fh) != EOF);
             dx --;
@@ -3703,7 +3743,7 @@ static int rawcurses_fput_cup(FILE *fh, int y, int x)
             (tekx >= (4096 / 2)) ? "\b " : " \b") > 0;
     }
     if (rawcurses_stdio_atascii || rawcurses_stdio_petscii || rawcurses_stdio_dumb || rawcurses_stdio_tek) return 0;
-    if (rawcurses_stdio_vt52 || rawcurses_stdio_adm3a)
+    if (rawcurses_stdio_vt52 || rawcurses_stdio_adm3a || rawcurses_stdio_emacs)
     {
         int yo, xo, ret;
 
@@ -3719,15 +3759,17 @@ static int rawcurses_fput_cup(FILE *fh, int y, int x)
             xo = x - 0x5e;
             x = 0x5e;
         }
-        ret = (fprintf(fh, rawcurses_stdio_adm3a ? (ESCAPE("=%c%c")) : (ESCAPE("Y%c%c")), y + 0x20, x + 0x20) > 0);
+        ret = (fprintf(fh, rawcurses_stdio_adm3a ? (ESCAPE("=%c%c")) : rawcurses_stdio_emacs ? ("\020=%c%c") : (ESCAPE("Y%c%c")), y + 0x20, x + 0x20) > 0);
         while (yo --)
         {
             if (rawcurses_stdio_adm3a) fputc('\n', fh);
+            else if (rawcurses_stdio_emacs) fputs("\020\n", fh);
             else fputs(ESCAPE("B"), fh);
         }
         while (xo --)
         {
             if (rawcurses_stdio_adm3a) fputc('\f', fh);
+            else if (rawcurses_stdio_emacs) fputs("\020\006", fh);
             else fputs(ESCAPE("C"), fh);
         }
         return ret;
@@ -4128,7 +4170,7 @@ static int rawcurses_fput_sgr(FILE *fh, attr_t a, attr_t a_rgb)
         fprintf(fh, ESCAPE("G%c"), '0' + wyco);
         return 1;
     }
-    if (rawcurses_stdio_adm3a || rawcurses_stdio_dumb || rawcurses_stdio_tek) return 0;
+    if (rawcurses_stdio_adm3a || rawcurses_stdio_emacs || rawcurses_stdio_dumb || rawcurses_stdio_tek) return 0;
     fputs(CSI("0"), fh);
     if ((a_rgb & BACKGROUND_INTENSITY)
         &&
@@ -6310,12 +6352,15 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
         ||
         RAWCURSES__EQ(termType, "eterm-color")
         ||
+        RAWCURSES__STARTSWITH(termType, "emacs-em")
+        ||
         (RAWCURSES__STARTSWITH(termType, "rxvt")
          &&
          RAWCURSES__NE(termType, "rxvt-unicode")))
     {
         /* (m)rxvt is still living in the pre-UTF-8 dark ages. it gets
-         * ASCII for now. likewise the Emacs "eterm"/"eterm-color". */
+         * ASCII for now. likewise the Emacs
+         * "eterm"/"eterm-color"/"emacs-em*". */
         rawcurses_stdio_utf8 = 0;
     }
     else if (RAWCURSES__STARTSWITH(termType, "cygwin"))
@@ -6434,6 +6479,18 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
             adm3alike += strlen(adm3alike) + 1;
         }
     }
+    if (rawcurses_getenv_boolean("RAWCURSES_EMACS"))
+    {
+        rawcurses_stdio_emacs = *(rawcurses_getenv_boolean("RAWCURSES_EMACS")) ? 1 : 0;
+    }
+    else
+    {
+        rawcurses_stdio_emacs = 0;
+        if (RAWCURSES__STARTSWITH(termType, "emacs-em"))
+        {
+            rawcurses_stdio_emacs = 1;
+        }
+    }
     if (rawcurses_getenv_boolean("RAWCURSES_DUMB"))
     {
         rawcurses_stdio_dumb = *(rawcurses_getenv_boolean("RAWCURSES_DUMB")) ? 1 : 0;
@@ -6487,6 +6544,14 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
     else
     {
         rawcurses_stdio_nocuu = rawcurses_stdio_dumb;
+    }
+    if (rawcurses_getenv_boolean("RAWCURSES_NOCUF"))
+    {
+        rawcurses_stdio_nocuf = *(rawcurses_getenv_boolean("RAWCURSES_NOCUF")) ? 1 : 0;
+    }
+    else
+    {
+        rawcurses_stdio_nocuf = rawcurses_stdio_dumb;
     }
     if (rawcurses_getenv_boolean("RAWCURSES_ATASCII"))
     {
@@ -6587,6 +6652,8 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
     {
         rawcurses_stdio_iso2022 = 1;
         if (rawcurses_stdio_adm3a
+            ||
+            rawcurses_stdio_emacs
             ||
             rawcurses_stdio_vt52
             ||
@@ -7775,6 +7842,19 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
                     }
                 }
             }
+            if (RAWCURSES__STARTSWITH(termType, "emacs-em"))
+            {
+                int sizecode = atoi(termType + strlen("emacs-em"));
+                int sizediv = 10;
+                while ((sizecode / (sizediv * 10)) > (sizecode % (sizediv * 10)))
+                {
+                    sizediv *= 10;
+                }
+                if ((sizecode / sizediv) && (sizecode % sizediv))
+                {
+                    rawcurses_w = sizecode / sizediv;
+                }
+            }
             got_winsize = 0;
         }
         if (rawcurses_h < 1)
@@ -7902,6 +7982,19 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
             {
                 rawcurses_h --;
             }
+            if (RAWCURSES__STARTSWITH(termType, "emacs-em"))
+            {
+                int sizecode = atoi(termType + strlen("emacs-em"));
+                int sizediv = 10;
+                while ((sizecode / (sizediv * 10)) > (sizecode % (sizediv * 10)))
+                {
+                    sizediv *= 10;
+                }
+                if ((sizecode / sizediv) && (sizecode % sizediv))
+                {
+                    rawcurses_h = sizecode % sizediv;
+                }
+            }
             got_winsize = 0;
         }
         rawcurses_stdio_new_shortname = NULL;
@@ -7976,7 +8069,7 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
         }
         else
         {
-            rawcurses_color = rawcurses_stdio ? (! ((rawcurses_stdio_vt52 && ! rawcurses_stdio_st52) || rawcurses_stdio_adm3a || rawcurses_stdio_dumb || rawcurses_stdio_tek || rawcurses_stdio_atascii)) : 1;
+            rawcurses_color = rawcurses_stdio ? (! ((rawcurses_stdio_vt52 && ! rawcurses_stdio_st52) || rawcurses_stdio_adm3a || rawcurses_stdio_emacs || rawcurses_stdio_dumb || rawcurses_stdio_tek || rawcurses_stdio_atascii)) : 1;
 #if USE_CONIO
 #if ! defined(_CONIO2_H_)
             if (rawcurses_stdio_conio)
@@ -9180,6 +9273,7 @@ static int rawcurses_getch(void)
                              * but we pretend to care... */
                             rawcurses_stdio_vt52 = 1;
                             rawcurses_stdio_adm3a = 0;
+                            rawcurses_stdio_emacs = 0;
                             rawcurses_stdio_atascii = 0;
                             rawcurses_stdio_petscii = 0;
                             rawcurses_stdio_dumb = 0;
@@ -9625,6 +9719,7 @@ static int rawcurses_getch(void)
                          * but we pretend to care... */
                         rawcurses_stdio_vt52 = 0;
                         rawcurses_stdio_adm3a = 0;
+                        rawcurses_stdio_emacs = 0;
                         rawcurses_stdio_atascii = 0;
                         rawcurses_stdio_petscii = 0;
                         rawcurses_stdio_dumb = 0;
@@ -10878,7 +10973,7 @@ static int addch(chtype ch)
         if (rawcurses_x >= rawcurses_w)
         {
             rawcurses_x = rawcurses_w - 1;
-            if (rawcurses_stdio_atascii || rawcurses_stdio_petscii || rawcurses_stdio_dumb || rawcurses_stdio_tek)
+            if (rawcurses_stdio_atascii || rawcurses_stdio_petscii || rawcurses_stdio_dumb || rawcurses_stdio_tek || rawcurses_stdio_emacs)
             {
                 rawcurses_x = 0;
                 rawcurses_y ++;

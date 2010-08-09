@@ -159,6 +159,7 @@
 /* NOTE: s2 must be a string literal, and this relies on the compiler
  * merging successive string literals, as in ANSI C */
 #define RAWCURSES__HASFLAG(s1,s2) (RAWCURSES__CONTAINS((s1), ("-"s2"-")) || RAWCURSES__ENDSWITH((s1), ("-"s2)))
+#define RAWCURSES__HASBASE(s1,s2) (RAWCURSES__EQ((s1), (s2)) || RAWCURSES__STARTSWITH((s1), (s2"-")))
 
 #if defined(WIN32)
 #ifndef USE_WINCONSOLE
@@ -1595,6 +1596,8 @@ RAWCURSES_GLOBAL(int rawcurses_stdio_acs, = 0);
 RAWCURSES_GLOBAL(int rawcurses_stdio_acs_h19, = 0);
 RAWCURSES_GLOBAL(int rawcurses_stdio_acs_wy60, = 0);
 RAWCURSES_GLOBAL(int rawcurses_stdio_acs_kaypro2x, = 0);
+RAWCURSES_GLOBAL(int rawcurses_stdio_m100, = 0);
+RAWCURSES_GLOBAL(int rawcurses_stdio_acs_m100, = 0);
 RAWCURSES_GLOBAL(int rawcurses_stdio_acs_c128, = 0);
 RAWCURSES_GLOBAL(int rawcurses_stdio_wy60, = 0);
 RAWCURSES_GLOBAL(int rawcurses_stdio_kaypro2x, = 0);
@@ -1809,7 +1812,23 @@ static const char *RAWCURSES_VT52LIKE =
     "kermit" "\0"
     "kermit-am" "\0"
     "m100" "\0"
+    "m100-40x24" "\0"
+    "m100-60x10" "\0"
+    "m100-60x10-acs" "\0"
+    "m100-80x24" "\0"
+    "m100-80x24-acs" "\0"
+    "m100-acs" "\0"
+    "m100-acs-60x10" "\0"
+    "m100-acs-80x24" "\0"
+    "m100-acs-s" "\0"
+    "m100-s" "\0"
+    "m100-s-acs" "\0"
     "m100v" "\0"
+    "m200" "\0"
+    "m200-acs" "\0"
+    "m200-acs-s" "\0"
+    "m200-s" "\0"
+    "m200-s-acs" "\0"
     "mime2a" "\0"
     "mime2a-v" "\0"
     "mod100" "\0"
@@ -1854,6 +1873,8 @@ static const char *RAWCURSES_VT52LIKE =
     "t1061" "\0"
     "t1061f" "\0"
     "t3800" "\0"
+    "td100" "\0"
+    "td200" "\0"
     "tek4107" "\0"
     "tek4109" "\0"
     "tek4207-s" "\0"
@@ -1862,6 +1883,8 @@ static const char *RAWCURSES_VT52LIKE =
     "TRS100" "\0"
     "trs100" "\0"
     "trs16" "\0"
+    "TRS200" "\0"
+    "trs200" "\0"
     "trs2" "\0"
     "trs80II" "\0"
     "trs80ii" "\0"
@@ -1967,6 +1990,48 @@ static const char *RAWCURSES_ACS_KAYPRO2XLIKE =
  * sequences */
 static const char *RAWCURSES_KAYPRO2XLIKE =
     "kaypro2x" "\0"
+    "\0\0";
+
+/* list of terminals for which we assume a TRS-80 Model 100-style
+ * escape sequences */
+static const char *RAWCURSES_M100LIKE =
+    "m100" "\0"
+    "m100" "\0"
+    "m100-60x10" "\0"
+    "m100-60x10-acs" "\0"
+    "m100-acs" "\0"
+    "m100-acs-60x10" "\0"
+    "m100-acs-s" "\0"
+    "m100-s" "\0"
+    "m100-s-acs" "\0"
+    "m100v" "\0"
+    "m200" "\0"
+    "m200-acs" "\0"
+    "m200-acs-s" "\0"
+    "m200-s" "\0"
+    "m200-s-acs" "\0"
+    "mod100" "\0"
+    "mod200" "\0"
+    "td100" "\0"
+    "td200" "\0"
+    "TRS100" "\0"
+    "trs100" "\0"
+    "TRS200" "\0"
+    "trs200" "\0"
+    "trs80-100" "\0"
+    "\0\0";
+
+/* list of terminals for which we assume a TRS-80 Model 100-style
+ * alternate character set */
+static const char *RAWCURSES_ACS_M100LIKE =
+    "m100-60x10-acs" "\0"
+    "m100-acs" "\0"
+    "m100-acs-60x10" "\0"
+    "m100-acs-s" "\0"
+    "m100-s-acs" "\0"
+    "m200-acs" "\0"
+    "m200-acs-s" "\0"
+    "m200-s-acs" "\0"
     "\0\0";
 
 /* list of terminals which need their SGR sequences split out with one
@@ -3260,6 +3325,7 @@ static int rawcurses_fput_civis(FILE *fh)
 #endif
     }
 #endif
+    if (rawcurses_stdio_m100) return fputs(ESCAPE("Q"), fh) != EOF;
     if (rawcurses_stdio_st52) return fputs(ESCAPE("f"), fh) != EOF;
     if (rawcurses_stdio_wy60) return fputs(ESCAPE("`0"), fh) != EOF;
     if (rawcurses_stdio_kaypro2x) return fputs(ESCAPE("C4"), fh) != EOF;
@@ -3282,6 +3348,7 @@ static int rawcurses_fput_cnorm(FILE *fh)
 #endif
     }
 #endif
+    if (rawcurses_stdio_m100) return fputs(ESCAPE("P"), fh) != EOF;
     if (rawcurses_stdio_st52) return fputs(ESCAPE("e"), fh) != EOF;
     if (rawcurses_stdio_wy60) return fputs(ESCAPE("`1"), fh) != EOF;
     if (rawcurses_stdio_kaypro2x) return fputs(ESCAPE("B4"), fh) != EOF;
@@ -3323,6 +3390,18 @@ static int rawcurses_fput_smcup(FILE *fh)
         fflush(fh);
         usleep(RAWCURSES_PETSCII_RESET_USECS);
         return 1;
+    }
+    if (rawcurses_stdio_m100)
+    {
+        /* HACK: status line = odd height */
+        if (rawcurses_h % 2)
+        {
+            fputs(ESCAPE("T"), fh);
+        }
+        else
+        {
+            fputs(ESCAPE("U"), fh);
+        }
     }
     if (rawcurses_stdio_vt52 || rawcurses_stdio_adm3a || rawcurses_stdio_emacs || rawcurses_stdio_dumb || rawcurses_stdio_tek || rawcurses_stdio_amiga || rawcurses_stdio_atascii) return rawcurses_fput_clear(fh);
     return (fprintf(fh, ESCAPE("7") CSI("s") "%s" CSI("\?7l") CSI("r"),
@@ -3370,7 +3449,7 @@ static int rawcurses_fput_enacs(FILE *fh)
     }
 #endif
     if (rawcurses_stdio_adm3a || rawcurses_stdio_emacs || rawcurses_stdio_dumb || rawcurses_stdio_tek) return 0;
-    if (rawcurses_stdio_vt52 || rawcurses_stdio_acs_h19 || rawcurses_stdio_atascii || rawcurses_stdio_acs_wy60 || rawcurses_stdio_acs_kaypro2x || rawcurses_stdio_cp437 || rawcurses_stdio_cp850 || rawcurses_stdio_koi8r || rawcurses_stdio_koi8u || rawcurses_stdio_petscii) return 1;
+    if (rawcurses_stdio_vt52 || rawcurses_stdio_acs_h19 || rawcurses_stdio_atascii || rawcurses_stdio_acs_wy60 || rawcurses_stdio_acs_kaypro2x || rawcurses_stdio_acs_m100 || rawcurses_stdio_cp437 || rawcurses_stdio_cp850 || rawcurses_stdio_koi8r || rawcurses_stdio_koi8u || rawcurses_stdio_petscii) return 1;
     if (! rawcurses_stdio_iso2022) return 1;
     return fputs(ESCAPE("(B") ESCAPE(")0"), fh) != EOF;
 }
@@ -3383,6 +3462,7 @@ static int rawcurses_fput_smacs(FILE *fh)
         return 1;
     }
 #endif
+    if (rawcurses_stdio_m100) return 1;
     if (rawcurses_stdio_vt52) return fputs(ESCAPE("F"), fh) != EOF;
     if (rawcurses_stdio_wy60 && rawcurses_stdio_acs_wy60) return fputs(ESCAPE("H"), fh) != EOF;
     if (rawcurses_stdio_petscii
@@ -3397,7 +3477,7 @@ static int rawcurses_fput_smacs(FILE *fh)
     {
         return fputs("\216", fh) != EOF;
     }
-    if (rawcurses_stdio_kaypro2x || rawcurses_stdio_acs_kaypro2x || rawcurses_stdio_atascii || rawcurses_stdio_petscii) return 1;
+    if (rawcurses_stdio_kaypro2x || rawcurses_stdio_acs_kaypro2x || rawcurses_stdio_acs_m100 || rawcurses_stdio_atascii || rawcurses_stdio_petscii) return 1;
     if ((rawcurses_stdio_cp437 || rawcurses_stdio_cp850 || rawcurses_stdio_koi8r || rawcurses_stdio_koi8u)
         &&
         ! (rawcurses_stdio_adm3a || rawcurses_stdio_emacs || rawcurses_stdio_dumb || rawcurses_stdio_tek))
@@ -3418,6 +3498,7 @@ static int rawcurses_fput_rmacs(FILE *fh)
         return 1;
     }
 #endif
+    if (rawcurses_stdio_m100) return 1;
     if (rawcurses_stdio_vt52) return fputs(ESCAPE("G"), fh) != EOF;
     if (rawcurses_stdio_wy60 && rawcurses_stdio_acs_wy60) return 1;
     if (rawcurses_stdio_petscii
@@ -3432,7 +3513,7 @@ static int rawcurses_fput_rmacs(FILE *fh)
     {
         return fputs("\016", fh) != EOF;
     }
-    if (rawcurses_stdio_kaypro2x || rawcurses_stdio_acs_kaypro2x || rawcurses_stdio_atascii || rawcurses_stdio_petscii) return 1;
+    if (rawcurses_stdio_kaypro2x || rawcurses_stdio_acs_kaypro2x || rawcurses_stdio_acs_m100 || rawcurses_stdio_atascii || rawcurses_stdio_petscii) return 1;
     if ((rawcurses_stdio_cp437 || rawcurses_stdio_cp850 || rawcurses_stdio_koi8r || rawcurses_stdio_koi8u)
         &&
         ! (rawcurses_stdio_adm3a || rawcurses_stdio_emacs || rawcurses_stdio_dumb || rawcurses_stdio_tek))
@@ -4553,6 +4634,68 @@ static chtype rawcurses_map_acs(chtype ch)
                 break;
             }
 #endif /* UNICODE */
+            ch = (chtype) ERR;
+        }
+        return ch;
+    }
+    if (rawcurses_stdio_acs_m100)
+    {
+        switch (ch)
+        {
+        case ACS_BLOCK:
+            ch = 0xef;
+            break;
+        case RAWCURSES__ACS_THALF:
+            ch = 0xe7;
+            break;
+        case RAWCURSES__ACS_BHALF:
+            ch = 0xe8;
+            break;
+        case RAWCURSES__ACS_LHALF:
+            ch = 0xe9;
+            break;
+        case RAWCURSES__ACS_RHALF:
+            ch = 0xea;
+            break;
+        case ACS_LRCORNER:
+            ch = 0xf7;
+            break;
+        case ACS_URCORNER:
+            ch = 0xf2;
+            break;
+        case ACS_ULCORNER:
+            ch = 0xf0;
+            break;
+        case ACS_LLCORNER:
+            ch = 0xf6;
+            break;
+        case ACS_PLUS:
+            ch = 0xfa;
+            break;
+        case ACS_HLINE:
+            ch = 0xf1;
+            break;
+        case ACS_LTEE:
+            ch = 0xf4;
+            break;
+        case ACS_RTEE:
+            ch = 0xf9;
+            break;
+        case ACS_BTEE:
+            ch = 0xf8;
+            break;
+        case ACS_TTEE:
+            ch = 0xf3;
+            break;
+        case ACS_VLINE:
+            ch = 0xf5;
+            break;
+        default:
+            if ((ch == (chtype) ACS_BULLET) && ! (SWAPDOTS))
+            {
+                ch = 0x9d;
+                break;
+            }
             ch = (chtype) ERR;
         }
         return ch;
@@ -6953,6 +7096,44 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
             acs_kaypro2xlike += strlen(acs_kaypro2xlike) + 1;
         }
     }
+    if (rawcurses_getenv_boolean("RAWCURSES_M100"))
+    {
+        rawcurses_stdio_m100 = *(rawcurses_getenv_boolean("RAWCURSES_M100")) ? 1 : 0;
+    }
+    else
+    {
+        const char *m100like = RAWCURSES_M100LIKE;
+
+        rawcurses_stdio_m100 = 0;
+        while (strlen(m100like))
+        {
+            if (RAWCURSES__EQ(termType, m100like))
+            {
+                rawcurses_stdio_m100 = 1;
+                break;
+            }
+            m100like += strlen(m100like) + 1;
+        }
+    }
+    if (rawcurses_getenv_boolean("RAWCURSES_ACS_M100"))
+    {
+        rawcurses_stdio_acs_m100 = *(rawcurses_getenv_boolean("RAWCURSES_ACS_M100")) ? 1 : 0;
+    }
+    else
+    {
+        const char *acs_m100like = RAWCURSES_ACS_M100LIKE;
+
+        rawcurses_stdio_acs_m100 = 0;
+        while (strlen(acs_m100like))
+        {
+            if (RAWCURSES__EQ(termType, acs_m100like))
+            {
+                rawcurses_stdio_acs_m100 = 1;
+                break;
+            }
+            acs_m100like += strlen(acs_m100like) + 1;
+        }
+    }
     if (rawcurses_getenv_boolean("RAWCURSES_NOSWAPDOTS"))
     {
         rawcurses_stdio_noswapdots = *(rawcurses_getenv_boolean("RAWCURSES_NOSWAPDOTS")) ? 1 : 0;
@@ -6986,6 +7167,10 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
         rawcurses_stdio_acs = 1;
     }
     if (rawcurses_stdio_acs_kaypro2x && ! rawcurses_getenv_boolean("RAWCURSES_ACS"))
+    {
+        rawcurses_stdio_acs = 1;
+    }
+    if (rawcurses_stdio_acs_m100 && ! rawcurses_getenv_boolean("RAWCURSES_ACS"))
     {
         rawcurses_stdio_acs = 1;
     }
@@ -7818,6 +8003,30 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
                 ||
                 RAWCURSES__STARTSWITH(termType, "petscii")
                 ||
+                RAWCURSES__EQ(termType, "8201")
+                ||
+                RAWCURSES__HASBASE(termType, "m100")
+                ||
+                RAWCURSES__EQ(termType, "mod100")
+                ||
+                RAWCURSES__HASBASE(termType, "m200")
+                ||
+                RAWCURSES__EQ(termType, "mod200")
+                ||
+                RAWCURSES__EQ(termType, "PC-8201A")
+                ||
+                RAWCURSES__EQ(termType, "pc-8201a")
+                ||
+                RAWCURSES__EQ(termType, "TRS100")
+                ||
+                RAWCURSES__EQ(termType, "trs100")
+                ||
+                RAWCURSES__EQ(termType, "TRS200")
+                ||
+                RAWCURSES__EQ(termType, "trs200")
+                ||
+                RAWCURSES__EQ(termType, "trs80-100")
+                ||
                 RAWCURSES__STARTSWITH(termType, "ibm6153-40"))
             {
                 rawcurses_w = 40;
@@ -7871,6 +8080,34 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
         if (rawcurses_h < 1)
         {
             rawcurses_h = 24;
+            if (RAWCURSES__EQ(termType, "8201")
+                ||
+                RAWCURSES__HASBASE(termType, "m100")
+                ||
+                RAWCURSES__EQ(termType, "mod100")
+                ||
+                RAWCURSES__EQ(termType, "PC-8201A")
+                ||
+                RAWCURSES__EQ(termType, "pc-8201a")
+                ||
+                RAWCURSES__EQ(termType, "TRS100")
+                ||
+                RAWCURSES__EQ(termType, "trs100")
+                ||
+                RAWCURSES__EQ(termType, "trs80-100"))
+            {
+                rawcurses_h = 8;
+            }
+            if (RAWCURSES__HASBASE(termType, "m200")
+                ||
+                RAWCURSES__EQ(termType, "mod200")
+                ||
+                RAWCURSES__EQ(termType, "TRS200")
+                ||
+                RAWCURSES__EQ(termType, "trs200"))
+            {
+                rawcurses_h = 16;
+            }
             if (RAWCURSES__STARTSWITH(termType, "petscii")
                 ||
                 RAWCURSES__STARTSWITH(termType, "ansi")

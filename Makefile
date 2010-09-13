@@ -2055,7 +2055,11 @@ and \
 and2 \
 and3 \
 mazeoid \
-pocketmn
+pocketmn \
+human \
+pacdude \
+specman \
+pac78
 
 all_sizes = \
 small \
@@ -3637,6 +3641,8 @@ lvl/hatman.asc \
 lvl/hatman.txt \
 lvl/hedges.asc \
 lvl/hedges.txt \
+lvl/human.asc \
+lvl/human.txt \
 lvl/iitpac.asc \
 lvl/iitpac.txt \
 lvl/ipac.asc \
@@ -3813,6 +3819,8 @@ lvl/pac64.asc \
 lvl/pac64.txt \
 lvl/pac700.asc \
 lvl/pac700.txt \
+lvl/pac78.asc \
+lvl/pac78.txt \
 lvl/pac8bit.asc \
 lvl/pac8bit.txt \
 lvl/pacbox.asc \
@@ -3823,6 +3831,8 @@ lvl/pacclone.asc \
 lvl/pacclone.txt \
 lvl/paccv.asc \
 lvl/paccv.txt \
+lvl/pacdude.asc \
+lvl/pacdude.txt \
 lvl/pacex2.asc \
 lvl/pacex2.txt \
 lvl/pacgal.asc \
@@ -3983,6 +3993,8 @@ lvl/snespac.asc \
 lvl/snespac.txt \
 lvl/spear.asc \
 lvl/spear.txt \
+lvl/specman.asc \
+lvl/specman.txt \
 lvl/spook.asc \
 lvl/spook.txt \
 lvl/spooky.asc \

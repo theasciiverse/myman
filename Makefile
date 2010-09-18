@@ -2059,7 +2059,13 @@ pocketmn \
 human \
 pacdude \
 specman \
-pac78
+pac78 \
+sol \
+solx \
+pakpak \
+pac99 \
+clone64 \
+toru
 
 all_sizes = \
 small \
@@ -3553,6 +3559,8 @@ lvl/classic2.asc \
 lvl/classic2.txt \
 lvl/classmun.asc \
 lvl/classmun.txt \
+lvl/clone64.asc \
+lvl/clone64.txt \
 lvl/clsweep.asc \
 lvl/clsweep.txt \
 lvl/crazyg.asc \
@@ -3823,6 +3831,8 @@ lvl/pac78.asc \
 lvl/pac78.txt \
 lvl/pac8bit.asc \
 lvl/pac8bit.txt \
+lvl/pac99.asc \
+lvl/pac99.txt \
 lvl/pacbox.asc \
 lvl/pacbox.txt \
 lvl/paccdi.asc \
@@ -3901,6 +3911,8 @@ lvl/paczx2.asc \
 lvl/paczx2.txt \
 lvl/pakkman.asc \
 lvl/pakkman.txt \
+lvl/pakpak.asc \
+lvl/pakpak.txt \
 lvl/pakus.asc \
 lvl/pakus.txt \
 lvl/paques.asc \
@@ -3991,6 +4003,10 @@ lvl/snapper.asc \
 lvl/snapper.txt \
 lvl/snespac.asc \
 lvl/snespac.txt \
+lvl/sol.asc \
+lvl/sol.txt \
+lvl/solx.asc \
+lvl/solx.txt \
 lvl/spear.asc \
 lvl/spear.txt \
 lvl/specman.asc \
@@ -4026,6 +4042,8 @@ lvl/tman.asc \
 lvl/tman.txt \
 lvl/tomyport.asc \
 lvl/tomyport.txt \
+lvl/toru.asc \
+lvl/toru.txt \
 lvl/toyman.asc \
 lvl/toyman.txt \
 lvl/trashman.asc \

@@ -2065,7 +2065,10 @@ solx \
 pakpak \
 pac99 \
 clone64 \
-toru
+toru \
+bk \
+bigbk \
+smallbk
 
 all_sizes = \
 small \
@@ -3525,8 +3528,12 @@ lvl/babypac.asc \
 lvl/babypac.txt \
 lvl/bb.asc \
 lvl/bb.txt \
+lvl/bigbk.asc \
+lvl/bigbk.txt \
 lvl/bigpac.asc \
 lvl/bigpac.txt \
+lvl/bk.asc \
+lvl/bk.txt \
 lvl/blinky.asc \
 lvl/blinky.txt \
 lvl/blobbo.asc \
@@ -3989,6 +3996,8 @@ lvl/small.asc \
 lvl/small.txt \
 lvl/small188.asc \
 lvl/small188.txt \
+lvl/smallbk.asc \
+lvl/smallbk.txt \
 lvl/smallmac.asc \
 lvl/smallmac.txt \
 lvl/smallpac.asc \

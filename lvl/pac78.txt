@@ -5,7 +5,7 @@ RFRUIT=16.5 \
  RHERO=22.5 \
   RMSG=16 \
  RMSG2=10 \
-ABOUT="Inspired by PacManPlus's 'Pac-Man' conversion of 'Ms. Pac-Man' for the Atari 7800"
+ABOUT="Inspired by Bob DeCrescenzo/PacManPlus's 'Pac-Man' conversion of 'Ms. Pac-Man' for the Atari 7800"
 ╔════════════╕╒════════════╗
 ║············││············║
 ║■┌──┐·┌───┐·││·┌───┐·┌──┐■║

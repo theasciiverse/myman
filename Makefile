@@ -2072,7 +2072,8 @@ smallbk \
 snackatk \
 wabapac \
 wabapac2 \
-javapac1
+javapac1 \
+pacman85
 
 all_sizes = \
 small \
@@ -3878,6 +3879,8 @@ lvl/pacmaine.asc \
 lvl/pacmaine.txt \
 lvl/pacman2.asc \
 lvl/pacman2.txt \
+lvl/pacman85.asc \
+lvl/pacman85.txt \
 lvl/pacman89.asc \
 lvl/pacman89.txt \
 lvl/pacman98.asc \

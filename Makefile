@@ -2068,7 +2068,8 @@ clone64 \
 toru \
 bk \
 bigbk \
-smallbk
+smallbk \
+snackatk
 
 all_sizes = \
 small \
@@ -4006,6 +4007,8 @@ lvl/smalltax.asc \
 lvl/smalltax.txt \
 lvl/smartpac.asc \
 lvl/smartpac.txt \
+lvl/snackatk.asc \
+lvl/snackatk.txt \
 lvl/snail.asc \
 lvl/snail.txt \
 lvl/snapper.asc \

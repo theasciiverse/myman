@@ -2069,7 +2069,10 @@ toru \
 bk \
 bigbk \
 smallbk \
-snackatk
+snackatk \
+wabapac \
+wabapac2 \
+javapac1
 
 all_sizes = \
 small \
@@ -3665,6 +3668,8 @@ lvl/ipac.asc \
 lvl/ipac.txt \
 lvl/javapac.asc \
 lvl/javapac.txt \
+lvl/javapac1.asc \
+lvl/javapac1.txt \
 lvl/javapac2.asc \
 lvl/javapac2.txt \
 lvl/jelly2.asc \
@@ -4069,6 +4074,10 @@ lvl/vicman.asc \
 lvl/vicman.txt \
 lvl/vicmen.asc \
 lvl/vicmen.txt \
+lvl/wabapac.asc \
+lvl/wabapac.txt \
+lvl/wabapac2.asc \
+lvl/wabapac2.txt \
 lvl/xensrvng.asc \
 lvl/xensrvng.txt \
 lvl/xfred.asc \

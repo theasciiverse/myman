@@ -2073,7 +2073,8 @@ snackatk \
 wabapac \
 wabapac2 \
 javapac1 \
-pacman85
+pacman85 \
+avrpac
 
 all_sizes = \
 small \
@@ -3527,6 +3528,8 @@ lvl/asciiman.asc \
 lvl/asciiman.txt \
 lvl/ascpac.asc \
 lvl/ascpac.txt \
+lvl/avrpac.asc \
+lvl/avrpac.txt \
 lvl/baby2.asc \
 lvl/baby2.txt \
 lvl/babypac.asc \

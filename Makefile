@@ -2074,7 +2074,8 @@ wabapac \
 wabapac2 \
 javapac1 \
 pacman85 \
-avrpac
+avrpac \
+eatman
 
 all_sizes = \
 small \
@@ -3598,6 +3599,8 @@ lvl/dotman.asc \
 lvl/dotman.txt \
 lvl/eatit.asc \
 lvl/eatit.txt \
+lvl/eatman.asc \
+lvl/eatman.txt \
 lvl/ebipac.asc \
 lvl/ebipac.txt \
 lvl/epochman.asc \

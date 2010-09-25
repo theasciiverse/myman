@@ -2080,7 +2080,8 @@ avrpac2 \
 avrpac3 \
 pacrat \
 remix \
-hangly52
+hangly52 \
+upac78
 
 all_sizes = \
 small \
@@ -4092,6 +4093,8 @@ lvl/trashman.txt \
 lvl/ultrapac.asc \
 lvl/ultrapac.txt \
 lvl/upacthin.txt \
+lvl/upac78.asc \
+lvl/upac78.txt \
 lvl/vermin.asc \
 lvl/vermin.txt \
 lvl/vicman.asc \

@@ -2075,7 +2075,12 @@ wabapac2 \
 javapac1 \
 pacman85 \
 avrpac \
-eatman
+eatman \
+avrpac2 \
+avrpac3 \
+pacrat \
+remix \
+hangly52
 
 all_sizes = \
 small \
@@ -3531,6 +3536,10 @@ lvl/ascpac.asc \
 lvl/ascpac.txt \
 lvl/avrpac.asc \
 lvl/avrpac.txt \
+lvl/avrpac2.asc \
+lvl/avrpac2.txt \
+lvl/avrpac3.asc \
+lvl/avrpac3.txt \
 lvl/baby2.asc \
 lvl/baby2.txt \
 lvl/babypac.asc \
@@ -3659,6 +3668,8 @@ lvl/hangly.asc \
 lvl/hangly.txt \
 lvl/hangly26.asc \
 lvl/hangly26.txt \
+lvl/hangly52.asc \
+lvl/hangly52.txt \
 lvl/hannah.asc \
 lvl/hannah.txt \
 lvl/hasewolf.asc \
@@ -3917,6 +3928,8 @@ lvl/pacpsion.asc \
 lvl/pacpsion.txt \
 lvl/pacpunk.asc \
 lvl/pacpunk.txt \
+lvl/pacrat.asc \
+lvl/pacrat.txt \
 lvl/pacrt11.asc \
 lvl/pacrt11.txt \
 lvl/pacst.asc \
@@ -3987,6 +4000,8 @@ lvl/quikman.asc \
 lvl/quikman.txt \
 lvl/remake.asc \
 lvl/remake.txt \
+lvl/remix.asc \
+lvl/remix.txt \
 lvl/revenge.asc \
 lvl/revenge.txt \
 lvl/ruckman.asc \

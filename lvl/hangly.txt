@@ -1,4 +1,4 @@
-﻿3 28x31~2 ABOUT="Inspired by 'Hangly-Man', another early hack of the original Puckman by 'Nittoh'"
+﻿3 28x31~2 RMSG2=9 ABOUT="Inspired by 'Hangly-Man', another early hack of the original Puckman by 'Nittoh'"
 ╔══════════════════════════╗
 ║··························║
 ║·┌──┐·┌───┐·┌┐·┌───┐·┌──┐·║

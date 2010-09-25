@@ -1,0 +1,28 @@
+﻿1 11x16 \
+RTOP=6.5 \
+RGHOST=6.5 CGHOST=5.5 ROGHOST=0.5 COGHOST=0 \
+RFRUIT=8.5 CFRUIT=5.5 \
+RHERO=10.5 CHERO=5.5 \
+RMSG=8 CMSG=3 \
+RMSG2=5 CMSG2=3 \
+   READY="READY" \
+ PLAYER1="P ONE" \
+ PLAYER2="P TWO" \
+GAMEOVER=" BYE." \
+ABOUT="Inspired by a game for an Atmel development board"
+╔════╦════╗
+║····║····║
+║■╞╡·╨·╞╡■║
+║·········║
+║·╔═╡ ╞═╗·║
+║·║     ║·║
+╨·╨ ╔≡╗ ╨·╨
+    ╚═╝    
+╥·╥     ╥·╥
+║·╨ ╞═╡ ╨·║
+║·       ·║
+╠═╡·╞╦╡·╞═╣
+║····║····║
+║■╞╡·╨·╞╡■║
+║·········║
+╚═════════╝

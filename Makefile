@@ -2081,7 +2081,10 @@ avrpac3 \
 pacrat \
 remix \
 hangly52 \
-upac78
+upac78 \
+pet \
+pet2 \
+petx
 
 all_sizes = \
 small \
@@ -3969,6 +3972,12 @@ lvl/perqman.asc \
 lvl/perqman.txt \
 lvl/pesco.asc \
 lvl/pesco.txt \
+lvl/pet.asc \
+lvl/pet.txt \
+lvl/pet2.asc \
+lvl/pet2.txt \
+lvl/petx.asc \
+lvl/petx.txt \
 lvl/plaque.asc \
 lvl/plaque.txt \
 lvl/plaque2.asc \

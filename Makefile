@@ -2086,7 +2086,10 @@ pet \
 pet2 \
 petx \
 big \
-msppnes
+msppnes \
+mslim \
+limghost \
+mspplim
 
 all_sizes = \
 small \
@@ -3728,6 +3731,8 @@ lvl/kpacman.asc \
 lvl/kpacman.txt \
 lvl/lim.asc \
 lvl/lim.txt \
+lvl/limghost.asc \
+lvl/limghost.txt \
 lvl/lives.asc \
 lvl/lives.txt \
 lvl/macman.asc \
@@ -3774,6 +3779,8 @@ lvl/mschomp.asc \
 lvl/mschomp.txt \
 lvl/mshack.asc \
 lvl/mshack.txt \
+lvl/mslim.asc \
+lvl/mslim.txt \
 lvl/mspac20.asc \
 lvl/mspac20.txt \
 lvl/mspac26.asc \
@@ -3809,6 +3816,8 @@ lvl/msport.txt \
 lvl/mspp.asc \
 lvl/mspp.txt \
 lvl/mspp2.txt \
+lvl/mspplim.asc \
+lvl/mspplim.txt \
 lvl/msppnes.asc \
 lvl/msppnes.txt \
 lvl/mspsnes.asc \

@@ -2089,7 +2089,8 @@ big \
 msppnes \
 mslim \
 limghost \
-mspplim
+mspplim \
+minijs
 
 all_sizes = \
 small \
@@ -3757,6 +3758,8 @@ lvl/meter.asc \
 lvl/meter.txt \
 lvl/mini.asc \
 lvl/mini.txt \
+lvl/minijs.asc \
+lvl/minijs.txt \
 lvl/minipac.asc \
 lvl/minipac.txt \
 lvl/misspac.asc \

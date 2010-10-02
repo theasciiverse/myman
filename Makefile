@@ -2084,7 +2084,9 @@ hangly52 \
 upac78 \
 pet \
 pet2 \
-petx
+petx \
+big \
+msppnes
 
 all_sizes = \
 small \
@@ -3550,6 +3552,8 @@ lvl/babypac.asc \
 lvl/babypac.txt \
 lvl/bb.asc \
 lvl/bb.txt \
+lvl/big.asc \
+lvl/big.txt \
 lvl/bigbk.asc \
 lvl/bigbk.txt \
 lvl/bigpac.asc \
@@ -3805,6 +3809,8 @@ lvl/msport.txt \
 lvl/mspp.asc \
 lvl/mspp.txt \
 lvl/mspp2.txt \
+lvl/msppnes.asc \
+lvl/msppnes.txt \
 lvl/mspsnes.asc \
 lvl/mspsnes.txt \
 lvl/mspwlnx.asc \

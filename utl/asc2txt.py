@@ -103,6 +103,9 @@ fixup_single = {
     u'\N{BOX DRAWINGS LIGHT VERTICAL AND LEFT}': (2, u'\N{BOX DRAWINGS LIGHT VERTICAL AND HORIZONTAL}'),
     u'\N{BOX DRAWINGS LIGHT VERTICAL AND RIGHT}': (1, u'\N{BOX DRAWINGS LIGHT VERTICAL AND HORIZONTAL}'),
     },
+    '+': {
+        u'\N{BULLET}': (0, u'\N{BULLET}'),
+        },
     }
 
 fixup_double = {
@@ -126,6 +129,9 @@ fixup_double = {
     u'\N{BOX DRAWINGS DOUBLE VERTICAL AND LEFT}': (2, u'\N{BOX DRAWINGS DOUBLE VERTICAL AND HORIZONTAL}'),
     u'\N{BOX DRAWINGS DOUBLE VERTICAL AND RIGHT}': (1, u'\N{BOX DRAWINGS DOUBLE VERTICAL AND HORIZONTAL}'),
     },
+    '+': {
+        u'\N{BULLET}': (0, u'\N{BULLET}'),
+        },
     }
 
 fixup_both = {
@@ -163,6 +169,9 @@ fixup_both = {
     u'\N{BOX DRAWINGS DOUBLE VERTICAL AND LEFT}': (2, u'\N{BOX DRAWINGS DOUBLE VERTICAL AND HORIZONTAL}'),
     u'\N{BOX DRAWINGS DOUBLE VERTICAL AND RIGHT}': (1, u'\N{BOX DRAWINGS DOUBLE VERTICAL AND HORIZONTAL}'),
     },
+    '+': {
+        u'\N{BULLET}': (0, u'\N{BULLET}'),
+        },
     }
 
 boxmap = {
@@ -332,6 +341,115 @@ rewrite_ternary = {
         },
     }
 
+edge_rewrite = {
+    3: {
+        -3: {
+            27: {
+                u'\N{BOX DRAWINGS LIGHT UP AND LEFT}': u'\N{BOX DRAWINGS DOUBLE UP AND LEFT}',
+                u'\N{BOX DRAWINGS DOWN DOUBLE AND LEFT SINGLE}': u'\N{BOX DRAWINGS DOUBLE VERTICAL AND LEFT}',
+                },
+            30: {
+                u'\N{BOX DRAWINGS VERTICAL SINGLE AND RIGHT DOUBLE}': u'\N{BOX DRAWINGS DOWN SINGLE AND RIGHT DOUBLE}',
+                },
+            9: {
+                u'\N{BOX DRAWINGS LIGHT UP AND RIGHT}': u'\N{BOX DRAWINGS DOUBLE UP AND RIGHT}',
+                u'\N{BOX DRAWINGS DOWN DOUBLE AND RIGHT SINGLE}': u'\N{BOX DRAWINGS DOUBLE VERTICAL AND RIGHT}',
+                },
+            36: {
+                u'\N{BOX DRAWINGS LIGHT HORIZONTAL}': u'\N{BOX DRAWINGS DOUBLE HORIZONTAL}',
+                u'\N{BOX DRAWINGS DOWN DOUBLE AND HORIZONTAL SINGLE}': u'\N{BOX DRAWINGS DOUBLE DOWN AND HORIZONTAL}',
+                },
+            39: {
+                u'\N{BOX DRAWINGS LIGHT DOWN AND RIGHT}': u'\N{BOX DRAWINGS DOWN SINGLE AND RIGHT DOUBLE}',
+                },
+            10: {
+                u'\N{BOX DRAWINGS VERTICAL SINGLE AND LEFT DOUBLE}': u'\N{BOX DRAWINGS DOWN SINGLE AND LEFT DOUBLE}',
+                },
+            37: {
+                u'\N{BOX DRAWINGS LIGHT DOWN AND LEFT}': u'\N{BOX DRAWINGS DOWN SINGLE AND LEFT DOUBLE}',
+                },
+            },
+         -1: {
+            3: {
+                u'\N{BOX DRAWINGS LIGHT DOWN AND LEFT}': u'\N{BOX DRAWINGS DOUBLE DOWN AND LEFT}',
+                u'\N{BOX DRAWINGS DOWN SINGLE AND RIGHT DOUBLE}': u'\N{BOX DRAWINGS DOUBLE DOWN AND HORIZONTAL}',
+                },
+            4: {
+                u'\N{BOX DRAWINGS UP DOUBLE AND HORIZONTAL SINGLE}': u'\N{BOX DRAWINGS UP DOUBLE AND RIGHT SINGLE}',
+                },
+            27: {
+                u'\N{BOX DRAWINGS LIGHT UP AND LEFT}': u'\N{BOX DRAWINGS DOUBLE UP AND LEFT}',
+                u'\N{BOX DRAWINGS UP SINGLE AND RIGHT DOUBLE}': u'\N{BOX DRAWINGS DOUBLE UP AND HORIZONTAL}',
+                },
+            30: {
+                u'\N{BOX DRAWINGS LIGHT VERTICAL}': u'\N{BOX DRAWINGS DOUBLE VERTICAL}',
+                u'\N{BOX DRAWINGS VERTICAL SINGLE AND RIGHT DOUBLE}': u'\N{BOX DRAWINGS DOUBLE VERTICAL AND RIGHT}',
+                },
+            31: {
+                u'\N{BOX DRAWINGS LIGHT UP AND RIGHT}': u'\N{BOX DRAWINGS UP DOUBLE AND RIGHT SINGLE}',
+                },
+            36: {
+                u'\N{BOX DRAWINGS DOWN DOUBLE AND HORIZONTAL SINGLE}': u'\N{BOX DRAWINGS DOWN DOUBLE AND RIGHT SINGLE}',
+                },
+            39: {
+                u'\N{BOX DRAWINGS LIGHT DOWN AND RIGHT}': u'\N{BOX DRAWINGS DOWN DOUBLE AND RIGHT SINGLE}',
+                },
+            },
+         1: {
+            1: {
+                u'\N{BOX DRAWINGS LIGHT DOWN AND RIGHT}': u'\N{BOX DRAWINGS DOUBLE DOWN AND RIGHT}',
+                u'\N{BOX DRAWINGS DOWN SINGLE AND LEFT DOUBLE}': u'\N{BOX DRAWINGS DOUBLE DOWN AND HORIZONTAL}',
+                },
+            4: {
+                u'\N{BOX DRAWINGS UP DOUBLE AND HORIZONTAL SINGLE}': u'\N{BOX DRAWINGS UP DOUBLE AND LEFT SINGLE}',
+                },
+            9: {
+                u'\N{BOX DRAWINGS LIGHT UP AND RIGHT}': u'\N{BOX DRAWINGS DOUBLE UP AND RIGHT}',
+                u'\N{BOX DRAWINGS UP SINGLE AND LEFT DOUBLE}': u'\N{BOX DRAWINGS DOUBLE UP AND HORIZONTAL}',
+                },
+            10: {
+                u'\N{BOX DRAWINGS LIGHT VERTICAL}': u'\N{BOX DRAWINGS DOUBLE VERTICAL}',
+                u'\N{BOX DRAWINGS VERTICAL SINGLE AND LEFT DOUBLE}': u'\N{BOX DRAWINGS DOUBLE VERTICAL AND LEFT}',
+                },
+            13: {
+                u'\N{BOX DRAWINGS LIGHT UP AND LEFT}': u'\N{BOX DRAWINGS UP DOUBLE AND LEFT SINGLE}',
+                },
+            36: {
+                u'\N{BOX DRAWINGS DOWN DOUBLE AND HORIZONTAL SINGLE}': u'\N{BOX DRAWINGS DOWN DOUBLE AND LEFT SINGLE}',
+                },
+            37: {
+                u'\N{BOX DRAWINGS LIGHT DOWN AND LEFT}': u'\N{BOX DRAWINGS DOWN DOUBLE AND LEFT SINGLE}',
+                },
+            },
+         3: {
+            3: {
+                u'\N{BOX DRAWINGS LIGHT DOWN AND LEFT}': u'\N{BOX DRAWINGS DOUBLE DOWN AND LEFT}',
+                u'\N{BOX DRAWINGS UP DOUBLE AND LEFT SINGLE}': u'\N{BOX DRAWINGS DOUBLE VERTICAL AND LEFT}',
+                },
+            30: {
+                u'\N{BOX DRAWINGS VERTICAL SINGLE AND RIGHT DOUBLE}': u'\N{BOX DRAWINGS UP SINGLE AND RIGHT DOUBLE}',
+                },
+            1: {
+                u'\N{BOX DRAWINGS LIGHT DOWN AND RIGHT}': u'\N{BOX DRAWINGS DOUBLE DOWN AND RIGHT}',
+                u'\N{BOX DRAWINGS UP DOUBLE AND RIGHT SINGLE}': u'\N{BOX DRAWINGS DOUBLE VERTICAL AND RIGHT}',
+                },
+            4: {
+                u'\N{BOX DRAWINGS LIGHT HORIZONTAL}': u'\N{BOX DRAWINGS DOUBLE HORIZONTAL}',
+                u'\N{BOX DRAWINGS UP DOUBLE AND HORIZONTAL SINGLE}': u'\N{BOX DRAWINGS DOUBLE UP AND HORIZONTAL}',
+                },
+            31: {
+                u'\N{BOX DRAWINGS LIGHT UP AND RIGHT}': u'\N{BOX DRAWINGS UP SINGLE AND RIGHT DOUBLE}',
+                },
+            10: {
+                u'\N{BOX DRAWINGS VERTICAL SINGLE AND LEFT DOUBLE}': u'\N{BOX DRAWINGS UP SINGLE AND LEFT DOUBLE}',
+                },
+            13: {
+                u'\N{BOX DRAWINGS LIGHT UP AND LEFT}': u'\N{BOX DRAWINGS UP SINGLE AND LEFT DOUBLE}',
+                },
+            },
+         },
+    }
+
 def trit_fill_1(tritmap, row, col, traditional):
     if traditional and not row:
         raise row
@@ -438,6 +556,20 @@ def main(argv, envp, stdin, stdout, stderr):
     outfile.write(((u'\ufeff%s %sx%s') % (n, w, h)).encode('utf-8'))
     if flags: outfile.write((u'~%d' % flags).encode('utf-8'))
     if opts: outfile.write((u' %s' % opts).encode('utf-8'))
+    fixup[thickness]['+'] = fixup[thickness].get('+', {})
+    for otherchar in '-|':
+        for k, v in fixup[thickness][otherchar].iteritems():
+            if k not in fixup[thickness]['+']:
+                fixup[thickness]['+'][k] = v
+    if traditional and (thickness in edge_rewrite):
+        for v_e in (-3, 3):
+            for h_e in (-1, 1):
+                edge_rewrite[thickness][h_e + v_e] = edge_rewrite[thickness].get(h_e + v_e, {})
+                for edge in (h_e, v_e):
+                    for code, codemap in edge_rewrite[thickness][edge].iteritems():
+                        edge_rewrite[thickness][h_e + v_e][code] = edge_rewrite[thickness][h_e + v_e].get(code, {})
+                        for k, v in edge_rewrite[thickness][edge][code].iteritems():
+                            edge_rewrite[thickness][h_e + v_e][code][k] = v
     outfile.write(u'\r\n'.encode('utf-8'))
     outfile.flush()
     for maze in xrange(n):
@@ -552,7 +684,8 @@ def main(argv, envp, stdin, stdout, stderr):
                     except:
                         pass
         if debug_tritmap:
-            for line in tritmap:
+            for lineidx in xrange(len(tritmap)):
+                line = tritmap[lineidx]
                 for trit in line:
                     ch = { -1: '.', 0: ' ', 1: '#' }[trit]
                     stderr.write(ch.encode('utf-8'))
@@ -571,6 +704,9 @@ def main(argv, envp, stdin, stdout, stderr):
                 west = orows[row][(col - 1 + len(orows[row])) % len(orows[row])] in u'-~='
                 if (mask & (8 * north + 4 * south + 2 * east + west)) == mask:
                     ch = och
+                edge = ((col == w - 1) + 3 * (row == h - 1)) - ((col == 0) + 3 * (row == 0))
+                if traditional and edge:
+                    ch = edge_rewrite.get(thickness, {}).get(edge, {}).get(code, {}).get(ch, ch)
                 outfile.write(ch.encode('utf-8'))
             outfile.write(u'\r\n'.encode('utf-8'))
         outfile.flush()

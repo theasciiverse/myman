@@ -2090,7 +2090,8 @@ msppnes \
 mslim \
 limghost \
 mspplim \
-minijs
+minijs \
+and4
 
 all_sizes = \
 small \
@@ -3534,6 +3535,8 @@ lvl/and2.asc \
 lvl/and2.txt \
 lvl/and3.asc \
 lvl/and3.txt \
+lvl/and4.asc \
+lvl/and4.txt \
 lvl/apollo.asc \
 lvl/apollo.txt \
 lvl/armpac2.asc \

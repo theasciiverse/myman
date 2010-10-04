@@ -2091,7 +2091,8 @@ mslim \
 limghost \
 mspplim \
 minijs \
-and4
+and4 \
+joyman
 
 all_sizes = \
 small \
@@ -3711,6 +3712,8 @@ lvl/jellymon.asc \
 lvl/jellymon.txt \
 lvl/jobman.asc \
 lvl/jobman.txt \
+lvl/joyman.asc \
+lvl/joyman.txt \
 lvl/jrpac.asc \
 lvl/jrpac.txt \
 lvl/jrpac26.asc \

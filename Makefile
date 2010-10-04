@@ -2092,7 +2092,8 @@ limghost \
 mspplim \
 minijs \
 and4 \
-joyman
+joyman \
+mlb
 
 all_sizes = \
 small \
@@ -3772,6 +3773,8 @@ lvl/misspac.asc \
 lvl/misspac.txt \
 lvl/misstiny.asc \
 lvl/misstiny.txt \
+lvl/mlb.asc \
+lvl/mlb.txt \
 lvl/mmpalm.asc \
 lvl/mmpalm.txt \
 lvl/mmproto.asc \

@@ -1,0 +1,27 @@
+﻿1 11x15 ABOUT="Inspired by Actronics/Hanzawa/Ludotronic's 'Hungry Pac'/'Hungry Pac III'/'Pack 'n Maze'/'Fantomes Gloutons' electronic game" \
+GHOSTS=3 \
+  RTOP=13.5 \
+RGHOST=13.5 CGHOST=5.5 ROGHOST=0 COGHOST=0 \
+RFRUIT=13.5 CFRUIT=5.5 \
+ RHERO=7.5   CHERO=4.5 \
+  RMSG=7      CMSG=6 \
+ RMSG2=7     CMSG2=0 \
+   READY="READY" \
+ PLAYER1="P ONE" \
+ PLAYER2="P TWO" \
+GAMEOVER=" BYE."
+════╝ ╚════
+ · · · · · 
+╗ ╔═╡ ╞═╗ ╔
+║·║· · ·║·║
+║ ╨ ╥ ╥ ╨ ║
+║· ·║·║· ·║
+╝ ╞═╝ ╚═╡ ╚
+ · · ■ · · 
+╗ ╞═╗ ╔═╡ ╔
+║· ·║·║· ·║
+║ ╥ ╨ ╨ ╥ ║
+║·║· · ·║·║
+╝ ╚═╡ ╞═╝ ╚
+ · · · · · 
+════╗ ╔════

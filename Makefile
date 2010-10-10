@@ -2093,7 +2093,16 @@ mspplim \
 minijs \
 and4 \
 joyman \
-mlb
+mlb \
+mlb2 \
+pacnc \
+sc2mod \
+pacmr \
+cgpuck \
+hungry \
+hungry2 \
+paczx3 \
+cc
 
 all_sizes = \
 small \
@@ -3583,8 +3592,12 @@ lvl/catchum.asc \
 lvl/catchum.txt \
 lvl/cattrax.asc \
 lvl/cattrax.txt \
+lvl/cc.asc \
+lvl/cc.txt \
 lvl/cgkit.asc \
 lvl/cgkit.txt \
+lvl/cgpuck.asc \
+lvl/cgpuck.txt \
 lvl/chicky.asc \
 lvl/chicky.txt \
 lvl/chomp.asc \
@@ -3697,6 +3710,10 @@ lvl/hedges.asc \
 lvl/hedges.txt \
 lvl/human.asc \
 lvl/human.txt \
+lvl/hungry.asc \
+lvl/hungry.txt \
+lvl/hungry2.asc \
+lvl/hungry2.txt \
 lvl/iitpac.asc \
 lvl/iitpac.txt \
 lvl/ipac.asc \
@@ -3775,6 +3792,8 @@ lvl/misstiny.asc \
 lvl/misstiny.txt \
 lvl/mlb.asc \
 lvl/mlb.txt \
+lvl/mlb2.asc \
+lvl/mlb2.txt \
 lvl/mmpalm.asc \
 lvl/mmpalm.txt \
 lvl/mmproto.asc \
@@ -3947,10 +3966,14 @@ lvl/pacmen.asc \
 lvl/pacmen.txt \
 lvl/pacmes.asc \
 lvl/pacmes.txt \
+lvl/pacmr.asc \
+lvl/pacmr.txt \
 lvl/pacmsx.asc \
 lvl/pacmsx.txt \
 lvl/pacmunch.asc \
 lvl/pacmunch.txt \
+lvl/pacnc.asc \
+lvl/pacnc.txt \
 lvl/pacnstuf.asc \
 lvl/pacnstuf.txt \
 lvl/pacpdp11.asc \
@@ -3975,6 +3998,8 @@ lvl/paczx.asc \
 lvl/paczx.txt \
 lvl/paczx2.asc \
 lvl/paczx2.txt \
+lvl/paczx3.asc \
+lvl/paczx3.txt \
 lvl/pakkman.asc \
 lvl/pakkman.txt \
 lvl/pakpak.asc \
@@ -4045,6 +4070,8 @@ lvl/ruckman.asc \
 lvl/ruckman.txt \
 lvl/salomon.asc \
 lvl/salomon.txt \
+lvl/sc2mod.asc \
+lvl/sc2mod.txt \
 lvl/scandal.asc \
 lvl/scandal.txt \
 lvl/scarfman.asc \

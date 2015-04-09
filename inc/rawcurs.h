@@ -4591,8 +4591,6 @@ static int rawcurses_fput_smacs(FILE *fh)
         &&
         (rawcurses_w == 80)
         &&
-        rawcurses_color
-        &&
         rawcurses_stdio_petscii_shifted)
     {
         return fputs("\216", fh) != EOF;
@@ -4630,8 +4628,6 @@ static int rawcurses_fput_rmacs(FILE *fh)
         rawcurses_stdio_acs_c128
         &&
         (rawcurses_w == 80)
-        &&
-        rawcurses_color
         &&
         rawcurses_stdio_petscii_shifted)
     {
@@ -5934,8 +5930,6 @@ static chtype rawcurses_map_acs(chtype ch)
             if (((rawcurses_stdio_acs_c128
                   &&
                   (rawcurses_w == 80)
-                  &&
-                  rawcurses_color
                   &&
                   rawcurses_stdio_petscii_shifted)
                  ||
@@ -8793,17 +8787,13 @@ static int initscrWithHints(int h, int w, const char *title, const char *shortna
     else
     {
         rawcurses_stdio_acs_c128 = 0;
-        if (((rawcurses_stdio_petscii
-              &&
-              rawcurses_stdio_petscii_shifted)
+        if ((RAWCURSES__HASBASE(termType, "c128")
              ||
-             (RAWCURSES__HASBASE(termType, "c128")))
+             RAWCURSES__EQ(termType, "commodore")
+             ||
+             RAWCURSES__EQ(termType, "b-128"))
             &&
-            (! (RAWCURSES__HASBASE(termType, "vic")
-                ||
-                RAWCURSES__HASBASE(termType, "c64")
-                ||
-                RAWCURSES__HASFLAG(termType, "lc")
+            (! (RAWCURSES__HASFLAG(termType, "lc")
                 ||
                 RAWCURSES__HASFLAG(termType, "uc")
                 ||
@@ -13640,8 +13630,6 @@ static int addch(chtype ch)
                         rawcurses_stdio_acs_c128
                         &&
                         (rawcurses_w == 80)
-                        &&
-                        rawcurses_color
                         &&
                         rawcurses_stdio_petscii_shifted)
                     {

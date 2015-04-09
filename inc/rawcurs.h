@@ -8769,7 +8769,11 @@ static int initscrWithHints(int h, int w, const char *title, const char *shortna
             ||
             RAWCURSES__HASFLAG(termType, "uc")
             ||
-            RAWCURSES__HASFLAG(termType, "rc")
+            (RAWCURSES__HASFLAG(termType, "rc")
+             &&
+             ((! RAWCURSES__HASFLAG(termType, "80"))
+              ||
+              RAWCURSES__HASFLAG(termType, "rgb")))
             ||
             RAWCURSES__HASFLAG(termType, "ruc"))
         {

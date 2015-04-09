@@ -1,5 +1,8 @@
 #!/bin/bash
-# $Id: mach_mypal,v 1.5 2010/05/19 04:16:16 bsittler Exp $
+# $Id: mach_mypal,v 1.6 2015/04/09 06:49:23 bsittler Exp $
+#
+# NOTE: This script DOES NOT WORK on Mac OS X version 10.5 or above
+# and DOES NOT WORK on 64-bit kernels.
 #
 # WARNING: This script modifies your running operating system kernel.
 # This is potentially very risky, as the kernel is what allows everything
@@ -70,6 +73,8 @@
 # NOTE: This script needs the 'nm' utility; get it from Xcode or
 # odcctools
 
+export KERNEL_ARCH="$(test -x /usr/bin/uname && /usr/bin/uname -m || uname -m)"
+
 export KERNEL_FILE="$(test -f /mach_kernel && echo /mach_kernel || echo /mach)"
 
 export KERNEL_MEMORY="/dev/kmem"
@@ -80,7 +85,15 @@ export KERNEL_FONT_SYMBOL="_iso_font"
 export KERNEL_FONT_SIZE=$((256 * 16))
 
 export KERNEL_PALETTE_SYMBOL="${KERNEL_FONT_SYMBOL}"
-export KERNEL_PALETTE_OFFSET=$((${KERNEL_FONT_SIZE} + $( [ :"$(/usr/bin/uname -p)" = :powerpc ] && echo 44 || echo 32) ))
+export KERNEL_PALETTE_OFFSET=$((${KERNEL_FONT_SIZE} + $( [ :"$(test -x /usr/bin/uname && /usr/bin/uname -p || uname -p)" = :powerpc ] && echo 44 || echo 32) ))
+export KERNEL_PALETTE_101010=0
+
+if [ :"$(test -x /usr/bin/uname && /usr/bin/uname -r || uname -r)" = :10.8.0 ]
+then
+    KERNEL_PALETTE_SYMBOL='_apple_protect_pager_ops'
+    KERNEL_PALETTE_OFFSET=48000
+    KERNEL_PALETTE_101010=1
+fi
 
 # format is R G B or R1 G1 B1  R2 G2 B2 (in the latter case the average
 # of the two triples will be used); scale is 0 ... 1000 (inclusive)
@@ -101,10 +114,6 @@ then
     . /etc/defaults/mach_console
 fi
 
-test :"$(uname -s)" = :"Darwin" || {
-    echo "$0: this is not Darwin, exiting" >&2
-    exit 1
-}
 on_console=0
 if test -t
 then
@@ -191,6 +200,10 @@ then
     echo ""
     exit $ret
 fi
+test :"$(uname -s)" = :"Darwin" || {
+    echo "$0: this is not Darwin, exiting" >&2
+    exit 1
+}
 if test :"$*" = :"--uninstall"
 then
     chmod 644 /usr/sbin/mach_mypal || exit $?
@@ -272,6 +285,9 @@ shortx2 () {
 bytex4 () {
     shortx2 $((($1*256)+$1))
 }
+rgb101010 () {
+    long $(((($1*1023/1000)*1024+($2*1023/1000))*1024+($3*1023/1000)))
+}
 rgb888 () {
     long $(((($1*255/1000)*256+($2*255/1000))*256+($3*255/1000)))
 }
@@ -281,13 +297,17 @@ rgb555 () {
 rgb () {
     rgb555 "$@"
     rgb888 "$@"
+    if [ :"${KERNEL_PALETTE_101010}" = :1 ]
+    then
+        rgb101010 "$@"
+    fi
 }
 pal () {
     bytex4 "$@"
 }
 clut="$(
 clut=
-dd if="${KERNEL_MEMORY}" bs=1 skip=$(( 0x$(nm "${KERNEL_FILE}"  | grep ' '"${KERNEL_CLUT_SYMBOL}"'$' | awk '{print $1}') )) count=$((256*3)) 2>/dev/null |
+dd if="${KERNEL_MEMORY}" bs=1 skip=$( printf %lu $(( 0x$(nm -arch "$KERNEL_ARCH" "${KERNEL_FILE}"  | grep ' '"${KERNEL_CLUT_SYMBOL}"'$' | awk '{print $1}') )) ) count=$((256*3)) 2>/dev/null |
 od -vtx1 |
 fgrep ' ' |
 sed 's/  */ /g' |
@@ -328,6 +348,7 @@ blend () {
     fi
     rgbpal $((($1+$4)/2)) $((($2+$5)/2)) $((($3+$6)/2))
 }
+export szpalrgb="$(( $(printf "$(pal 0xff)""$(rgb 1000 1000    0)" | LC_ALL=C wc -c ) ))"
 test $# = 0 &&
 cmp <(
     printf \
@@ -341,7 +362,7 @@ cmp <(
 "$(pal 0x00)""$(rgb 1000 1000 1000)"\
 ''
 ) <(
-    dd if="${KERNEL_MEMORY}" bs=1 skip=$(( 0x$(nm "${KERNEL_FILE}"  | grep ' '"${KERNEL_PALETTE_SYMBOL}"'$' | awk '{print $1}') + ${KERNEL_PALETTE_OFFSET})) count=$((8*4*3)) 2>/dev/null
+    dd if="${KERNEL_MEMORY}" bs=1 skip=$( printf %lu $(( 0x$(nm -arch "$KERNEL_ARCH" "${KERNEL_FILE}"  | grep ' '"${KERNEL_PALETTE_SYMBOL}"'$' | awk '{print $1}') + ${KERNEL_PALETTE_OFFSET})) ) count=$((8*${szpalrgb})) 2>/dev/null
 ) >/dev/null 2>&1 &&
 dd if=<(
    printf \
@@ -354,7 +375,7 @@ dd if=<(
 "$(blend ${KERNEL_PALETTE_6})"\
 "$(blend ${KERNEL_PALETTE_7})"\
 ''
-) of="${KERNEL_MEMORY}" bs=1 seek=$(( 0x$(nm "${KERNEL_FILE}"  | grep ' '"${KERNEL_PALETTE_SYMBOL}"'$' | awk '{print $1}') + ${KERNEL_PALETTE_OFFSET})) count=$((8*4*3)) conv=notrunc || {
+) of="${KERNEL_MEMORY}" bs=1 seek=$( printf %lu $(( 0x$(nm -arch "$KERNEL_ARCH" "${KERNEL_FILE}"  | grep ' '"${KERNEL_PALETTE_SYMBOL}"'$' | awk '{print $1}') + ${KERNEL_PALETTE_OFFSET})) ) count=$((8*${szpalrgb})) conv=notrunc || {
     echo "To install this, type the following command:" >&2
     echo "   sudo /bin/bash $0 --install" >&2
     echo "To uninstall, type the following command:" >&2
@@ -372,8 +393,27 @@ exit 0
 
 #
 # $Log: mach_mypal,v $
-# Revision 1.5  2010/05/19 04:16:16  bsittler
-# re-add utl/mach_{acs,mypal} with hopefully-correct permissions
+# Revision 1.6  2015/04/09 06:49:23  bsittler
+# *** empty log message ***
+#
+# Revision 1.54  2012/01/13 03:28:57  bsittler
+# Fixed kernel architecture test. Added note at the beginning about
+# incompatibilities.
+#
+# Revision 1.53  2011/12/27 01:29:29  bsittler
+# 30-bit color (RGB101010)
+#
+# Revision 1.52  2011/12/27 00:23:43  bsittler
+# *** empty log message ***
+#
+# Revision 1.51  2011/12/27 00:21:21  bsittler
+# *** empty log message ***
+#
+# Revision 1.50  2011/12/26 22:35:28  bsittler
+# kernel arch
+#
+# Revision 1.49  2010/06/03 17:41:46  bsittler
+# allow --test even in foreign OSes and on foreign terminals
 #
 # Revision 1.48  2009/05/15 16:59:52  bsittler
 # better gradient bar

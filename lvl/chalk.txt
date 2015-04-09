@@ -1,0 +1,32 @@
+﻿1 13x21 ABOUT="Inspired by a 3D chalk ground painting by Leon Keer (dots rearranged)" \
+RTOP=8.5 \
+RGHOST=11 CGHOST=6.5 ROGHOST=1.5 COGHOST=1 \
+RFRUIT=13.5 CFRUIT=6.5 \
+RHERO=17.5 CHERO=6.5 \
+RMSG=20 CMSG=1 \
+RMSG2=0 CMSG2=1 \
+   READY="   READY!  " \
+ PLAYER1=" PLAYER ONE" \
+ PLAYER2=" PLAYER TWO" \
+GAMEOVER=" GAME OVER "
+╔═══════════╗
+║···········║
+║·╥·╞═══╡·╥·║
+║■║·······║■║
+║·╚═╡·╥·╞═╝·║
+║·····║·····║
+╚═╗·╞═╩═╡·╔═╝
+  ║·······║  
+══╝·╔═≡═╗·╚══
+   ·║   ║·   
+══╗·║   ║·╔══
+  ║·║   ║·║  
+╔═╝·╚═══╝·╚═╗
+║···········║
+║·╔═╡·╥·╞═╗·║
+║·║···║···║·║
+║■║·╞═╩═╡·║■║
+║·║··· ···║·║
+║·╚═╡·╥·╞═╝·║
+║·····║·····║
+╚═════╩═════╝

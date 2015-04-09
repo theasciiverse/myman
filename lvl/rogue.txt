@@ -1,0 +1,29 @@
+﻿1 21x17 ABOUT="Inspired by Rich Aidley/Blue Goat's 'Rogue Orange' for the Gameboy Color" \
+FIXME="Missing all but the first level" \
+RTOP=6.5 \
+RGHOST=5.5 CGHOST=10.5 ROGHOST=-1 COGHOST=0 \
+RFRUIT=7.5 CFRUIT=10.5 \
+RHERO=11.5 CHERO=10.5 \
+RMSG=7 CMSG=6 \
+RMSG2=0 CMSG2=6 \
+   READY="  READY! " \
+ PLAYER1=" PLAYER 1" \
+ PLAYER2=" PLAYER 2" \
+GAMEOVER="GAME OVER"
+╔═════════╦═════════╗
+║·········║·········║
+║■╔╗·╞══╡·╨·╞══╡·╔╗■║
+║·╚╝·············╚╝·║
+║····╥ ╞═╦═╦═╡ ╥····║
+║·╞╡·║   ║ ║   ║·╞╡·║
+║····╠╡ ╞╩~╩╡ ╞╣····║
+╠╦╦╗·║         ║·╔╦╦╣
+╠╩╩╝·╨ ╞══╦══╡ ╨·╚╩╩╣
+║·········║·········║
+║·╞═╗·╞═╡·╨·╞═╡·╔═╡·║
+║■··║····· ·····║··■║
+╠═╡·╨·╥·╞═╦═╡·╥·╨·╞═╣
+║·····║···║···║·····║
+║·╞═══╩═╡·╨·╞═╩═══╡·║
+║···················║
+╚═══════════════════╝

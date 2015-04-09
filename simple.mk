@@ -77,7 +77,7 @@ clean:
 bigman=${big} ${myman}
 
 bigman: src/myman.c ${UTILSOBJS} ${LOGICOBJS}
-	${CC} ${CINCLUDES} ${CFLAGS} ${CURSOPTS} ${CURSESINCLUDE} ${MYGETOPTCPPFLAGS} ${bigman} -o $@ $< ${CURSESLIBS} ${MYGETOPTLIBS} ${UTILSOBJS} ${LOGICOBJS}
+	${CC} ${CINCLUDES} ${CFLAGS} ${CURSOPTS} ${CURSESINCLUDE} ${MYGETOPTCPPFLAGS} ${bigman} -o $@ src/myman.c ${UTILSOBJS} ${LOGICOBJS} ${MYGETOPTLIBS} ${CURSESLIBS}
 
 # "huge" is the largest size (huge ASCII-art pictures)
 TILEFILE_huge=chr5x3.txt
@@ -88,7 +88,7 @@ huge=-DMYMANSIZE=\"huge\" ${hugetiles} ${hugesprites}
 hugeman=${huge} ${myman}
 
 hugeman: src/myman.c ${UTILSOBJS} ${LOGICOBJS}
-	${CC} ${CINCLUDES} ${CFLAGS} ${CURSOPTS} ${CURSESINCLUDE} ${MYGETOPTCPPFLAGS} ${hugeman} -o $@ $< ${CURSESLIBS} ${MYGETOPTLIBS} ${UTILSOBJS} ${LOGICOBJS}
+	${CC} ${CINCLUDES} ${CFLAGS} ${CURSOPTS} ${CURSESINCLUDE} ${MYGETOPTCPPFLAGS} ${hugeman} -o $@ src/myman.c ${UTILSOBJS} ${LOGICOBJS} ${MYGETOPTLIBS} ${CURSESLIBS}
 
 # "small" uses a pair of character-cells to represent each tile and sprite
 TILEFILE_small=khr2h.txt
@@ -99,7 +99,7 @@ small=-DMYMANSIZE=\"small\" ${smalltiles} ${smallsprites}
 smallman=${small} ${myman}
 
 smallman: src/myman.c ${UTILSOBJS} ${LOGICOBJS}
-	${CC} ${CINCLUDES} ${CFLAGS} ${CURSOPTS} ${CURSESINCLUDE} ${MYGETOPTCPPFLAGS} ${smallman} -o $@ $< ${CURSESLIBS} ${MYGETOPTLIBS} ${UTILSOBJS} ${LOGICOBJS}
+	${CC} ${CINCLUDES} ${CFLAGS} ${CURSOPTS} ${CURSESINCLUDE} ${MYGETOPTCPPFLAGS} ${smallman} -o $@ src/myman.c ${UTILSOBJS} ${LOGICOBJS} ${MYGETOPTLIBS} ${CURSESLIBS}
 
 # "square" uses one character-cell to represent each tile and sprite
 TILEFILE_square=khr1.txt
@@ -110,7 +110,7 @@ square=-DMYMANSIZE=\"square\" ${squaretiles} ${squaresprites}
 squareman=${square} ${myman}
 
 squareman: src/myman.c ${UTILSOBJS} ${LOGICOBJS}
-	${CC} ${CINCLUDES} ${CFLAGS} ${CURSOPTS} ${CURSESINCLUDE} ${MYGETOPTCPPFLAGS} ${squareman} -o $@ $< ${CURSESLIBS} ${MYGETOPTLIBS} ${UTILSOBJS} ${LOGICOBJS}
+	${CC} ${CINCLUDES} ${CFLAGS} ${CURSOPTS} ${CURSESINCLUDE} ${MYGETOPTCPPFLAGS} ${squareman} -o $@ src/myman.c ${UTILSOBJS} ${LOGICOBJS} ${MYGETOPTLIBS} ${CURSESLIBS}
 
 .PHONY: all clean
 

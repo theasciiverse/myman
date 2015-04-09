@@ -309,11 +309,13 @@ typedef unsigned long int chtype;
 
 typedef chtype attr_t;
 
-static cucul_canvas_t *cv;
+static cucul_canvas_t *cacacurses_cv;
 
-static caca_display_t *dp;
+static caca_display_t *cacacurses_dp;
 
-static int cacacurses_x, cacacurses_y, cacacurses_w, cacacurses_h;
+static int cacacurses_x, cacacurses_y, cacacurses_w, cacacurses_h, cacacurses_lines, cacacurses_cols;
+
+static attr_t cacacurses_attrs;
 
 static unsigned long int *cacacurses_framebuffer;
 
@@ -325,7 +327,7 @@ static unsigned long int cacacurses_pal[COLORS], cacacurses_dimpal[COLORS];
 
 static cucul_dither_t *cacacurses_dither;
 
-static chtype pal[COLOR_PAIRS];
+static struct { int fg; int bg; } cacacurses_pairs[COLOR_PAIRS];
 
 #ifndef OK
 #define OK (0)
@@ -383,11 +385,9 @@ static chtype pal[COLOR_PAIRS];
 
 #define start_color()
 
-#define COLOR_PAIR(i) (pal[(i)])
+#define LINES (cacacurses_lines + 0)
 
-#define LINES (cacacurses_bitmap ? (cacacurses_h / (cacacurses_bitmap_double ? 2 : 1) / (cacacurses_bitmap_doubleheight ? 2 : 1)) : cucul_get_canvas_height(cv))
-
-#define COLS (cacacurses_bitmap ? (cacacurses_w / (cacacurses_bitmap_double ? 2 : 1)) : cucul_get_canvas_width(cv))
+#define COLS (cacacurses_cols + 0)
 
 #define COLOR_BLACK CUCUL_BLACK
 
@@ -405,13 +405,24 @@ static chtype pal[COLOR_PAIRS];
 
 #define COLOR_WHITE CUCUL_LIGHTGRAY
 
-#define A_STANDOUT CUCUL_BLINK
+/* Sacrifice plane 16 for some extra color pairs. */
+#define A_CHARTEXT 0x000FFFFFUL
 
-#define A_BOLD CUCUL_BOLD
+#define A_STANDOUT 0x80000000UL
 
-#define A_UNDERLINE CUCUL_UNDERLINE
+#define A_BOLD 0x40000000UL
 
-#define A_REVERSE CUCUL_ITALICS
+#define A_UNDERLINE 0x20000000UL
+
+#define A_REVERSE 0x10000000UL
+
+#define CACACURSES__A_COLOR 0x0FF00000UL
+
+#define _PAIR_SHIFT 20
+
+#define COLOR_PAIR(p) (((chtype) (p)) << _PAIR_SHIFT)
+
+#define PAIR_NUMBER(a) (((a) & CACACURSES__A_COLOR) >> _PAIR_SHIFT)
 
 #define KEY_LEFT CACA_KEY_LEFT
 
@@ -449,7 +460,9 @@ static int cacacurses_rotate;
 
 #define INITSCR_WITH_HINTS
 
-static void initscrWithHints(int h, int w, const char *title, const char *shortname)
+static int init_pair(int i, short fg, short bg);
+
+static int initscrWithHints(int h, int w, const char *title, const char *shortname)
 {
     cacacurses_bitmap = myman_getenv("CACACURSES_BITMAP");
     if (cacacurses_bitmap && ! *cacacurses_bitmap) cacacurses_bitmap = NULL;
@@ -473,17 +486,17 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
         if (w > 128) w = 128;
         if (h > 50) h = 50;
     }
-    cv = cucul_create_canvas(w * (cacacurses_bitmap ? (cacacurses_bitmap_double ? 2 : 1) : 1),
+    cacacurses_cv = cucul_create_canvas(w * (cacacurses_bitmap ? (cacacurses_bitmap_double ? 2 : 1) : 1),
                              h * (cacacurses_bitmap ? ((cacacurses_bitmap_double ? 2 : 1) * (cacacurses_bitmap_doubleheight ? 2 : 1)) : 1));
-    dp = caca_create_display(cv);
-    if (! dp)
+    cacacurses_dp = caca_create_display(cacacurses_cv);
+    if (! cacacurses_dp)
     {
         int goterror;
 
         goterror = errno;
         perror("caca_create_display");
         fflush(stderr);
-        cucul_free_canvas(cv);
+        cucul_free_canvas(cacacurses_cv);
         if (goterror == ENODEV)
         {
             char const * const * drivers;
@@ -497,38 +510,36 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
             }
             fflush(stderr);
         }
-        exit(1);
+        return 0;
     }
-    cucul_put_char(cv, 0, 0, ' ');
-    pal[0] = cucul_get_attr(cv, 0, 0);
     {
         int i;
 
+        for (i = 0; i < COLOR_PAIRS; ++i)
+        {
+            init_pair(i, i % COLORS, i / COLORS % COLORS);
+        }
         for (i = 0; i < COLORS; i ++)
         {
             cacacurses_pal[i] = (
-                ((i & 4) ? ((i & 8) ? 0xff0000UL : 0x880000UL) : 0)
+                ((i & 4) ? 0xaa0000UL : 0)
                 |
-                ((i & 2) ? ((i & 8) ? 0xff00UL : 0x8800UL) : 0)
+                ((i & 2) ? 0xaa00UL : 0)
                 |
-                ((i & 1) ? ((i & 8) ? 0xffUL : 0x88UL) : 0)
+                ((i & 1) ? 0xaaUL : 0)
                 |
-                ((i == 8) ? 0x777777UL : 0)
-                |
-                ((i == 7) ? 0x222222UL : 0));
+                ((i & 8) ? 0x555555UL : 0));
             cacacurses_dimpal[i] = (
-                ((i & 4) ? ((i & 8) ? 0x770000UL : 0x440000UL) : 0)
+                ((i & 4) ? 0x880000UL : 0)
                 |
-                ((i & 2) ? ((i & 8) ? 0x7700UL : 0x4400UL) : 0)
+                ((i & 2) ? 0x8800UL : 0)
                 |
-                ((i & 1) ? ((i & 8) ? 0x77UL : 0x44UL) : 0)
+                ((i & 1) ? 0x88UL : 0)
                 |
-                ((i == 8) ? 0x333333UL : 0)
-                |
-                ((i == 7) ? 0x111111UL : 0));
+                ((i & 8) ? 0x333333UL : 0));
         }
     }
-    if (title) caca_set_display_title(dp, title);
+    if (title) caca_set_display_title(cacacurses_dp, title);
     if (cacacurses_bitmap)
     {
         cacacurses_dither = cucul_create_dither(CHAR_BIT * sizeof(unsigned long int), cacacurses_w, cacacurses_h, cacacurses_w * sizeof(unsigned long int), 0xff0000UL, 0xff00UL, 0xffUL, 0UL);
@@ -536,9 +547,9 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
         {
             perror("cucul_create_dither");
             fflush(stderr);
-            caca_free_display(dp);
-            cucul_free_canvas(cv);
-            exit(1);
+            caca_free_display(cacacurses_dp);
+            cucul_free_canvas(cacacurses_cv);
+            return 0;
         }
         if (myman_getenv("CACACURSES_BITMAP_BRIGHTNESS"))
         {
@@ -547,9 +558,9 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
                 perror("cucul_set_dither_brightness: CACACURSES_BITMAP_BRIGHTNESS");
                 fflush(stderr);
                 cucul_free_dither(cacacurses_dither);
-                caca_free_display(dp);
-                cucul_free_canvas(cv);
-                exit(1);
+                caca_free_display(cacacurses_dp);
+                cucul_free_canvas(cacacurses_cv);
+                return 0;
             }
         }
         if (myman_getenv("CACACURSES_BITMAP_GAMMA"))
@@ -559,9 +570,9 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
                 perror("cucul_set_dither_gamma: CACACURSES_BITMAP_GAMMA");
                 fflush(stderr);
                 cucul_free_dither(cacacurses_dither);
-                caca_free_display(dp);
-                cucul_free_canvas(cv);
-                exit(1);
+                caca_free_display(cacacurses_dp);
+                cucul_free_canvas(cacacurses_cv);
+                return 0;
             }
         }
         if (myman_getenv("CACACURSES_BITMAP_CONTRAST"))
@@ -571,9 +582,9 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
                 perror("cucul_set_dither_contrast: CACACURSES_BITMAP_CONTRAST");
                 fflush(stderr);
                 cucul_free_dither(cacacurses_dither);
-                caca_free_display(dp);
-                cucul_free_canvas(cv);
-                exit(1);
+                caca_free_display(cacacurses_dp);
+                cucul_free_canvas(cacacurses_cv);
+                return 0;
             }
         }
         if (myman_getenv("CACACURSES_BITMAP_ANTIALIAS"))
@@ -597,9 +608,9 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
                 }
                 fflush(stderr);
                 cucul_free_dither(cacacurses_dither);
-                caca_free_display(dp);
-                cucul_free_canvas(cv);
-                exit(1);
+                caca_free_display(cacacurses_dp);
+                cucul_free_canvas(cacacurses_cv);
+                return 0;
             }
         }
         if (myman_getenv("CACACURSES_BITMAP_COLOR"))
@@ -623,9 +634,9 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
                 }
                 fflush(stderr);
                 cucul_free_dither(cacacurses_dither);
-                caca_free_display(dp);
-                cucul_free_canvas(cv);
-                exit(1);
+                caca_free_display(cacacurses_dp);
+                cucul_free_canvas(cacacurses_cv);
+                return 0;
             }
         }
         if (myman_getenv("CACACURSES_BITMAP_CHARSET"))
@@ -649,9 +660,9 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
                 }
                 fflush(stderr);
                 cucul_free_dither(cacacurses_dither);
-                caca_free_display(dp);
-                cucul_free_canvas(cv);
-                exit(1);
+                caca_free_display(cacacurses_dp);
+                cucul_free_canvas(cacacurses_cv);
+                return 0;
             }
         }
         if (myman_getenv("CACACURSES_BITMAP_ALGORITHM"))
@@ -675,9 +686,9 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
                 }
                 fflush(stderr);
                 cucul_free_dither(cacacurses_dither);
-                caca_free_display(dp);
-                cucul_free_canvas(cv);
-                exit(1);
+                caca_free_display(cacacurses_dp);
+                cucul_free_canvas(cacacurses_cv);
+                return 0;
             }
         }
         cacacurses_framebuffer = (unsigned long int *) malloc(cacacurses_w * cacacurses_h * sizeof(unsigned long int));
@@ -686,22 +697,45 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
             perror("malloc");
             fflush(stderr);
             cucul_free_dither(cacacurses_dither);
-            caca_free_display(dp);
-            cucul_free_canvas(cv);
-            exit(1);
+            caca_free_display(cacacurses_dp);
+            cucul_free_canvas(cacacurses_cv);
+            return 0;
         }
     }
+    cacacurses_lines = (cacacurses_bitmap ? (cacacurses_h / (cacacurses_bitmap_double ? 2 : 1) / (cacacurses_bitmap_doubleheight ? 2 : 1)) : cucul_get_canvas_height(cacacurses_cv));
+    cacacurses_cols = (cacacurses_bitmap ? (cacacurses_w / (cacacurses_bitmap_double ? 2 : 1)) : cucul_get_canvas_width(cacacurses_cv));
     cacacurses_ready = 1;
+    return 1;
 }
 
+static int move(int y, int x);
+
+static int attrset(attr_t attrs);
+
+static int addch(const chtype ch);
+
+static int refresh(void);
+
 static void endwin(void) {
+    if (! cacacurses_ready)
+    {
+        return;
+    }
     if (cacacurses_bitmap)
     {
         free((void *) cacacurses_framebuffer);
+        cacacurses_framebuffer = NULL;
         cucul_free_dither(cacacurses_dither);
+        cacacurses_dither = NULL;
+        cacacurses_bitmap = NULL;
     }
-    caca_free_display(dp);
-    cucul_free_canvas(cv);
+    attrset(0);
+    move(0, 0);
+    addch(' ');
+    caca_free_display(cacacurses_dp);
+    cacacurses_dp = NULL;
+    cucul_free_canvas(cacacurses_cv);
+    cacacurses_cv = NULL;
     cacacurses_ready = 0;
 }
 
@@ -712,9 +746,9 @@ static int erase(void) {
     }
     else
     {
-        cucul_clear_canvas(cv);
+        cucul_clear_canvas(cacacurses_cv);
     }
-    cucul_gotoxy(cv, -1, -1);
+    cucul_gotoxy(cacacurses_cv, -1, -1);
     cacacurses_x = 0;
     cacacurses_y = 0;
     return OK;
@@ -724,28 +758,28 @@ static int refresh(void) {
     if (! cacacurses_ready) return OK;
     if (cacacurses_bitmap)
     {
-        cucul_dither_bitmap(cv, 0, 0, cucul_get_canvas_width(cv), cucul_get_canvas_height(cv), cacacurses_dither, cacacurses_framebuffer);
+        cucul_dither_bitmap(cacacurses_cv, 0, 0, cucul_get_canvas_width(cacacurses_cv), cucul_get_canvas_height(cacacurses_cv), cacacurses_dither, cacacurses_framebuffer);
     }
     switch (cacacurses_rotate)
     {
     case 1:
-        cucul_flip(cv);
+        cucul_flip(cacacurses_cv);
         break;
     case 2:
-        cucul_flop(cv);
+        cucul_flop(cacacurses_cv);
         break;
     case 3:
-        cucul_rotate_180(cv);
+        cucul_rotate_180(cacacurses_cv);
         break;
     }
-    caca_refresh_display(dp);
+    caca_refresh_display(cacacurses_dp);
     return OK;
 }
 
 static chtype getch(void) {
     caca_event_t ev;
 
-    if (caca_get_event(dp, CACA_EVENT_KEY_PRESS | CACA_EVENT_KEY_RELEASE | CACA_EVENT_QUIT, & ev, 0))
+    if (caca_get_event(cacacurses_dp, CACA_EVENT_KEY_PRESS | CACA_EVENT_KEY_RELEASE | CACA_EVENT_QUIT, & ev, 0))
     {
         if (caca_get_event_type(& ev) == CACA_EVENT_QUIT) return 'Q';
         if (caca_get_event_type(& ev) == CACA_EVENT_KEY_PRESS) {
@@ -771,27 +805,29 @@ static chtype getch(void) {
     return ERR;
 }
 
-static void standout() {
-    cucul_set_color_ansi(cv, CUCUL_BLACK, CUCUL_WHITE);
-    cucul_set_attr(cv, 0);
-}
-
-static void standend() {
-    cucul_set_color_ansi(cv, CUCUL_LIGHTGRAY, CUCUL_BLACK);
-    cucul_set_attr(cv, 0);
-}
-
-static int attrset(int a)
+static int attrset(attr_t attrs)
 {
+    cacacurses_attrs = attrs & ~A_CHARTEXT;
+    return OK;
+#if 0
     unsigned char fg, bg;
-    int a_cucul;
+    int cucul_attrs;
+    int pair;
 
-    a_cucul = (a & ~(A_STANDOUT | A_BOLD | A_UNDERLINE | A_REVERSE));
-    if (a & (A_BOLD | A_STANDOUT)) a_cucul |= CUCUL_BOLD;
-    if (a & A_UNDERLINE) a_cucul |= CUCUL_UNDERLINE;
-    fg = ((a & A_BOLD) ? 8 : 0) | ((a & A_UNDERLINE) ? CUCUL_BLUE : CUCUL_LIGHTGRAY);
-    bg = CUCUL_BLACK;
-    if (a & (A_STANDOUT | A_REVERSE))
+    attrs &= ~A_CHARTEXT;
+    pair = PAIR_NUMBER(attrs);
+    cucul_attrs = pal[pair];
+    if (attrs & (A_BOLD | A_STANDOUT)) cucul_attrs |= CUCUL_BOLD;
+    if (attrs & A_UNDERLINE) cucul_attrs |= CUCUL_UNDERLINE;
+    fg = ((attrs & A_BOLD) ? 8 : 0) | ((attrs & A_UNDERLINE) ? CUCUL_BLUE : cucul_attr_to_ansi_fg(cucul_attrs));
+    bg = cucul_attr_to_ansi_bg(cucul_attrs);
+    if (fg == bg)
+    {
+        fg = (bg == CUCUL_BLACK) ?
+            (((attrs & A_BOLD) ? 8 : 0) | ((attrs & A_UNDERLINE) ? CUCUL_BLUE : CUCUL_LIGHTGRAY)) :
+            CUCUL_BLACK;
+    }
+    if ((attrs & (A_STANDOUT | A_REVERSE)) && ! pair)
     {
         unsigned char tmp;
 
@@ -799,44 +835,63 @@ static int attrset(int a)
         fg = bg;
         bg = tmp;
     }
-    cucul_set_color_ansi(cv, fg, bg);
-    cucul_set_attr(cv, 0);
-    cucul_set_attr(cv, a_cucul);
-    if (a & ~(A_BOLD | A_UNDERLINE | A_STANDOUT | A_REVERSE))
+    cucul_set_attr(cacacurses_cv, cucul_attrs);
+    if (pair)
     {
-        if (a & (A_STANDOUT | A_REVERSE))
+        cucul_set_color_ansi(cacacurses_cv, fg, bg);
+    }
+    else
+    {
+        cucul_set_color_ansi(
+            cacacurses_cv,
+            (attrs & (A_STANDOUT | A_BOLD)) ? CUCUL_RED : (attrs & CUCUL_UNDERLINE) ? CUCUL_BLUE : CUCUL_WHITE,
+            (attrs & (A_STANDOUT | A_REVERSE)) ? (CUCUL_BLUE | CUCUL_GREEN) : CUCUL_GREEN);
+    }
+    cucul_attrs = cucul_get_attr(cacacurses_cv, -1, -1);
+    if (pair)
+    {
+        if (attrs & (A_STANDOUT | A_REVERSE))
         {
-            fg = cucul_attr_to_ansi_fg(a_cucul);
-            if (a_cucul & CUCUL_BOLD) fg |= 8;
-            bg = cucul_attr_to_ansi_bg(a_cucul);
-            cucul_set_color_ansi(cv, bg, fg);
+            fg = cucul_attr_to_ansi_fg(cucul_attrs);
+            if (cucul_attrs & CUCUL_BOLD) fg |= 8;
+            bg = cucul_attr_to_ansi_bg(cucul_attrs);
+            cucul_set_color_ansi(cacacurses_cv, bg, fg);
             if (can_change_color())
             {
-                cucul_set_color_argb(cv,
-                                     0xf000u | cucul_attr_to_rgb12_bg(a_cucul),
-                                     0xf000u | cucul_attr_to_rgb12_fg(a_cucul));
+                cucul_set_color_argb(cacacurses_cv,
+                                     0xf000u | cucul_attr_to_rgb12_bg(cucul_attrs),
+                                     0xf000u | cucul_attr_to_rgb12_fg(cucul_attrs));
             }
-            a_cucul = cucul_get_attr(cv, -1, -1);
+            cucul_attrs = cucul_get_attr(cacacurses_cv, -1, -1);
         }
         else
         {
-            fg = cucul_attr_to_ansi_fg(a_cucul);
-            if (a_cucul & CUCUL_BOLD) fg |= 8;
-            bg = cucul_attr_to_ansi_bg(a_cucul);
-            cucul_set_color_ansi(cv, fg, bg);
+            fg = cucul_attr_to_ansi_fg(cucul_attrs);
+            if (cucul_attrs & CUCUL_BOLD) fg |= 8;
+            bg = cucul_attr_to_ansi_bg(cucul_attrs);
+            cucul_set_color_ansi(cacacurses_cv, fg, bg);
             if (can_change_color())
             {
-                cucul_set_color_argb(cv,
-                                     0xf000u | cucul_attr_to_rgb12_fg(a_cucul),
-                                     0xf000u | cucul_attr_to_rgb12_bg(a_cucul));
+                cucul_set_color_argb(cacacurses_cv,
+                                     0xf000u | cucul_attr_to_rgb12_fg(cucul_attrs),
+                                     0xf000u | cucul_attr_to_rgb12_bg(cucul_attrs));
             }
-            a_cucul = cucul_get_attr(cv, -1, -1);
+            cucul_attrs = cucul_get_attr(cacacurses_cv, -1, -1);
         }
     }
-    return cucul_set_attr(cv, a_cucul);
+    return cucul_set_attr(cacacurses_cv, cucul_attrs);
+#endif
 }
 
-static int move(y, x) {
+static void standout() {
+    attrset(A_STANDOUT);
+}
+
+static void standend() {
+    attrset(0);
+}
+
+static int move(int y, int x) {
     cacacurses_y = y;
     cacacurses_x = x;
     return OK;
@@ -868,43 +923,103 @@ static unsigned long cacacurses_rgb12_to_pixel(unsigned short rgb12)
             ((unsigned long) (rgb12 & 0xfu)) * 0x11ul);
 }
 
+static int color_content(int i, short *r, short *g, short *b);
+
 static int addch(const chtype ch) {
+    unsigned long cucul_attrs;
+    int fg, bg;
+    int pair;
+
+    if (ch & ~A_CHARTEXT)
+    {
+        attr_t oattr;
+        int ret;
+
+        oattr = cacacurses_attrs;
+        attrset(ch & ~A_CHARTEXT);
+        ret = addch(ch & A_CHARTEXT);
+        attrset(oattr);
+        return ret;
+    }
+    cucul_attrs = 0;
+    fg = cacacurses_attrs ? CUCUL_LIGHTGRAY : CUCUL_DEFAULT;
+    bg = cacacurses_attrs ? CUCUL_BLACK : CUCUL_TRANSPARENT;
+    if (cacacurses_attrs & A_UNDERLINE)
+    {
+        cucul_attrs |= CUCUL_UNDERLINE;
+        fg = CUCUL_BLUE;
+    }
+    pair = PAIR_NUMBER(cacacurses_attrs);
+    if (pair)
+    {
+        fg = cacacurses_pairs[pair].fg;
+        bg = cacacurses_pairs[pair].bg;
+    }
+    if (cacacurses_attrs & A_BOLD)
+    {
+        cucul_attrs |= CUCUL_BOLD;
+        fg |= 8;
+    }
+    if (cacacurses_attrs & A_STANDOUT)
+    {
+        bg |= 8;
+    }
+    if (cacacurses_attrs & (A_REVERSE | A_STANDOUT))
+    {
+        int tmp;
+
+        tmp = fg;
+        fg = bg;
+        bg = tmp;
+    }
+    cucul_set_color_ansi(cacacurses_cv, fg, bg);
+    if (can_change_color() && pair)
+    {
+        short fg_r, fg_g, fg_b, bg_r, bg_g, bg_b;
+
+        if ((color_content(fg, &fg_r, &fg_g, &fg_b) == OK)
+            &&
+            (color_content(bg, &bg_r, &bg_g, &bg_b) == OK))
+        {
+            cucul_set_color_argb(cacacurses_cv,
+                                 0xf000 | ((fg_r * 0xf / 1000) << 8) | ((fg_g * 0xf / 1000) << 4) | (fg_b * 0xf / 1000),
+                                 0xf000 | ((bg_r * 0xf / 1000) << 8) | ((bg_g * 0xf / 1000) << 4) | (bg_b * 0xf / 1000));
+        }
+    }
+    cucul_set_attr(cacacurses_cv, cucul_attrs);
+    cucul_attrs = cucul_get_attr(cacacurses_cv, -1, -1);
     if (cacacurses_bitmap)
     {
-        unsigned long attr;
-
-        attr = cucul_get_attr(cv, -1, -1);
         {
-            unsigned char fg, bg;
             unsigned long fgpixel, bgpixel, halfpixel;
             unsigned long outpixel, outpixel2, outpixel3, outpixel4;
             int charwidth, charheight;
 
             fg = 7;
             bg = 0;
-            if (attr & A_UNDERLINE)
+            if (cucul_attrs & CUCUL_UNDERLINE)
             {
                 fg = 4;
             }
-            if (attr & A_BOLD)
+            if (cucul_attrs & CUCUL_BOLD)
             {
                 fg |= 8;
             }
-            if (cucul_attr_to_ansi(attr) & 0xf)
+            if (cucul_attr_to_ansi(cucul_attrs) & 0xf)
             {
-                fg = (cucul_attr_to_ansi(attr) & 0xf) | ((attr & A_BOLD) ? 8 : 0);
+                fg = (cucul_attr_to_ansi(cucul_attrs) & 0xf) | ((cucul_attrs & CUCUL_BOLD) ? 8 : 0);
             }
-            if ((cucul_attr_to_ansi(attr) >> 4) & 0xf)
+            if ((cucul_attr_to_ansi(cucul_attrs) >> 4) & 0xf)
             {
-                bg = (cucul_attr_to_ansi(attr) >> 4) & 0xf;
+                bg = (cucul_attr_to_ansi(cucul_attrs) >> 4) & 0xf;
             }
             fgpixel = cacacurses_pal[fg];
             halfpixel = cacacurses_dimpal[fg] ? cacacurses_dimpal[fg] : cacacurses_dimpal[bg];
             bgpixel = cacacurses_pal[bg];
             if (can_change_color())
             {
-                bgpixel = cacacurses_rgb12_to_pixel(cucul_attr_to_rgb12_bg(attr));
-                fgpixel = cacacurses_rgb12_to_pixel(cucul_attr_to_rgb12_fg(attr));
+                bgpixel = cacacurses_rgb12_to_pixel(cucul_attr_to_rgb12_bg(cucul_attrs));
+                fgpixel = cacacurses_rgb12_to_pixel(cucul_attr_to_rgb12_fg(cucul_attrs));
                 /* FIXME: do gamma correction here, possibly... */
                 halfpixel = 
                     ((((fgpixel & 0xff0000ul) + (bgpixel & 0xff0000ul)) >> 1) & 0xff0000ul)
@@ -952,8 +1067,8 @@ static int addch(const chtype ch) {
                     outpixel3 = (outpixel4 = fgpixel);
                 }
             }
-            charwidth = cacacurses_w / COLS;
-            charheight = cacacurses_h / LINES;
+            charwidth = cacacurses_w / cacacurses_cols;
+            charheight = cacacurses_h / cacacurses_lines;
             cacacurses_framebuffer[cacacurses_x * charwidth + cacacurses_w * cacacurses_y * charheight] = outpixel;
             if (cacacurses_bitmap_double)
             {
@@ -995,7 +1110,7 @@ static int addch(const chtype ch) {
     }
     else
     {
-        cucul_put_char(cv, cacacurses_x, cacacurses_y, ch);
+        cucul_put_char(cacacurses_cv, cacacurses_x, cacacurses_y, ch);
     }
     cacacurses_x += cucul_utf32_is_fullwidth(ch) ? 2 : 1;
     return OK;
@@ -1003,29 +1118,37 @@ static int addch(const chtype ch) {
 
 static int clrtobot(void) {
     unsigned int x, y;
+    unsigned int ox, oy;
 
-    for (x = cacacurses_x; x < COLS; x ++)
+    ox = cacacurses_x;
+    oy = cacacurses_y;
+    for (x = cacacurses_x; x < cacacurses_cols; x ++)
     {
         move(cacacurses_y, x);
         addch(' ');
     }
-    for (y = cacacurses_y + 1; y < LINES; y ++)
+    for (y = cacacurses_y + 1; y < cacacurses_lines; y ++)
         for (x = 0; x < COLS; x ++)
         {
             move(y, x);
             addch(' ');
         }
+    move(oy, ox);
     return OK;
 }
 
 static int clrtoeol(void) {
     unsigned int x;
+    unsigned int ox, oy;
 
+    ox = cacacurses_x;
+    oy = cacacurses_y;
     for (x = cacacurses_x; x < COLS; x ++)
     {
         move(cacacurses_y, x);
         addch(' ');
     }
+    move(oy, ox);
     return OK;
 }
 
@@ -1043,6 +1166,10 @@ static int mvprintw(int y, int x, const char *s) {
 }
 
 static int init_color(int i, short r, short g, short b) {
+    if ((i < 0) || (i > COLOR_PAIRS))
+    {
+        return ERR;
+    }
     if (! can_change_color()) return ERR;
     cacacurses_pal[i] = ((r * 0xffUL / 1000) << 16) | ((g * 0xffUL / 1000) << 8) | (b * 0xffUL / 1000);
     cacacurses_dimpal[i] = ((r * 0x77UL / 1000) << 16) | ((g * 0x77UL / 1000) << 8) | (b * 0x77UL / 1000);
@@ -1050,6 +1177,10 @@ static int init_color(int i, short r, short g, short b) {
 }
 
 static int color_content(int i, short *r, short *g, short *b) {
+    if ((i < 0) || (i > COLOR_PAIRS))
+    {
+        return ERR;
+    }
     if (! can_change_color()) return ERR;
     *r = ((cacacurses_pal[i] >> 16) & 0xffUL) * 1000 / 0xffUL;
     *g = ((cacacurses_pal[i] >> 8) & 0xffUL) * 1000 / 0xffUL;
@@ -1058,7 +1189,23 @@ static int color_content(int i, short *r, short *g, short *b) {
 }
 
 static int init_pair(int i, short fg, short bg) {
-    cucul_set_color_ansi(cv, fg, bg);
+    if ((i < 1) || (i > COLOR_PAIRS))
+    {
+        return ERR;
+    }
+    if ((fg < 0) || (fg > COLORS))
+    {
+        return ERR;
+    }
+    if ((bg < 0) || (bg > COLORS))
+    {
+        return ERR;
+    }
+    cacacurses_pairs[i].fg = fg;
+    cacacurses_pairs[i].bg = bg;
+    return OK;
+#if 0
+    cucul_set_color_ansi(cacacurses_cv, fg, bg);
     if (can_change_color())
     {
         short fg_r, fg_g, fg_b, bg_r, bg_g, bg_b;
@@ -1067,20 +1214,30 @@ static int init_pair(int i, short fg, short bg) {
             &&
             (color_content(bg, &bg_r, &bg_g, &bg_b) == OK))
         {
-            cucul_set_color_argb(cv,
+            cucul_set_color_argb(cacacurses_cv,
                                  0xf000 | ((fg_r * 0xf / 1000) << 8) | ((fg_g * 0xf / 1000) << 4) | (fg_b * 0xf / 1000),
                                  0xf000 | ((bg_r * 0xf / 1000) << 8) | ((bg_g * 0xf / 1000) << 4) | (bg_b * 0xf / 1000));
         }
     }
-    cucul_set_attr(cv, 0);
-    pal[i] = cucul_get_attr(cv, -1, -1);
+    cucul_set_attr(cacacurses_cv, 0);
+    pal[i] = cucul_get_attr(cacacurses_cv, -1, -1);
     return OK;
+#endif
 }
 
 static int pair_content(int i, short *fg, short *bg) {
+    if ((i < 0) || (i > COLOR_PAIRS))
+    {
+        return ERR;
+    }
+    *fg = cacacurses_pairs[i].fg;
+    *bg = cacacurses_pairs[i].bg;
+    return OK;
+#if 0
     *fg = i ? i : CUCUL_DEFAULT;
     *bg = i ? CUCUL_BLACK : CUCUL_TRANSPARENT;
     return OK;
+#endif
 }
 
 #else
@@ -1267,7 +1424,7 @@ static int cacacurses_use_acs = 1;
 
 #define INITSCR_WITH_HINTS
 
-static void initscrWithHints(int h, int w, const char *title, const char *shortname)
+static int initscrWithHints(int h, int w, const char *title, const char *shortname)
 {
     char g[80];
 
@@ -1288,7 +1445,7 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
     {
         fprintf(stderr, "caca_init() failed\n");
         fflush(stderr);
-        exit(1);
+        return 0;
     }
     if (myman_getenv("CACACURSES_ACS"))
     {
@@ -1302,6 +1459,7 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
     pal[0] = (CACA_COLOR_LIGHTGRAY << 4) | CACA_COLOR_BLACK;
     caca_set_window_title(title);
     cacacurses_ready = 1;
+    return 1;
 }
 
 static void endwin(void) {

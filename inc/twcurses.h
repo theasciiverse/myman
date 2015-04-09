@@ -69,6 +69,8 @@ static tmsgport twcurses_msgport;
 
 typedef unsigned long int chtype;
 
+typedef chtype attr_t;
+
 static int twcurses_x, twcurses_y, twcurses_w, twcurses_h;
 
 #ifndef OK
@@ -118,8 +120,6 @@ static int twcurses_x, twcurses_y, twcurses_w, twcurses_h;
 #define immedok(stdscr, x)
 
 #define idlok(stdscr, x)
-
-#define clearok(stdscr, x) (x ? (twcurses_clearok = 1) : 0)
 
 #define leaveok(stdscr, x)
 
@@ -234,9 +234,20 @@ static int attrset(int a)
     return OK;
 }
 
-static void move(y, x) {
+static int move(y, x) {
     twcurses_y = y;
     twcurses_x = x;
+    return OK;
+}
+
+static int insch(const chtype ch)
+{
+    return ERR;
+}
+
+static int delch(void)
+{
+    return ERR;
 }
 
 static int addch(const chtype ch) {
@@ -305,7 +316,7 @@ static int mvprintw(int y, int x, const char *s) {
 
 #define TWCURSES_PROGNAME "twcurses"
 
-static void initscrWithHints(int h, int w, const char *title, const char *shortname)
+static int initscrWithHints(int h, int w, const char *title, const char *shortname)
 {
     byte *name;
     byte name_def[sizeof(TWCURSES_TITLE)];
@@ -354,7 +365,7 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
     {
         fprintf(stderr, "TwOpen failed\n");
         fflush(stderr);
-        exit(1);
+        return 0;
     }
     if (w > Tw_GetDisplayWidth(twcurses_display)) w = Tw_GetDisplayWidth(twcurses_display);
     if (h >= Tw_GetDisplayHeight(twcurses_display)) h = Tw_GetDisplayHeight(twcurses_display) - 1;
@@ -364,7 +375,7 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
     {
         perror("malloc");
         fflush(stderr);
-        exit(1);
+        return 0;
     }
     if (TW_NOID == (twcurses_msgport = Tw_CreateMsgPort(twcurses_display, strlen(shortname), progname)))
     {
@@ -372,7 +383,7 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
         free(twcurses_backing);
         fprintf(stderr, "Tw_CreateMsgPort failed\n");
         fflush(stderr);
-        exit(1);
+        return 0;
     }
     if (TW_NOID == (twcurses_menu = Tw_CreateMenu(twcurses_display, COL(WHITE, BLACK), COL(HIGH | YELLOW, BLACK), COL(HIGH | BLACK, BLACK), COL(BLACK, HIGH | BLACK), COL(BLUE, BLACK), COL(BLACK, BLUE), 0)))
     {
@@ -381,7 +392,7 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
         free(twcurses_backing);
         fprintf(stderr, "Tw_CreateMenu failed\n");
         fflush(stderr);
-        exit(1);
+        return 0;
     }
     if (TW_NOID == (twcurses_window = Tw_CreateWindow(twcurses_display, strlen(title), name, namecolors, twcurses_menu, COL(WHITE, BLACK), TW_NOCURSOR, TW_WINDOW_WANT_KEYS | TW_WINDOW_WANT_CHANGES | TW_WINDOW_RESIZE | TW_WINDOW_CLOSE | TW_WINDOW_DRAG, TW_WINDOWFL_USEROWS, twcurses_w, twcurses_h, 0)))
     {
@@ -391,12 +402,13 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
         free(twcurses_backing);
         fprintf(stderr, "Tw_CreateWindow failed\n");
         fflush(stderr);
-        exit(1);
+        return 0;
     }
     Tw_MapWindow(twcurses_display, twcurses_window, Tw_FirstScreen(twcurses_display));
     erase();
     twcurses_clearok = 1;
     twcurses_ready = 1;
+    return 1;
 }
 
 static void endwin(void) {
@@ -514,3 +526,15 @@ static int pair_content(int i, short *fg, short *bg) {
     *bg = COLBG(twcurses_pairs[i]);
     return OK;
 }
+
+static int twcurses_stdscr_clearok(int x)
+{
+    if (x)
+    {
+        twcurses_clearok = 1;
+    }
+    return OK;
+}
+
+#undef clearok
+#define clearok(stdscr, flag) twcurses_stdscr_clearok(((flag) == FALSE) ? 0 : 1)

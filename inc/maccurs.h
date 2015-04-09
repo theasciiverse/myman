@@ -28,28 +28,41 @@
  * This code is mostly written in an interoperable common subset of
  * Carbon and Toolbox.
  *
- * Use gcc to build a "Universal", Intel x86, or 32-bit PowerPC Mach-O
+ * Use a PowerPC and/or x86 (32-bit) Mach-O toolchain (e.g. gcc from
+ * Xcode) to build a "Universal", Intel x86, or 32-bit PowerPC Mach-O
  * Carbon application for Mac OS X. Since Quickdraw is deprecated
  * these days you will see lots of warning messages.
  *
- * Use MPW to build a 32-bit PowerPC Carbon CFM application for Mac OS
- * X, Mac OS 9.x, and Mac OS 8.6. Requires CarbonLib 1.6 runtime on
- * Mac OS 8.6/9.x.
+ * Use a PowerPC PEF toolchain (e.g. MrC or powerpc-gcc in MPW) to
+ * build a 32-bit PowerPC Carbon CFM application for Mac OS X 10.6 or
+ * earlier, Mac OS 9.x, and Mac OS 8.6. Requires CarbonLib 1.6 runtime
+ * on Mac OS 8.6/9.x.
  *
- * Use MPW to build a "Fat", PowerPC, or 68k Toolbox application for
+ * Use a PowerPC PEF toolchain (e.g. MrC or powerpc-gcc in MPW) and/or
+ * a 68k 'CODE' fragment-capable toolchain (e.g. SC, MPW C or m68k-gcc
+ * in MPW) to build a "Fat", PowerPC, or 68k Toolbox application for
  * Mac OS 9.x or earlier, although it is unlikely to work with System
- * versions prior to System 7 (or prior to System version 4.1 if you
- * use the Universal Interfaces 2.1.5 SDK for the 68k compilation.)
- * This also seems to work in the final freeware version of ARDI's
+ * versions prior to System 7 (or prior to OS version 4.1 if you use
+ * the Universal Interfaces 2.1.5 SDK for the 68k compilation.)  This
+ * also seems to work in the final freeware version of ARDI's
  * "Executor" cleanroom reimplementation of Toolbox and Mac OS/System
  * 7 for Intel Linux, Win32, etc.
  *
- * Use MPW to build a "Fat" PowerPC Carbon CFM + 68k Toolbox
- * application for Mac OS X, Mac OS 9.x, and Mac OS 8.6 on PowerPC
- * and for Mac OS 8.1 or earlier on 68k (see previous paragraphs for
- * guesses about compatibility.)
+ * Use a Carbon-capable PowerPC PEF toolchain (e.g. MrC in MPW) and a
+ * 68k 'CODE' fragment-capable toolchain (e.g. SC, MPW C or m68k-gcc
+ * in MPW) to build a "Fat" PowerPC Carbon CFM + 68k Toolbox
+ * application for Mac OS X 10.6 or earlier, Mac OS 9.x, and Mac OS
+ * 8.6 on PowerPC and for Mac OS 8.1 or earlier on 68k (see previous
+ * paragraphs for guesses about compatibility.) Although it is not as
+ * well-tested, CFM-68K builds should work too on a subset of those
+ * (under System 7.1 through Mac OS 8.1 on a 68020, 68030 or 68040
+ * processor with 32-bit addressing enabled provided the CFM-68K
+ * Runtime Enabler and the Appearance Extension [a.k.a. AppearanceLib]
+ * are installed.)
  *
- * Use MPW to build a "Fat", PowerPC, or 68k MPW Tool.
+ * Use a PowerPC PEF toolchain (e.g. MrC or powerpc-gcc in MPW) and/or
+ * a 68k 'CODE' fragment-capable toolchain (e.g. SC, MPW C or m68k-gcc
+ * in MPW) to build a "Fat", PowerPC, or 68k MPW Tool or SIOW app.
  *
  * See utl/macbuild.txt for more information on installing and
  * building with MPW.
@@ -69,7 +82,9 @@
 #else /* ! (defined(TARGET_API_MAC_CARBON) && TARGET_API_MAC_CARBON) */
 
 /* Case 2: Toolbox */
+#ifndef ANCIENT_HEADERS
 #include <ConditionalMacros.h>
+#endif
 
 /* we work around some overly aggressive deprecation in newer
  * <ConditionalMacros.h> so that we can also build with the older
@@ -96,7 +111,7 @@
 #undef CFMSYSTEMCALLS
 #define CFMSYSTEMCALLS TARGET_RT_MAC_CFM
 #endif /* defined(TARGET_RT_MAC_CFM) */
-#endif
+#endif /* defined(__CARBON__) */
 
 /* when USE_OLD_TOOLBOX is non-zero we directly access Toolbox
  * internals which were deprecated or removed in Carbon, and avoid
@@ -108,7 +123,7 @@
 #else
 #define USE_OLD_TOOLBOX 1
 #endif
-#endif /* ! defined(_USE_OLD_TOOLBOX) */
+#endif /* ! defined(USE_OLD_TOOLBOX) */
 
 /* when USE_FONT_MANAGER_9 is zero we avoid use of Font Manager 9
  * routines */
@@ -128,15 +143,26 @@
 #include <Errors.h>
 #include <Files.h>
 #include <Fonts.h>
+#ifndef ANCIENT_HEADERS
 #include <Gestalt.h>
+#else
+#include <GestaltEqu.h>
+#endif
 #include <Menus.h>
+#ifndef ANCIENT_HEADERS
 #include <Math64.h>
+#endif
 #include <QDOffscreen.h>
 #include <Quickdraw.h>
+#ifndef ANCIENT_HEADERS
 #include <QuickdrawText.h>
+#endif
+#include <Resources.h>
 #include <Script.h>
 #include <Sound.h>
+#ifndef ANCIENT_HEADERS
 #include <TextUtils.h>
+#endif
 #include <Timer.h>
 #include <ToolUtils.h>
 #include <Traps.h>
@@ -155,9 +181,15 @@
 
 #else /* ! (defined(UNIVERSAL_INTERFACES_VERSION) && (UNIVERSAL_INTERFACES_VERSION >= 0x0300)) */
 
+#include <Events.h>
 #include <Types.h>
 #include <Windows.h>
 #include <OSUtils.h>
+
+#ifdef ANCIENT_HEADERS
+#include <Desk.h>
+#include <OSEvents.h>
+#endif
 
 #ifndef TRUE
 #define TRUE true
@@ -166,6 +198,112 @@
 #ifndef FALSE
 #define FALSE false
 #endif
+
+#ifdef ANCIENT_HEADERS
+
+#ifndef WindowRef
+#define WindowRef WindowPtr
+#endif
+
+#ifndef MenuRef
+#define MenuRef MenuHandle
+#endif
+
+#ifndef UniversalProcPtr
+/* HACK: This should be ProcPtr, but that's not what NGetTrapAddress
+ * returns in the ancient headers... */
+typedef long UniversalProcPtr;
+#endif
+
+#ifndef AEEventHandlerUPP
+#define AEEventHandlerUPP EventHandlerProcPtr
+#endif
+
+#ifndef UInt32
+typedef unsigned long UInt32;
+#endif
+
+#ifndef SInt32
+typedef long SInt32;
+#endif
+
+#ifndef UInt16
+typedef unsigned short UInt16;
+#endif
+
+#ifndef SInt16
+typedef short SInt16;
+#endif
+
+#ifndef UInt8
+typedef unsigned char UInt8;
+#endif
+
+#ifndef SInt8
+typedef signed char SInt8;
+#endif
+
+#ifndef UnsignedWide
+struct UnsignedWide {
+    UInt32 hi;
+    UInt32 lo;
+};
+typedef struct UnsignedWide UnsignedWide;
+#endif
+
+#ifndef EventMask
+typedef UInt16 EventMask;
+#endif
+
+#ifndef OSStatus
+typedef SInt32 OSStatus;
+#endif
+
+#ifndef GetWindowPort
+#define GetWindowPort(windowRef) ((CGrafPtr) (windowRef))
+#endif
+
+#ifndef GetMenuHandle
+#define GetMenuHandle(menuID) GetMHandle(menuID)
+#endif
+
+#ifndef GetMenuItemText
+#define GetMenuItemText(menu, item, itemStr) GetItem((menu), (item), (itemStr))
+#endif
+
+#ifndef AppendResMenu
+#define AppendResMenu(menu, typ) AddResMenu((menu), (typ))
+#endif
+
+#ifndef NewRoutineDescriptor
+#define NewRoutineDescriptor(proc, procInfo, isa) ((UniversalProcPtr) (proc))
+#endif
+
+#ifndef GetWindowStructureRgn
+#define GetWindowStructureRgn(winPtr, regionHandle) CopyRgn(*(RgnHandle *) (((UInt8 *) (winPtr)) + sizeof(GrafPort) + 0x6), (regionHandle))
+#endif
+
+#ifndef GetWindowContentRgn
+#define GetWindowContentRgn(winPtr, regionHandle) CopyRgn(*(RgnHandle *) (((UInt8 *) winPtr) + sizeof(GrafPort) + 0xA), (regionHandle))
+#endif
+
+#ifndef GetWindowUpdateRgn
+#define GetWindowUpdateRgn(winPtr, regionHandle) CopyRgn( *(RgnHandle *)(((UInt8 *) winPtr) + sizeof(GrafPort) + 0xE), (regionHandle))
+#endif
+
+#ifndef FontToScript
+#define FontToScript(fontNum) Font2Script(fontNum)
+#endif
+
+#ifndef KeyTranslate
+#define KeyTranslate(map, code, state) KeyTrans((map), (short) (code), (long *) (void *) (state))
+#endif
+
+#ifndef GetScriptManagerVariable
+#define GetScriptManagerVariable(verb) GetEnvirons(verb)
+#endif
+
+#endif /* defined(ANCIENT_HEADERS) */
 
 #ifndef MacGetCurrentProcess
 #define MacGetCurrentProcess GetCurrentProcess
@@ -272,7 +410,7 @@ static Rect *GetWindowPortBounds(WindowRef window, Rect *bounds)
     return bounds;
 }
 
-#endif
+#endif /* ! defined(GetWindowPortBounds) */
 
 #endif /* ! (defined(UNIVERSAL_INTERFACES_VERSION) && (UNIVERSAL_INTERFACES_VERSION >= 0x0300)) */
 
@@ -281,6 +419,8 @@ static Rect *GetWindowPortBounds(WindowRef window, Rect *bounds)
 #include <TextEncodingConverter.h>
 
 #else /* ! USE_TEXT_ENCODING_CONVERSION_MANAGER */
+
+#ifndef __TEXTCOMMON__
 
 #ifndef TextEncoding
 #define TextEncoding UInt32
@@ -294,6 +434,18 @@ static Rect *GetWindowPortBounds(WindowRef window, Rect *bounds)
 #define kTextEncodingMacJapanese smJapanese
 #endif
 
+#ifndef kTextEncodingMacChineseTrad
+#define kTextEncodingMacChineseTrad smTradChinese
+#endif
+
+#ifndef kTextEncodingMacChineseSimp
+#define kTextEncodingMacChineseSimp smSimpChinese
+#endif
+
+#ifndef kTextEncodingMacKorean
+#define kTextEncodingMacKorean smKorean
+#endif
+
 #ifndef kTextEncodingMacVT100
 #define kTextEncodingMacVT100 0xfc
 #endif
@@ -305,6 +457,8 @@ static Rect *GetWindowPortBounds(WindowRef window, Rect *bounds)
 #ifndef kTextEncodingUS_ASCII
 #define kTextEncodingUS_ASCII 0x600
 #endif
+
+#endif /* ! defined(__TEXTCOMMON__) */
 
 #endif /* ! USE_TEXT_ENCODING_CONVERSION_MANAGER */
 
@@ -325,12 +479,56 @@ static Rect *GetWindowPortBounds(WindowRef window, Rect *bounds)
 
 #endif /* ! defined(macintosh) */
 
+#ifndef USE_OLD_TOOLBOX
+#define USE_OLD_TOOLBOX 0
+#endif
+
 #ifndef USE_FONT_MANAGER_9
 #define USE_FONT_MANAGER_9 1
 #endif
 
 #ifndef USE_TEXT_ENCODING_CONVERSION_MANAGER
 #define USE_TEXT_ENCODING_CONVERSION_MANAGER 1
+#endif
+
+#if USE_TEXT_ENCODING_CONVERSION_MANAGER
+
+static int maccurses_use_text_encoding_conversion_manager = 0;
+
+static TextEncodingBase
+maccurses_GetTextEncodingBase(TextEncoding e)
+{
+    if (maccurses_use_text_encoding_conversion_manager && GetTextEncodingBase)
+    {
+        return GetTextEncodingBase(e);
+    }
+    return e & 0xffff;
+}
+#undef GetTextEncodingBase
+#define GetTextEncodingBase(e) maccurses_GetTextEncodingBase(e)
+
+static OSStatus
+maccurses_RevertTextEncodingToScriptInfo(TextEncoding enc, ScriptCode *pscript, LangCode *plang, Str255 fontname)
+{
+    if (maccurses_use_text_encoding_conversion_manager && RevertTextEncodingToScriptInfo)
+    {
+        return RevertTextEncodingToScriptInfo(enc, pscript, plang, fontname);
+    }
+    return unimpErr;
+}
+#undef RevertTextEncodingToScriptInfo
+#define RevertTextEncodingToScriptInfo(e,s,l,f) maccurses_RevertTextEncodingToScriptInfo((e),(s),(l),(f))
+
+#else
+
+#ifndef GetTextEncodingBase
+#define GetTextEncodingBase(e) ((e) & 0xffff)
+#endif
+
+#ifndef RevertTextEncodingToScriptInfo
+#define RevertTextEncodingToScriptInfo(e,s,l,f) (unimpErr)
+#endif
+
 #endif
 
 #include <math.h>
@@ -341,7 +539,30 @@ static Rect *GetWindowPortBounds(WindowRef window, Rect *bounds)
 #ifndef __CARBON__
 
 /* we must provide storage for the global qd */
+#ifndef ANCIENT_HEADERS
 QDGlobals qd;
+#endif
+
+/* These accessors are only defined in Carbon */
+#ifndef GetPortTextFont
+#define GetPortTextFont(port) (((CGrafPtr)(port))->txFont)
+#endif
+
+#ifndef GetPortTextFace
+#define GetPortTextFace(port) ((Style)(((CGrafPtr)(port))->txFace))
+#endif
+
+#ifndef GetPortTextMode
+#define GetPortTextMode(port) (((CGrafPtr)(port))->txMode)
+#endif
+
+#ifndef GetPortTextSize
+#define GetPortTextSize(port) (((CGrafPtr)(port))->txSize)
+#endif
+
+#ifndef GetPortSpExtra
+#define GetPortSpExtra(port) (((CGrafPtr)(port))->spExtra)
+#endif
 
 #endif
 
@@ -371,10 +592,13 @@ static UniversalProcPtr maccurses_trapUnimplemented;
 
 #if ! (defined(TARGET_RT_MAC_CFM) && TARGET_RT_MAC_CFM || defined(__CFM68K__))
 
+#ifndef ANCIENT_HEADERS
 static UniversalProcPtr maccurses_trapMicroseconds;
+#endif
 
 static void maccurses_Microseconds(UnsignedWide *microTickCount)
 {
+#ifndef ANCIENT_HEADERS
     if (! maccurses_trapUnimplemented)
     {
         maccurses_trapUnimplemented = maccurses_getTrapAddress(_Unimplemented);
@@ -384,6 +608,7 @@ static void maccurses_Microseconds(UnsignedWide *microTickCount)
         maccurses_trapMicroseconds = maccurses_getTrapAddress(_Microseconds);
     }
     if (maccurses_trapMicroseconds == maccurses_trapUnimplemented)
+#endif
     {
 #if defined(UNIVERSAL_INTERFACES_VERSION) && (UNIVERSAL_INTERFACES_VERSION >= 0x0300)
         *microTickCount = UInt64ToUnsignedWide(U64Divide(U64Multiply(U64SetU((UInt32) clock()),
@@ -399,7 +624,9 @@ static void maccurses_Microseconds(UnsignedWide *microTickCount)
 #endif
         return;
     }
+#ifndef ANCIENT_HEADERS
     Microseconds(microTickCount);
+#endif
 }
 #undef Microseconds
 #define Microseconds maccurses_Microseconds
@@ -530,82 +757,6 @@ static OSStatus SetWindowBounds(WindowRef window,
     return ret;
 }
 
-#undef GetWindowBounds
-#define GetWindowBounds maccurses_GetWindowBounds
-
-static OSStatus GetWindowBounds(WindowRef window,
-                                WindowRegionCode regionCode,
-                                Rect *globalBounds)
-{
-    RgnHandle rgn;
-    OSStatus ret = noErr;
-
-    rgn = NewRgn();
-    switch (regionCode)
-    {
-    case kWindowStructureRgn:
-        GetWindowStructureRgn(window, rgn);
-        break;
-    case kWindowContentRgn:
-        GetWindowContentRgn(window, rgn);
-        break;
-    case kWindowUpdateRgn:
-        GetWindowUpdateRgn(window, rgn);
-        break;
-    default:
-        ret = unimpErr;
-    }
-    if (ret == noErr)
-    {
-        GetRegionBounds(rgn, globalBounds);
-    }
-    DisposeRgn(rgn);
-    return ret;
-}
-
-#undef GetWindowStructureWidths
-#define GetWindowStructureWidths maccurses_GetWindowStructureWidths
-
-static OSStatus GetWindowStructureWidths(WindowRef window, Rect *rect)
-{
-    OSStatus ret;
-    Rect strucRect, contRect;
-
-    ret = GetWindowBounds(window, kWindowStructureRgn, &strucRect);
-    if (ret == noErr)
-    {
-        ret = GetWindowBounds(window, kWindowContentRgn, &contRect);
-        if (ret == noErr)
-        {
-            rect->left = contRect.left - strucRect.left;
-            rect->top = contRect.top - strucRect.top;
-            rect->right = strucRect.right - contRect.right;
-            rect->bottom = strucRect.bottom - contRect.bottom;
-        }
-    }
-    return ret;
-}
-
-#undef ResizeWindow
-#define ResizeWindow maccurses_ResizeWindow
-
-static Boolean ResizeWindow(WindowRef window,
-                            Point startPoint,
-                            const Rect *sizeConstraints,
-                            Rect *newContentRect)
-{
-    long newsize;
-
-    newsize = GrowWindow(window, startPoint, sizeConstraints);
-    if (newsize)
-    {
-        SizeWindow(window, LoWord(newsize), HiWord(newsize), TRUE);
-        GetWindowBounds(window, kWindowContentRgn, newContentRect);
-        return TRUE;
-    }
-    return FALSE;
-}
-
 #undef GetQDGlobalsBlack
 #define GetQDGlobalsBlack maccurses_GetQDGlobalsBlack
 
@@ -631,6 +782,106 @@ static BitMap *GetQDGlobalsScreenBits(BitMap *screenBits)
 }
 
 #endif /* USE_OLD_TOOLBOX */
+
+#ifndef __CARBON__
+
+#if ! USE_OLD_TOOLBOX
+static int maccurses_use_windowslib = 0;
+#endif
+
+static OSStatus
+maccurses_GetWindowBounds(WindowRef window, WindowRegionCode regionCode, Rect *globalBounds)
+{
+    RgnHandle rgn;
+    OSStatus ret = noErr;
+
+#if ! USE_OLD_TOOLBOX
+    if (maccurses_use_windowslib && GetWindowBounds)
+    {
+        return GetWindowBounds(window, regionCode, globalBounds);
+    }
+#endif
+    rgn = NewRgn();
+    switch (regionCode)
+    {
+    case kWindowStructureRgn:
+        GetWindowStructureRgn(window, rgn);
+        break;
+    case kWindowContentRgn:
+        GetWindowContentRgn(window, rgn);
+        break;
+    case kWindowUpdateRgn:
+        GetWindowUpdateRgn(window, rgn);
+        break;
+    default:
+        ret = unimpErr;
+    }
+    if (ret == noErr)
+    {
+        GetRegionBounds(rgn, globalBounds);
+    }
+    DisposeRgn(rgn);
+    return ret;
+}
+#undef GetWindowBounds
+#define GetWindowBounds(window, regionCode, globalBounds) maccurses_GetWindowBounds((window), (regionCode), (globalBounds))
+
+static Boolean
+maccurses_ResizeWindow(WindowRef window,
+                       Point startPoint,
+                       const Rect *sizeConstraints,
+                       Rect *newContentRect)
+{
+    long newsize;
+
+#if ! USE_OLD_TOOLBOX
+    if (maccurses_use_windowslib && ResizeWindow)
+    {
+        return ResizeWindow(window, startPoint, sizeConstraints, newContentRect);
+    }
+#endif
+    newsize = GrowWindow(window, startPoint, sizeConstraints);
+    if (newsize)
+    {
+        SizeWindow(window, LoWord(newsize), HiWord(newsize), TRUE);
+        GetWindowBounds(window, kWindowContentRgn, newContentRect);
+        return TRUE;
+    }
+    return FALSE;
+}
+#undef ResizeWindow
+#define ResizeWindow(window, startPoint, sizeConstraints, newContentRect) maccurses_ResizeWindow((window), (startPoint), (sizeConstraints), (newContentRect))
+
+static OSStatus
+maccurses_GetWindowStructureWidths(WindowRef window, Rect *rect)
+{
+    OSStatus ret;
+    Rect strucRect, contRect;
+
+#if ! USE_OLD_TOOLBOX
+    if (maccurses_use_windowslib && GetWindowStructureWidths)
+    {
+        return GetWindowStructureWidths(window, rect);
+    }
+#endif
+    ret = GetWindowBounds(window, kWindowStructureRgn, &strucRect);
+    if (ret == noErr)
+    {
+        ret = GetWindowBounds(window, kWindowContentRgn, &contRect);
+        if (ret == noErr)
+        {
+            rect->left = contRect.left - strucRect.left;
+            rect->top = contRect.top - strucRect.top;
+            rect->right = strucRect.right - contRect.right;
+            rect->bottom = strucRect.bottom - contRect.bottom;
+        }
+    }
+    return ret;
+}
+#undef GetWindowStructureWidths
+#define GetWindowStructureWidths(window, rect) maccurses_GetWindowStructureWidths((window), (rect))
+
+#endif /* ! defined(__CARBON__) */
 
 #ifdef macintosh
 
@@ -658,28 +909,37 @@ int maccurses_strcasecmp(const char *s1, const char *s2)
 
 #ifndef isatty
 
-#ifndef FIOFNAME
+#if ! (defined(FIOFNAME) || defined(FIOINTERACTIVE))
 
-#define isatty(fd) 0
+#define isatty(fd) ((fd) != -1)
 
-#else /* defined(FIOFNAME) */
+#else /* defined(FIOFNAME) || defined(FIOINTERACTIVE) */
 
 #define isatty(fd) maccurses_isatty(fd)
 
 int maccurses_isatty(int fd)
 {
-    char namebuf[512];
     long systemVersion = 0;
 
     if ((noErr == Gestalt(gestaltSystemVersion, &systemVersion))
         &&
         ((systemVersion & 0xffff) >= 0x0700))
     {
+        char namebuf[512];
+
+#ifdef FIOINTERACTIVE
+        if (ioctl(fd, FIOINTERACTIVE, NULL) == 0)
+        {
+            return 1;
+        }
+#endif
         memset((void *) namebuf, 0, sizeof(namebuf));
+#ifdef FIOFNAME
         if (ioctl(fd, FIOFNAME, (long *) (void *) namebuf) == -1)
         {
             return 0;
         }
+#endif
         if ((! strcmp(namebuf, "dev:console"))
             ||
             (! strncmp(namebuf, "dev:tty", strlen("dev:tty")))
@@ -692,7 +952,7 @@ int maccurses_isatty(int fd)
     return 0;
 }
 
-#endif /* defined(FIOFNAME) */
+#endif /* defined(FIOFNAME) || defined(FIOINTERACTIVE) */
 
 #endif
 
@@ -794,9 +1054,70 @@ static int maccurses_usleep(unsigned long us)
 
 #endif /* macintosh */
 
+#if USE_FONT_MANAGER_9
+
+static int maccurses_use_font_manager_9 = 0;
+
+static OSStatus maccurses_FMGetFontFamilyName(FMFontFamily family, Str255 name)
+{
+    if (maccurses_use_font_manager_9 && FMGetFontFamilyName)
+    {
+        return FMGetFontFamilyName(family, name);
+    }
+    GetFontName(family, name);
+    return noErr;
+}
+#undef FMGetFontFamilyName
+#define FMGetFontFamilyName(family, name) maccurses_FMGetFontFamilyName((family), (name))
+
+static FMFontFamily maccurses_FMGetFontFamilyFromName(ConstStr255Param name)
+{
+    short familyID;
+
+    if (maccurses_use_font_manager_9 && FMGetFontFamilyFromName)
+    {
+        return FMGetFontFamilyFromName(name);
+    }
+    GetFNum(name, &familyID);
+    if (! familyID)
+    {
+        Str255 nameCanon;
+        int i;
+
+        GetFontName(familyID, nameCanon);
+        if (name[0] != nameCanon[0])
+        {
+            return kInvalidFontFamily;
+        }
+        for (i = 0; i <= nameCanon[0]; i ++)
+        {
+            if (tolower(name[i]) != tolower(nameCanon[i]))
+            {
+                return kInvalidFontFamily;
+            }
+        }
+    }
+    return (FMFontFamily) familyID;
+}
+#undef FMGetFontFamilyFromName
+#define FMGetFontFamilyFromName(name) maccurses_FMGetFontFamilyFromName(name)
+
+static OSStatus
+maccurses_FMGetFontFamilyTextEncoding(FMFontFamily family, TextEncoding *encoding)
+{
+    if (maccurses_use_font_manager_9 && FMGetFontFamilyTextEncoding)
+    {
+        return FMGetFontFamilyTextEncoding(family, encoding);
+    }
+    return kFMInvalidFontFamilyErr;
+}
+#undef FMGetFontFamilyTextEncoding
+#define FMGetFontFamilyTextEncoding(family, encoding) maccurses_FMGetFontFamilyTextEncoding((family), (encoding))
+
+#else /* ! USE_FONT_MANAGER_9 */
+
 /* When built without Font Manager 9, we use macros to replace some
  * calls */
-#if ! USE_FONT_MANAGER_9
 
 #ifndef kInvalidFontFamily
 #define kInvalidFontFamily -1
@@ -820,17 +1141,111 @@ static int maccurses_usleep(unsigned long us)
 
 #ifndef FMGetFontFamilyFromName
 #define FMGetFontFamilyFromName maccurses_FMGetFontFamilyFromName
+
+const char *maccurses_standardFontNames =
+    "(System Font)" "\0"
+    "(Application Font)" "\0"
+    "New York" "\0"
+    "Geneva" "\0"
+    "Monaco" "\0"
+    "Venice" "\0"
+    "London" "\0"
+    "Athens" "\0"
+    "San Francisco" "\0"
+    "Toronto" "\0"
+    "(Font 10)" "\0"
+    "Cairo" "\0"
+    "Los Angeles" "\0"
+    "(Font 13)" "\0"
+    "(Font 14)" "\0"
+    "(Font 15)" "\0"
+    "(Font 16)" "\0"
+    "(Font 17)" "\0"
+    "(Font 18)" "\0"
+    "(Font 19)" "\0"
+    "Times" "\0"
+    "Helvetica" "\0"
+    "Courier" "\0"
+    "Symbol" "\0"
+    "Mobile" "\0"
+    "\0\0";
+
+static UniversalProcPtr maccurses_trapGetFNum;
+
+static UniversalProcPtr maccurses_trapGetFName;
+
 static FMFontFamily FMGetFontFamilyFromName(ConstStr255Param name)
 {
     short familyID;
 
-    GetFNum(name, &familyID);
+    if (! maccurses_trapUnimplemented)
+    {
+        maccurses_trapUnimplemented = maccurses_getTrapAddress(_Unimplemented);
+    }
+    if (! maccurses_trapGetFNum)
+    {
+        maccurses_trapGetFNum = maccurses_getTrapAddress(_GetFNum);
+    }
+    if (! maccurses_trapGetFName)
+    {
+        maccurses_trapGetFName = maccurses_getTrapAddress(_GetFName);
+    }
+    if (maccurses_trapGetFNum == maccurses_trapUnimplemented)
+    {
+        familyID = 0;
+    }
+    else
+    {
+        GetFNum(name, &familyID);
+    }
+    if (! familyID)
+    {
+        int i, j, k, m;
+
+        for (i = 0, j = 0, k = 0, m = 1;
+             maccurses_standardFontNames[j]
+                 ||
+                 maccurses_standardFontNames[j + 1];
+             ++ j)
+        {
+            if (! maccurses_standardFontNames[j])
+            {
+                if ((name[0] == (j - k)) && m)
+                {
+                    familyID = i;
+                    break;
+                }
+                ++ i;
+                k = j;
+                m = 1;
+            }
+            else if (m)
+            {
+                if ((name[0] < (j - k))
+                    ||
+                    (tolower(name[j - k])
+                     !=
+                     tolower(maccurses_standardFontNames[j])))
+                {
+                    m = 0;
+                }
+            }
+        }
+    }
+    if (maccurses_trapGetFName == maccurses_trapUnimplemented)
+    {
+        return kInvalidFontFamily;
+    }
     if (! familyID)
     {
         Str255 nameCanon;
         int i;
 
         GetFontName(familyID, nameCanon);
+        if (name[0] != nameCanon[0])
+        {
+            return kInvalidFontFamily;
+        }
         for (i = 0; i <= nameCanon[0]; i ++)
         {
             if (tolower(name[i]) != tolower(nameCanon[i]))
@@ -857,22 +1272,18 @@ static OSStatus FMGetFontFamilyName(FMFontFamily family, Str255 name)
 
 #endif /* ! USE_FONT_MANAGER_9 */
 
-#ifndef __CARBON__
-
-#undef GetPortBitMapForCopyBits
-#define GetPortBitMapForCopyBits maccurses_GetPortBitMapForCopyBits
-static const BitMap *GetPortBitMapForCopyBits(CGrafPtr port)
-{
-    return &(((struct GrafPort *) port)->portBits);
-}
-
-#ifndef GetFontFamilyFromMenuSelection
-#define GetFontFamilyFromMenuSelection maccurses_GetFontFamilyFromMenuSelection
-static OSStatus GetFontFamilyFromMenuSelection(MenuRef menu, MenuItemIndex item, FMFontFamily *outFontFamily, FMFontStyle *outStyle)
+static OSStatus
+maccurses_GetFontFamilyFromMenuSelection(MenuRef menu, MenuItemIndex item, FMFontFamily *outFontFamily, FMFontStyle *outStyle)
 {
     Str255 fontName;
     FMFontFamily tmpff;
 
+#ifdef __CARBON__
+    if (GetFontFamilyFromMenuSelection)
+    {
+        return GetFontFamilyFromMenuSelection(menu, item, outFontFamily, outStyle);
+    }
+#endif
     GetMenuItemText(menu, item, fontName);
     tmpff = FMGetFontFamilyFromName(fontName);
     if (tmpff != kInvalidFontFamily)
@@ -883,9 +1294,23 @@ static OSStatus GetFontFamilyFromMenuSelection(MenuRef menu, MenuItemIndex item,
     }
     return kFMInvalidFontFamilyErr;
 }
+#undef GetFontFamilyFromMenuSelection
+#define GetFontFamilyFromMenuSelection(menu, item, outFontFamily, outStyle) maccurses_GetFontFamilyFromMenuSelection((menu), (item), (outFontFamily), (outStyle))
+
+#ifndef __CARBON__
+
+#undef GetPortBitMapForCopyBits
+#define GetPortBitMapForCopyBits maccurses_GetPortBitMapForCopyBits
+static const BitMap *GetPortBitMapForCopyBits(CGrafPtr port)
+{
+    return (const BitMap *) &(((struct GrafPort *) (void *) port)->portBits);
+}
+
+#ifndef CountMenuItems
+#define CountMenuItems(mr) CountMItems(mr)
 #endif
 
-#endif
+#endif /* ! defined(__CARBON__) */
 
 #define ERR -1
 #define OK 0
@@ -1058,6 +1483,8 @@ typedef maccurses_chtype maccurses_attr_t;
 #define SWAPDOTS 1
 #endif
 
+#define MACCURSES_FOUR_CHAR_CODE(k) ((((long)((k)[0])) << 24) | ((255 & (long)(unsigned)((k)[1])) << 16) | ((255 & (unsigned)((k)[2])) << 8) | (255 & (unsigned)((k)[3])))
+
 /* an arbitrary integer identifying "Da Window" */
 #define MACCURSES_MAINWIN 0xda317d03LU
 
@@ -1065,8 +1492,10 @@ typedef maccurses_chtype maccurses_attr_t;
 #define MACCURSES_F8FFMENU 0x0080L
 #define MACCURSES_FILEMENU 0x0a01L
 #define MACCURSES_EDITMENU 0x0a02L
+#define MACCURSES_SIZEMENU 0x0a03L
 #define MACCURSES_FONTMENU 0x0f00L /* this and all higher codes are used by the font (sub-)menus */
 
+static int maccurses_after_endwin = 1;
 static int maccurses_x = 0;
 static int maccurses_y = 0;
 
@@ -1084,6 +1513,8 @@ static int maccurses_resize_pending = 0;
 #define _MACCURSES_RESIZE_TIMER 10
 #endif
 
+static int maccurses_use_acs_flag = TRUE;
+
 static int maccurses_clearok_flag = FALSE;
 
 static int maccurses_nodelay_flag = FALSE;
@@ -1094,11 +1525,17 @@ static int maccurses_idlok_flag = FALSE;
 
 static int maccurses_leaveok_flag = FALSE;
 
+static int maccurses_wide_flag = FALSE;
+
+static int maccurses_widefont_flag = FALSE;
+
+static int maccurses_debug_flag = FALSE;
+
 #ifndef UNICODE
 
-static unsigned short *maccurses_cvtt = 0;
+static maccurses_chtype *maccurses_cvtt = 0;
 
-static unsigned short maccurses_macvt100[] = {
+static maccurses_chtype maccurses_macvt100[] = {
     0x80, 0x82, 0x81, 0x9f, 0x82, 0x8e, 0x83, 0x89,
     0x84, 0x8a, 0x85, 0x88, 0x86, 0x8c, 0x87, 0x8d,
     0x88, 0x90, 0x89, 0x91, 0x8a, 0x8f, 0x8b, 0x95,
@@ -1118,20 +1555,231 @@ static unsigned short maccurses_macvt100[] = {
     0xf6, 0xd6, 0xf8, 0xa1, 0xfa, 0xe1, 0xfd, 0xb7,
     0, 0
 };
-static unsigned short maccurses_macjapanese[] = {
-    0x5c,   0x80, 0x9b, 0x8191, 0x9c, 0x8192, 0xaa, 0x81ca,
-    0xb3, 0x84a0, 0xb4, 0x84a7, 0xbf, 0x84a2, 0xc0, 0x84a4,
-    0xc1, 0x84a8, 0xc2, 0x84a6, 0xc3, 0x84a5, 0xc4, 0x849f,
-    0xc5, 0x84a9, 0xd9, 0x84a3, 0xda, 0x84a1, 0xe0, 0x83bf,
-    0xe2, 0x83a1, 0xe3, 0x83ce, 0xe4, 0x83b0, 0xe5, 0x83d0,
-    0xe6, 0x83ca, 0xe7, 0x83d1, 0xe8, 0x83b3, 0xe9, 0x83a6,
-    0xea, 0x83b6, 0xeb, 0x83c2, 0xec, 0x8187, 0xed, 0x83d3,
-    0xee, 0x83c3, 0xef, 0x81bf, 0xf0, 0x81df, 0xf2, 0x8186,
-    0xf3, 0x8185, 0xf6, 0x8180, 0xf8, 0x818b, 0xfb, 0x81e3,
+static maccurses_chtype maccurses_macjapanese[] = {
+    0x01, 0x8199, 0x02, 0x819a, 0x03, 0x86a5, 0x04, 0x86a6,
+    0x05, 0x86a4, 0x06, 0x86a3, 0x07, 0x819c, 0x08, 0x819c | A_REVERSE,
+    0x09, 0x819b, 0x0a, 0x819b | A_REVERSE, 0x0b, 0x8189, 0x0c, 0x818a,
+    0x0d, 0x81f4, 0x14, 0x81f7, 0x15, 0x8198,
+    0x18, 0x81aa, 0x19, 0x81ab, 0x1a, 0x81a8, 0x1b, 0x81a9,
+    0x1c, 0x8841, 0x1d, 0x81cc, 0x1e, 0x81a3, 0x1f, 0x81a5,
+    /* start fullwidth additions */
+    0x120, 0x8140, 0x121, 0x8149, 0x122, 0x8168, 0x123, 0x8194,
+    0x124, 0x8190, 0x125, 0x8193, 0x126, 0x8195, 0x127, 0x8166,
+    0x128, 0x8169, 0x129, 0x816a, 0x12a, 0x8196, 0x12b, 0x817b,
+    0x12c, 0x8143, 0x12d, 0x815d, 0x12e, 0x8144, 0x12f, 0x815e,
+    0x130, 0x824f, 0x131, 0x8250, 0x132, 0x8251, 0x133, 0x8252,
+    0x134, 0x8253, 0x135, 0x8254, 0x136, 0x8255, 0x137, 0x8256,
+    0x138, 0x8257, 0x139, 0x8258, 0x13a, 0x8146, 0x13b, 0x8147,
+    0x13c, 0x8183, 0x13d, 0x8181, 0x13e, 0x8184, 0x13f, 0x8148,
+    0x140, 0x8197, 0x141, 0x8260, 0x142, 0x8261, 0x143, 0x8262,
+    0x144, 0x8263, 0x145, 0x8264, 0x146, 0x8265, 0x147, 0x8266,
+    0x148, 0x8267, 0x149, 0x8268, 0x14a, 0x8269, 0x14b, 0x826a,
+    0x14c, 0x826b, 0x14d, 0x826c, 0x14e, 0x826d, 0x14f, 0x826e,
+    0x150, 0x826f, 0x151, 0x8270, 0x152, 0x8271, 0x153, 0x8272,
+    0x154, 0x8273, 0x155, 0x8274, 0x156, 0x8275, 0x157, 0x8276,
+    0x158, 0x8277, 0x159, 0x8278, 0x15a, 0x8279, 0x15b, 0x816d,
+    0x15c, 0x815f, 0x15d, 0x816e, 0x15e, 0x81c8, 0x15f, 0x8151,
+    0x160, 0x814d, 0x161, 0x8281, 0x162, 0x8282, 0x163, 0x8283,
+    0x164, 0x8284, 0x165, 0x8285, 0x166, 0x8286, 0x167, 0x8287,
+    0x168, 0x8288, 0x169, 0x8289, 0x16a, 0x828a, 0x16b, 0x828b,
+    0x16c, 0x828c, 0x16d, 0x828d, 0x16e, 0x828e, 0x16f, 0x828f,
+    0x170, 0x8290, 0x171, 0x8291, 0x172, 0x8292, 0x173, 0x8293,
+    0x174, 0x8294, 0x175, 0x8295, 0x176, 0x8296, 0x177, 0x8297,
+    0x178, 0x8298, 0x179, 0x8299, 0x17a, 0x829a, 0x17b, 0x816f,
+    0x17c, 0x8162, 0x17d, 0x8170, 0x17e, 0x8160, 0x19d, 0x818f,
+    0x1db, 0x8140 | A_REVERSE, 0x1ff, 0x8140,
+    /* end fullwidth additions */
+    0x5c,   0x80,
+    0x7f, 0x83a2,
+    0x9b, 0x8191, 0x9c, 0x8192, 0x9d,   0x5c,
+    0xaa, 0x81ca, 0xae, 0x8173, 0xaf, 0x8174,
+    0xb3, 0x84a0, 0xb4, 0x84a7, 0xb5, 0x84bc, 0xb6, 0x84b7,
+    0xb9, 0x84b2, 0xba, 0x84ab, 0xbb, 0x84ad, 0xbc, 0x84ae,
+    0xbf, 0x84a2, 0xc0, 0x84a4, 0xc1, 0x84a8, 0xc2, 0x84a6,
+    0xc3, 0x84a5, 0xc4, 0x849f, 0xc5, 0x84a9, 0xc6, 0x84ba,
+    0xc7, 0x84b5, 0xc8, 0x84af, 0xc9, 0x84ac, 0xca, 0x84b3,
+    0xcb, 0x84b1, 0xcc, 0x84b0, 0xcd, 0x84aa, 0xce, 0x84b4,
+    0xcf, 0x84b8, 0xd0, 0x84bd, 0xd1, 0x84b6, 0xd2, 0x84bb,
+    0xd7, 0x84be, 0xd8, 0x84b9, 0xd9, 0x84a3, 0xda, 0x84a1,
+    0xdb, 0xa0 | A_REVERSE,
+    0xe0, 0x83bf, 0xe1, 0x83c0, 0xe2, 0x83a1, 0xe3, 0x83ce,
+    0xe4, 0x83b0, 0xe5, 0x83d0, 0xe6, 0x83ca, 0xe7, 0x83d1,
+    0xe8, 0x83b3, 0xe9, 0x83a6, 0xea, 0x83b6, 0xeb, 0x83c2,
+    0xec, 0x8187, 0xed, 0x83d3, 0xee, 0x83c3, 0xef, 0x81bf,
+    0xf0, 0x81df, 0xf1, 0x817d, 0xf2, 0x8186, 0xf3, 0x8185,
+    0xf4, 0x81e7, 0xf5, 0x81e7, 0xf6, 0x8180, 0xf8, 0x818b,
+    0xf8, 0x818b, 0xf9, 0x8145, 0xfa, 0x819c, 0xfb, 0x81e3,
     0xfe, 0x81a1, 0xff,   0xa0,
     0, 0
 };
-static unsigned short maccurses_macroman[] = {
+static maccurses_chtype maccurses_macchinesetrad[] = {
+    0x01, 0xa1b8, 0x02, 0xa1b9, 0x04, 0xa1bb, 0x08, 0xa1b4 | A_REVERSE,
+    0x09, 0xa1b3, 0x0a, 0xa1b3 | A_REVERSE, 0x0b, 0xa1f1, 0x0c, 0xa1f0,
+    0x0f, 0xa1b3, 0x15, 0xa1b1, 0x18, 0xa1f4, 0x19, 0xa1f5,
+    0x1a, 0xa1f7, 0x1b, 0xa1f6, 0x1c, 0xa1e8, 0x1e, 0xa1b6, 0x1f, 0xa1bf,
+    /* start fullwidth additions */
+    0x120, 0xa140, 0x121, 0xa149, 0x122, 0xa1a8, 0x123, 0xa1ad,
+    0x124, 0xa243, 0x125, 0xa248, 0x126, 0xa1ae, 0x127, 0xa1a6,
+    0x128, 0xa15d, 0x129, 0xa15e, 0x12a, 0xa1af, 0x12b, 0xa1cf,
+    0x12c, 0xa141, 0x12d, 0xa1d0, 0x12e, 0xa144, 0x12f, 0xa241,
+    0x130, 0xa2af, 0x131, 0xa2b0, 0x132, 0xa2b1, 0x133, 0xa2b2,
+    0x134, 0xa2b3, 0x135, 0xa2b4, 0x136, 0xa2b5, 0x137, 0xa2b6,
+    0x138, 0xa2b7, 0x139, 0xa2b8, 0x13a, 0xa147, 0x13b, 0xa146,
+    0x13c, 0xa1d5, 0x13d, 0xa1d7, 0x13e, 0xa1d6, 0x13f, 0xa148,
+    0x140, 0xa249, 0x141, 0xa2cf, 0x142, 0xa2d0, 0x143, 0xa2d1,
+    0x144, 0xa2d2, 0x145, 0xa2d3, 0x146, 0xa2d4, 0x147, 0xa2d5,
+    0x148, 0xa2d6, 0x149, 0xa2d7, 0x14a, 0xa2d8, 0x14b, 0xa2d9,
+    0x14c, 0xa2da, 0x14d, 0xa2db, 0x14e, 0xa2dc, 0x14f, 0xa2dd,
+    0x150, 0xa2de, 0x151, 0xa2df, 0x152, 0xa2e0, 0x153, 0xa2e1,
+    0x154, 0xa2e2, 0x155, 0xa2e3, 0x156, 0xa2e4, 0x157, 0xa2e5,
+    0x158, 0xa2e6, 0x159, 0xa2e7, 0x15a, 0xa2e8, 0x15b, 0xa165,
+    0x15c, 0xa242, 0x15d, 0xa166, 0x15e, 0xa173, 0x15f, 0xa1c4,
+    0x160, 0xa1a5, 0x161, 0xa2e9, 0x162, 0xa2ea, 0x163, 0xa2eb,
+    0x164, 0xa2ec, 0x165, 0xa2ed, 0x166, 0xa2ee, 0x167, 0xa2ef,
+    0x168, 0xa2f0, 0x169, 0xa2f1, 0x16a, 0xa2f2, 0x16b, 0xa2f3,
+    0x16c, 0xa2f4, 0x16d, 0xa2f5, 0x16e, 0xa2f6, 0x16f, 0xa2f7,
+    0x170, 0xa2f8, 0x171, 0xa2f9, 0x172, 0xa2fa, 0x173, 0xa2fb,
+    0x174, 0xa2fc, 0x175, 0xa2fd, 0x176, 0xa2fe, 0x177, 0xa340,
+    0x178, 0xa341, 0x179, 0xa342, 0x17a, 0xa343, 0x17b, 0xa161,
+    0x17c, 0xa155, 0x17d, 0xa162, 0x17e, 0xa1ca, 0x1ff, 0xa140,
+    /* end fullwidth additions */
+    0x7f, 0xa347, 0x9b, 0xa246, 0x9c, 0xa247, 0x9d, 0xa244,
+    0xae, 0xa16d, 0xaf, 0xa16e, 0xb3, 0xa278, 0xb4, 0xa274,
+    0xbf, /*0xa27b*/0xa2a1, 0xc0, /*0xa27c*/0xa2a2,
+    0xc1, 0xa272, 0xc2, 0xa273, 0xc3, 0xa275, 0xc4, 0xa277,
+    0xc5, 0xa271,
+    0xd9, /*0xa27d*/0xa2a3, 0xda, /*0xa27a*/0xa27e, 0xdb, 0xa269,
+    0xdc, 0xa265, 0xdd, 0xa26d, 0xde, 0xa26d | A_REVERSE,
+    0xdf, 0xa265 | A_REVERSE,
+    0xe0, 0xa35c, 0xe1, 0xa35d, 0xe2, 0xa346, 0xe3, 0xa36b,
+    0xe4, 0xa355, 0xe5, 0xa36d, 0xe6, 0xa367, 0xe7, 0xa36e,
+    0xe8, 0xa358, 0xe9, 0xa34b, 0xea, 0xa35b, 0xeb, 0xa35f,
+    0xec, 0xa1db, 0xed, 0xa370, 0xee, 0xa360, 0xef, 0xa1e4,
+    0xf0, 0xa1dd, 0xf1, 0xa1d3, 0xf2, 0xa1d9, 0xf3, 0xa1d8,
+    0xf4, 0xa1ec, 0xf5, 0xa1ec, 0xf6, 0xa1d2, 0xf8, 0xa258,
+    0xf9, 0xa145, 0xfa, 0xa1b4, 0xfb, 0xa1d4, 0xfe, 0xa1b4,
+    0, 0
+};
+static maccurses_chtype maccurses_macchinesesimp[] = {
+    0x01, 0xa1ee, 0x02, 0xa1ef, 0x04, 0xa1f4, 0x07, 0xa1f1,
+    0x08, 0xa1f1 | A_REVERSE, 0x09, 0xa1f0, 0x0a,
+    0xa1f0 | A_REVERSE, 0x0b, 0xa1e1, 0x0c, 0xa1e2, 0x15, 0xa1ec,
+    0x18, 0xa1fc, 0x19, 0xa1fd, 0x1a, 0xa1fa, 0x1b, 0xa1fb,
+    0x1e, 0xa1f8,
+    /* start fullwidth additions */
+    0x120, 0xa1a1, 0x121, 0xa3a1, 0x122, 0xa3a2, 0x123, 0xa3a3,
+    0x124, 0xa1e7, 0x125, 0xa3a5, 0x126, 0xa3a6, 0x127, 0xa3a7,
+    0x128, 0xa3a8, 0x129, 0xa3a9, 0x12a, 0xa3aa, 0x12b, 0xa3ab,
+    0x12c, 0xa3ac, 0x12d, 0xa3ad, 0x12e, 0xa3ae, 0x12f, 0xa3af,
+    0x130, 0xa3b0, 0x131, 0xa3b1, 0x132, 0xa3b2, 0x133, 0xa3b3,
+    0x134, 0xa3b4, 0x135, 0xa3b5, 0x136, 0xa3b6, 0x137, 0xa3b7,
+    0x138, 0xa3b8, 0x139, 0xa3b9, 0x13a, 0xa3ba, 0x13b, 0xa3bb,
+    0x13c, 0xa3bc, 0x13d, 0xa3bd, 0x13e, 0xa3be, 0x13f, 0xa3bf,
+    0x140, 0xa3c0, 0x141, 0xa3c1, 0x142, 0xa3c2, 0x143, 0xa3c3,
+    0x144, 0xa3c4, 0x145, 0xa3c5, 0x146, 0xa3c6, 0x147, 0xa3c7,
+    0x148, 0xa3c8, 0x149, 0xa3c9, 0x14a, 0xa3ca, 0x14b, 0xa3cb,
+    0x14c, 0xa3cc, 0x14d, 0xa3cd, 0x14e, 0xa3ce, 0x14f, 0xa3cf,
+    0x150, 0xa3d0, 0x151, 0xa3d1, 0x152, 0xa3d2, 0x153, 0xa3d3,
+    0x154, 0xa3d4, 0x155, 0xa3d5, 0x156, 0xa3d6, 0x157, 0xa3d7,
+    0x158, 0xa3d8, 0x159, 0xa3d9, 0x15a, 0xa3da, 0x15b, 0xa3db,
+    0x15c, 0xa3dc, 0x15d, 0xa3dd, 0x15e, 0xa3de, 0x15f, 0xa3df,
+    0x160, 0xa3e0, 0x161, 0xa3e1, 0x162, 0xa3e2, 0x163, 0xa3e3,
+    0x164, 0xa3e4, 0x165, 0xa3e5, 0x166, 0xa3e6, 0x167, 0xa3e7,
+    0x168, 0xa3e8, 0x169, 0xa3e9, 0x16a, 0xa3ea, 0x16b, 0xa3eb,
+    0x16c, 0xa3ec, 0x16d, 0xa3ed, 0x16e, 0xa3ee, 0x16f, 0xa3ef,
+    0x170, 0xa3f0, 0x171, 0xa3f1, 0x172, 0xa3f2, 0x173, 0xa3f3,
+    0x174, 0xa3f4, 0x175, 0xa3f5, 0x176, 0xa3f6, 0x177, 0xa3f7,
+    0x178, 0xa3f8, 0x179, 0xa3f9, 0x17a, 0xa3fa, 0x17b, 0xa3fb,
+    0x17c, 0xa3fc, 0x17d, 0xa3fd, 0x17e, 0xa1d7,
+    0x1db, 0xa1a1 | A_REVERSE, 0x1ff, 0xa1a1,
+    /* end fullwidth additions */
+    0x7f, 0xa1f7, 0x81, 0xa8b9, 0x82, 0xa8a6, 0x85, 0xa8a4,
+    0x88, 0xa8ba, 0x8d, 0xa8ac, 0x95, 0xa8b0, 0x97, 0xa8b4,
+    0x9b, 0xa1e9, 0x9c, 0xa1ea, 0x9d, 0xa3a4,
+    0xa0, 0xa8a2, 0xa1, 0xa8aa, 0xa2, 0xa8ae, 0xa3, 0xa8b2,
+    0xae, 0xa1b6, 0xaf, 0xa1b7, 0xb3, 0xa9a6,
+    0xb4, 0xa9c8, 0xb5, 0xa9c9, 0xb6, 0xa9cc, 0xb7, /*0xa9b6*/0xa9cb,
+    0xb8, /*0xa9b5*/0xa9d1, 0xb9, 0xa9cf, 0xba, 0xa9a7, 0xbb, 0xa9b7,
+    0xbc, 0xa9bf, 0xbd, /*0xa9be*/0xa9ca, 0xbe, /*0xa9bd*/0xa9d9, 0xbf, 0xa9b4,
+    0xc0, 0xa9b8, 0xc1, 0xa9d8, 0xc2, 0xa9d0, 0xc3, 0xa9c0,
+    0xc4, 0xa9a4, 0xc5, 0xa9e0, 0xc6, 0xa9c1, 0xc7, 0xa9c4,
+    0xc8, 0xa9bb, 0xc9, 0xa9b3, 0xca, 0xa9df, 0xcb, 0xa9d7,
+    0xcc, 0xa9c7, 0xcd, 0xa9a5, 0xce, 0xa9ef, 0xcf, 0xa9db,
+    0xd0, 0xa9dc, 0xd1, 0xa9d3, 0xd2, 0xa9d4, 0xd3, /*0xa9ba*/0xa9c2,
+    0xd4, /*0xa9b9*/0xa9da, 0xd5, /*0xa9b1*/0xa9d2, 0xd6, /*0xa9b2*/0xa9c3, 0xd7, 0xa9e6,
+    0xd8, 0xa9e3, 0xd9, 0xa9bc, 0xda, 0xa9b0, 0xdb, 0x20 | A_REVERSE,
+    0xe0, 0xa6c1, 0xe1, 0xa6c2, 0xe2, 0xa6a3, 0xe3, 0xa6d0,
+    0xe4, 0xa6b2, 0xe5, 0xa6d2, 0xe6, 0xa6cc, 0xe7, 0xa6d3,
+    0xe8, 0xa6b5, 0xe9, 0xa6a8, 0xea, 0xa6b8, 0xeb, 0xa6c4,
+    0xec, 0xa1de, 0xed, 0xa6d5, 0xee, 0xa6c5, 0xef, 0xa1c9,
+    0xf0, 0xa1d4, 0xf1, 0xa1c0, 0xf2, 0xa1dd, 0xf3, 0xa1dc,
+    0xf4, 0xa1d2, 0xf5, 0xa1d2, 0xf6, 0xa1c2, 0xf7, 0xa1d6,
+    0xf8, 0xa1e3, 0xf9, 0xa1a4, 0xfa, 0xa1f1, 0xfb, 0xa1cc,
+    0xfe, 0xa1f6,
+    0, 0
+};
+static maccurses_chtype maccurses_mackorean[] = {
+    0x01, 0xa1d9, 0x02, 0xa1da, 0x03, 0xa2be,
+    0x04, 0xa1df, 0x05, 0xa2c0, 0x06, 0xa2bc, 0x07, 0xa655,
+    0x08, 0xa655 | A_REVERSE, 0x09, 0xa1db, 0x0a, 0xa1db | A_REVERSE, 0x0b, 0xa1ce, 
+    0x0c, 0xa1cf, 0x0d, 0xa2dc, 0x0e, 0xa2dd, 0x0f, 0xa654,
+    0x10, 0xa2ba, 0x11, 0xa2b8, 0x12, 0xa2d5, 0x13, 0xa784,
+    0x14, 0xa2d2, 0x15, 0xa1d7,
+    0x18, 0xa1e8, 0x19, 0xa1e9, 0x1a, 0xa1e6, 0x1b, 0xa1e7,
+    0x1c, 0xa753, 0x1d, 0xa1ea, 0x1e, 0xa1e3, 0x1f, 0xa1e5,
+    /* start fullwidth additions */
+    0x121, 0xa3a1, 0x122, 0xa1b1, 0x123, 0xa3a3,
+    0x124, 0xa3a4, 0x125, 0xa3a5, 0x126, 0xa3a6, 0x127, 0xa1af,
+    0x128, 0xa3a8, 0x129, 0xa3a9, 0x12a, 0xa3aa, 0x12b, 0xa3ab,
+    0x12c, 0xa3ac, 0x12d, 0xa3ad, 0x12e, 0xa3ae, 0x12f, 0xa3af,
+    0x130, 0xa3b0, 0x131, 0xa3b1, 0x132, 0xa3b2, 0x133, 0xa3b3,
+    0x134, 0xa3b4, 0x135, 0xa3b5, 0x136, 0xa3b6, 0x137, 0xa3b7,
+    0x138, 0xa3b8, 0x139, 0xa3b9, 0x13a, 0xa3ba, 0x13b, 0xa3bb,
+    0x13c, 0xa3bc, 0x13d, 0xa3bd, 0x13e, 0xa3be, 0x13f, 0xa3bf,
+    0x140, 0xa3c0, 0x141, 0xa3c1, 0x142, 0xa3c2, 0x143, 0xa3c3,
+    0x144, 0xa3c4, 0x145, 0xa3c5, 0x146, 0xa3c6, 0x147, 0xa3c7,
+    0x148, 0xa3c8, 0x149, 0xa3c9, 0x14a, 0xa3ca, 0x14b, 0xa3cb,
+    0x14c, 0xa3cc, 0x14d, 0xa3cd, 0x14e, 0xa3ce, 0x14f, 0xa3cf,
+    0x150, 0xa3d0, 0x151, 0xa3d1, 0x152, 0xa3d2, 0x153, 0xa3d3,
+    0x154, 0xa3d4, 0x155, 0xa3d5, 0x156, 0xa3d6, 0x157, 0xa3d7,
+    0x158, 0xa3d8, 0x159, 0xa3d9, 0x15a, 0xa3da, 0x15b, 0xa3db,
+    0x15c, 0xa1ac, 0x15d, 0xa3dd, 0x15e, 0xa3de, 0x15f, 0xa3df,
+    0x160, 0xa1ae, 0x161, 0xa3e1, 0x162, 0xa3e2, 0x163, 0xa3e3,
+    0x164, 0xa3e4, 0x165, 0xa3e5, 0x166, 0xa3e6, 0x167, 0xa3e7,
+    0x168, 0xa3e8, 0x169, 0xa3e9, 0x16a, 0xa3ea, 0x16b, 0xa3eb,
+    0x16c, 0xa3ec, 0x16d, 0xa3ed, 0x16e, 0xa3ee, 0x16f, 0xa3ef,
+    0x170, 0xa3f0, 0x171, 0xa3f1, 0x172, 0xa3f2, 0x173, 0xa3f3,
+    0x174, 0xa3f4, 0x175, 0xa3f5, 0x176, 0xa3f6, 0x177, 0xa3f7,
+    0x178, 0xa3f8, 0x179, 0xa3f9, 0x17a, 0xa3fa, 0x17b, 0xa3fb,
+    0x17c, 0xa3fc, 0x17d, 0xa3fd, 0x17e, 0xa1ad,
+    /* end fullwidth additions */
+    0x7f, 0xa1e2, 0x9b, 0xa1cb, 0x9c, 0xa1cc, 0x9d, 0xa1cd,
+    0xae, 0xa1b6, 0xaf, 0xa1b7,
+    0xa6, 0xa8a3, 0xa7, 0xa8ac,
+    0xa8, 0xa2af, 0xaa, 0xa1fe, 0xab, 0xa8f6,
+    0xac, 0xa8f9, 0xad, 0xa2ae, 0xae, 0xa65c, 0xaf, 0xa65d,
+    0xb0, 0xa2c6, 0xb1, 0xa2c6, 0xb2, 0xa2c6, 0xb3, 0xa6a2,
+    0xb4, 0xa6a9, 0xb5, 0xa6be, 0xb6, 0xa6b9, 0xb7, /*0xa6c1*/0xa6ce,
+    0xb8, /*0xa6c2*/0xa6d1, 0xb9, 0xa6b4, 0xba, 0xa6ad, 0xbb, 0xa6af,
+    0xbc, 0xa6b0, 0xbd, /*0xa6c3*/0xa6cd, 0xbe, /*0xa6c4*/0xa6d5, 0xbf, 0xa6a4,
+    0xc0, 0xa6a6, 0xc1, 0xa6aa, 0xc2, 0xa6a8, 0xc3, 0xa6a7,
+    0xc4, 0xa6a1, 0xc5, 0xa6ab, 0xc6, 0xa6bc, 0xc7, 0xa6b7,
+    0xc8, 0xa6b1, 0xc9, 0xa6ae, 0xca, 0xa6b5, 0xcb, 0xa6b3,
+    0xcc, 0xa6b2, 0xcd, 0xa6ac, 0xce, 0xa6b6, 0xcf, 0xa6ba,
+    0xd0, 0xa6bf, 0xd1, 0xa6b8, 0xd2, 0xa6bd, 0xd3, /*0xa6c5*/0xa6c9,
+    0xd4, /*0xa6c6*/0xa6d6, 0xd5, /*0xa6c8*/0xa6d2, 0xd6, /*0xa6c7*/0xa6ca, 0xd7, 0xa6c0,
+    0xd8, 0xa6bb, 0xd9, 0xa6a5, 0xda, 0xa6a3, 0xdb, 0xa78f,
+    0xe0, 0xa5e1, 0xe1, 0xa5e2, 0xe2, 0xa5c3, 0xe3, 0xa5f0,
+    0xe4, 0xa5d2, 0xe5, 0xa5f2, 0xe6, 0xa5ec, 0xe7, 0xa5f3,
+    0xe8, 0xa5d5, 0xe9, 0xa5c8, 0xea, 0xa5d8, 0xeb, 0xa5e4,
+    0xec, 0xa1c4, 0xed, 0xa5f5, 0xee, 0xa5e5, 0xef, 0xa1fb,
+    0xf0, 0xa1d5, 0xf1, 0xa1be, 0xf2, 0xa75b, 0xf3, 0xa75a,
+    0xf4, 0xa1f2, 0xf5, 0xa1f2, 0xf6, 0xa1c0, 0xf7, 0xa49b,
+    0xf8, 0xa1c6, 0xf9, 0xa1a4, 0xfa, 0xa1dc, 0xfb, 0xa1ee,
+    0xfc, 0xa9fa, 0xfd, 0xa9f7, 0xfe, 0xa1e1,
+    0, 0
+};
+static maccurses_chtype maccurses_macroman[] = {
     0x80, 0x82, 0x81, 0x9f, 0x82, 0x8e, 0x83, 0x89,
     0x84, 0x8a, 0x85, 0x88, 0x86, 0x8c, 0x87, 0x8d,
     0x88, 0x90, 0x89, 0x91, 0x8a, 0x8f, 0x8b, 0x95,
@@ -1148,7 +1796,7 @@ static unsigned short maccurses_macroman[] = {
     0xf6, 0xd6, 0xf7, 0xc5, 0xf8, 0xa1,
     0, 0
 };
-static unsigned short maccurses_cp437[] = {
+static maccurses_chtype maccurses_cp437[] = {
     0, 0
 };
 
@@ -1170,6 +1818,15 @@ static Rect maccurses_ideal_rect;
 static Boolean maccurses_maximized = false;
 static CGrafPtr maccurses_port;
 
+/* Text parameters saved prior to set-up, resored prior to exit for
+ * strange environments like MPW where this is needed to avoid
+ * corrupting the worksheet text rendering. */
+static short maccurses_oldTextFont;
+static Style maccurses_oldTextFace;
+static short maccurses_oldTextMode;
+static short maccurses_oldTextSize;
+static Fixed maccurses_oldSpaceExtra;
+
 static Str255 maccurses_title = { 0 };
 
 static int maccurses_zoom = 0;
@@ -1180,6 +1837,7 @@ static int maccurses_fontsize = 12;
 static FMFontFamily maccurses_fontfamily = kInvalidFontFamily;
 static FMFontFamily maccurses_custom_fontfamily = kInvalidFontFamily;
 static FMFontStyle maccurses_custom_fontstyle = 0;
+static TextEncoding maccurses_encoding = kTextEncodingMacRoman;
 
 static short maccurses_pairs[COLOR_PAIRS][2];
 
@@ -1200,24 +1858,33 @@ static void maccurses_cleanup(void)
 
 static int maccurses_wcwidth(wchar_t wc)
 {
-    switch ((wc & _MACCURSES_A_ALTCHARSET)
-            ?
-            wc
-            :
-            (wc | _MACCURSES_A_ALTCHARSET))
+    if (! maccurses_use_acs_flag)
     {
+        wc &= ~_MACCURSES_A_ALTCHARSET;
+    }
+    if (maccurses_use_acs_flag == TRUE)
+    {
+        switch ((wc & _MACCURSES_A_ALTCHARSET)
+                ?
+                wc
+                :
+                (wc | _MACCURSES_A_ALTCHARSET))
+        {
         case ACS_BLOCK:
         case _MACCURSES_ACS_THALF:
         case _MACCURSES_ACS_BHALF:
         case _MACCURSES_ACS_LHALF:
         case _MACCURSES_ACS_RHALF:
             return 1;
+        }
     }
     if ((wc >= 0x20) && (wc < 0x7f))
     {
         return 1;
     }
-    if ((wc & _MACCURSES_A_ALTCHARSET) == _MACCURSES_A_ALTCHARSET)
+    if (((wc & _MACCURSES_A_ALTCHARSET) == _MACCURSES_A_ALTCHARSET)
+        &&
+        (maccurses_use_acs_flag == TRUE))
     {
         wc ^= _MACCURSES_A_ALTCHARSET;
     }
@@ -1234,11 +1901,13 @@ static int maccurses_wcwidth(wchar_t wc)
             }
             for (j = 0; maccurses_cvtt[j]; j += 2)
             {
-                if (maccurses_cvtt[j] == wc)
+                if ((maccurses_cvtt[j] & ~((maccurses_wide_flag == TRUE) ? 0x100 : 0))
+                    ==
+                    wc)
                 {
-                    if (maccurses_cvtt[j + 1] > 0xff)
+                    if ((maccurses_cvtt[j + 1] & ~_MACCURSES_A_ATTR) > 0xff)
                     {
-                        return 2;
+                        return (maccurses_widefont_flag == TRUE) ? 1 : 2;
                     }
                     else
                     {
@@ -1311,16 +1980,28 @@ static int maccurses_wcwidth(wchar_t wc)
                                                               &sty,
                                                               &lyo)))
                 {
-                    ATSUSetTransientFontMatching(lyo, true);
-                    if (noErr == ATSUMeasureTextImage(lyo,
+                    ATSUFontID substFontAttrValue = kATSUInvalidFontID;
+                    UniCharArrayOffset firstChanged = 0;
+                    UniCharCount numChanged = 0;
+
+                    if (noErr == ATSUMatchFontsToText(lyo,
                                                       kATSUFromTextBeginning,
                                                       kATSUToTextEnd,
-                                                      0,
-                                                      0,
-                                                      &dimen))
+                                                      &substFontAttrValue,
+                                                      &firstChanged,
+                                                      &numChanged))
                     {
-                        /* woot. */
-                        atsuok = true;
+                        ATSUSetTransientFontMatching(lyo, true);
+                        if (noErr == ATSUMeasureTextImage(lyo,
+                                                          kATSUFromTextBeginning,
+                                                          kATSUToTextEnd,
+                                                          0,
+                                                          0,
+                                                          &dimen))
+                        {
+                            /* woot. */
+                            atsuok = true;
+                        }
                     }
                     ATSUDisposeTextLayout(lyo);
                 }
@@ -1339,7 +2020,9 @@ static int maccurses_wcwidth(wchar_t wc)
         }
 #endif /* defined(UNICODE) */
     }
-    if (! (wc & _MACCURSES_A_ALTCHARSET))
+    if ((! (wc & _MACCURSES_A_ALTCHARSET))
+        &&
+        (maccurses_use_acs_flag == TRUE))
     {
         switch (wc | _MACCURSES_A_ALTCHARSET)
         {
@@ -1372,7 +2055,7 @@ static int maccurses_endwin(void);
 
 static int maccurses_init_pair(short pair, short f, short b);
 
-static void maccurses_initscrWithHints(int h, int w, const char *title, const char *shortname);
+static int maccurses_initscrWithHints(int h, int w, const char *title, const char *shortname);
 
 static int maccurses_has_colors(void)
 {
@@ -1417,6 +2100,12 @@ static void maccurses_updateFontCheckMarks(MenuRef mr)
     int i;
     UInt16 count;
 
+#if ! (defined(CountMenuItems) || USE_OLD_TOOLBOX)
+    if (! CountMenuItems)
+    {
+        return;
+    }
+#endif
     count = CountMenuItems(mr);
     for (i = 0; i <= count; i ++)
     {
@@ -1430,17 +2119,29 @@ static void maccurses_updateFontCheckMarks(MenuRef mr)
             fam = kInvalidFontFamily;
             sty = 0;
             GetFontFamilyFromMenuSelection(mr, i, &fam, &sty);
-            MacCheckMenuItem(mr, i,
-                             ((fam == maccurses_fontfamily)
-                              &&
-                              (sty == maccurses_custom_fontstyle)) ? true : false);
+#ifdef __CARBON__
+            if (MacCheckMenuItem)
+            {
+                MacCheckMenuItem(mr, i,
+                                 ((fam == maccurses_fontfamily)
+                                  &&
+                                  (sty == maccurses_custom_fontstyle)) ? true : false);
+            }
+#else
+            CheckItem(mr, i,
+                      ((fam == maccurses_fontfamily)
+                       &&
+                       (sty == maccurses_custom_fontstyle)) ? true : false);
+#endif
         }
 #ifdef __CARBON__
         else
         {
             MenuRef submr;
 
-            if (noErr == GetMenuItemHierarchicalMenu(mr, i, &submr))
+            if (GetMenuItemHierarchicalMenu
+                &&
+                (noErr == GetMenuItemHierarchicalMenu(mr, i, &submr)))
             {
                 maccurses_updateFontCheckMarks(submr);
             }
@@ -1456,7 +2157,10 @@ static void maccurses_updateFontMenu(void)
     if (maccurses_fontmenu)
     {
 #ifdef __CARBON__
-        UpdateStandardFontMenu(maccurses_fontmenu, NULL);
+        if (UpdateStandardFontMenu)
+        {
+            UpdateStandardFontMenu(maccurses_fontmenu, NULL);
+        }
 #endif /* defined(__CARBON__) */
         maccurses_updateFontCheckMarks(maccurses_fontmenu);
     }
@@ -1474,31 +2178,37 @@ static pascal OSErr maccurses_onQuitEvent(const AppleEvent *ev, AppleEvent *repl
 
 static MenuBarHandle maccurses_oldMainMenu;
 
-static void maccurses_initscrWithHints(int h, int w, const char *title, const char *shortname)
+static int maccurses_initscrWithHints(int h, int w, const char *title, const char *shortname)
 {
+    int basefontsize = 12;
     char *font;
     const char *encoding_name;
     Str255 font_pascal;
     Rect coords;
-    TextEncoding encoding;
     Boolean encoding_determined = false;
     ScriptCode scriptID;
     int i;
     int j;
     int firsttime;
+    int managers_already_inited;
 
+    managers_already_inited = 0;
+    maccurses_after_endwin = 0;
     if (maccurses_valid == FALSE)
     {
         maccurses_valid = TRUE;
         firsttime = 1;
 #ifndef __CARBON__
         MaxApplZone();
+#if defined(HAVE_COMMAND_LINE)
+        managers_already_inited = HAVE_COMMAND_LINE;
 #endif
-        /* FIXME: we should add an atexit() handler to clean up... */
+#endif
     }
     else
     {
         firsttime = 0;
+        managers_already_inited = 1;
     }
     if (maccurses_new_w && maccurses_new_h)
     {
@@ -1569,147 +2279,107 @@ static void maccurses_initscrWithHints(int h, int w, const char *title, const ch
             SetFrontProcess(&psn);
         }
 #ifndef __CARBON__
-        InitGraf((void *) &(qd.thePort));
-        InitFonts();
-        InitWindows();
-        InitMenus();
+#if ! USE_OLD_TOOLBOX
+        maccurses_use_windowslib = 1;
+        if (myman_getenv("MACCURSES_WM")
+            &&
+            *myman_getenv("MACCURSES_WM"))
+        {
+            maccurses_use_windowslib = atoi(myman_getenv("MACCURSES_WM"));
+        }
+#endif
+#endif
+#if USE_FONT_MANAGER_9
+        maccurses_use_font_manager_9 = 1;
+        if (myman_getenv("MACCURSES_FM9")
+            &&
+            *myman_getenv("MACCURSES_FM9"))
+        {
+            maccurses_use_font_manager_9 = atoi(myman_getenv("MACCURSES_FM9"));
+        }
+#endif
 #if USE_TEXT_ENCODING_CONVERSION_MANAGER
-        TEInit();
+        maccurses_use_text_encoding_conversion_manager = 1;
+        if (myman_getenv("MACCURSES_TECM")
+            &&
+            *myman_getenv("MACCURSES_TECM"))
+        {
+            maccurses_use_text_encoding_conversion_manager = atoi(myman_getenv("MACCURSES_TECM"));
+        }
+        if (! (CreateTextEncoding && TECConvertText && TECCreateConverter && TECDisposeConverter && TECFlushText))
+        {
+            maccurses_use_text_encoding_conversion_manager = 0;
+        }
 #endif /* USE_TEXT_ENCODING_CONVERSION_MANAGER */
+#ifndef __CARBON__
+        InitGraf((void *) &(qd.thePort));
+        if (! managers_already_inited)
+        {
+            InitFonts();
+            InitWindows();
+            InitMenus();
+#if USE_TEXT_ENCODING_CONVERSION_MANAGER
+            if (maccurses_use_text_encoding_conversion_manager)
+            {
+                TEInit();
+            }
+#endif /* USE_TEXT_ENCODING_CONVERSION_MANAGER */
+        }
 #endif /* ! defined(__CARBON__) */
 
-        InitCursor();
+        if (! managers_already_inited)
+        {
+            InitCursor();
+        }
+        {
+#if USE_OLD_TOOLBOX
+            static UniversalProcPtr maccurses_trapFontDispatch;
+
+            if (! maccurses_trapFontDispatch)
+            {
+                maccurses_trapFontDispatch = maccurses_getTrapAddress(_FontDispatch);
+            }
+            if (maccurses_trapFontDispatch != maccurses_trapUnimplemented)
+#endif
+            {
+                SetOutlinePreferred(TRUE);
+                SetPreserveGlyph(FALSE);
+            }
+        }
+        SetFScaleDisable(TRUE);
     }
 
-    maccurses_oldMainMenu = GetMenuBar();
+    maccurses_debug_flag = FALSE;
+    if (myman_getenv("MACCURSES_DEBUG")
+        &&
+        *myman_getenv("MACCURSES_DEBUG")
+        &&
+        atoi(myman_getenv("MACCURSES_DEBUG")))
     {
-        int i;
-        /* 0x14, a.k.a. kMenuAppleLogoFilledGlyph */
-        const char *f8ffmenu_title = "\x14";
-        const char *filemenu_title = "File";
-        const char *editmenu_title = "Edit";
-        const char *fontmenu_title = "Font";
-        Str255 f8ffmenu_title_pascal = { 0 };
-        Str255 filemenu_title_pascal = { 0 };
-        Str255 editmenu_title_pascal = { 0 };
-        Str255 fontmenu_title_pascal = { 0 };
-        MenuRef f8ffmenu = NULL;
-        MenuRef filemenu = NULL;
-        MenuRef editmenu = NULL;
-
-        /* FIXME: we should figure out how to use shortname when running as an MPW tool */
-        if (shortname && 0)
-        {
-            f8ffmenu_title = (shortname && *shortname) ? shortname : "maccurses";
-        }
-        f8ffmenu_title_pascal[0] = 0;
-        for (i = 0; (i < 255) && f8ffmenu_title[i]; i ++)
-        {
-            f8ffmenu_title_pascal[i + 1] = f8ffmenu_title[i];
-            f8ffmenu_title_pascal[0] = i + 1;
-        }
-        f8ffmenu = NewMenu(MACCURSES_F8FFMENU, f8ffmenu_title_pascal);
-        if (f8ffmenu)
-        {
-            const char *f8ffmenu_items = "About/I;-";
-            Str255 f8ffmenu_items_pascal = { 0 };
-
-            f8ffmenu_items_pascal[0] = 0;
-            for (i = 0; (i < 255) && f8ffmenu_items[i]; i ++)
-            {
-                f8ffmenu_items_pascal[i + 1] = f8ffmenu_items[i];
-                f8ffmenu_items_pascal[0] = i + 1;
-            }
-            AppendMenu(f8ffmenu, f8ffmenu_items_pascal);
-            AppendResMenu(f8ffmenu, 'DRVR');
-            InsertMenu(f8ffmenu, 0);
-        }
-        filemenu_title_pascal[0] = 0;
-        for (i = 0; (i < 255) && filemenu_title[i]; i ++)
-        {
-            filemenu_title_pascal[i + 1] = filemenu_title[i];
-            filemenu_title_pascal[0] = i + 1;
-        }
-        filemenu = NewMenu(MACCURSES_FILEMENU, filemenu_title_pascal);
-        if (filemenu)
-        {
-            const char *filemenu_items = "Help/?;Interrupt/.;-;Quit/Q";
-            Str255 filemenu_items_pascal = { 0 };
-
-            filemenu_items_pascal[0] = 0;
-            for (i = 0; (i < 255) && filemenu_items[i]; i ++)
-            {
-                filemenu_items_pascal[i + 1] = filemenu_items[i];
-                filemenu_items_pascal[0] = i + 1;
-            }
-            AppendMenu(filemenu, filemenu_items_pascal);
-            InsertMenu(filemenu, 0);
-        }
-        editmenu_title_pascal[0] = 0;
-        for (i = 0; (i < 255) && editmenu_title[i]; i ++)
-        {
-            editmenu_title_pascal[i + 1] = editmenu_title[i];
-            editmenu_title_pascal[0] = i + 1;
-        }
-        editmenu = NewMenu(MACCURSES_EDITMENU, editmenu_title_pascal);
-        if (editmenu)
-        {
-            const char *editmenu_items = "Zoom/Z;-;Redraw/R";
-            Str255 editmenu_items_pascal = { 0 };
-
-            editmenu_items_pascal[0] = 0;
-            for (i = 0; (i < 255) && editmenu_items[i]; i ++)
-            {
-                editmenu_items_pascal[i + 1] = editmenu_items[i];
-                editmenu_items_pascal[0] = i + 1;
-            }
-            AppendMenu(editmenu, editmenu_items_pascal);
-            InsertMenu(editmenu, 0);
-        }
-        fontmenu_title_pascal[0] = 0;
-        for (i = 0; (i < 255) && fontmenu_title[i]; i ++)
-        {
-            fontmenu_title_pascal[i + 1] = fontmenu_title[i];
-            fontmenu_title_pascal[0] = i + 1;
-        }
-        maccurses_fontmenu = NewMenu(MACCURSES_FONTMENU, fontmenu_title_pascal);
-        if (maccurses_fontmenu)
-        {
-            const char *fontmenu_items = "Bigger Font/+;Smaller Font/-;Original Font Size/=";
-            Str255 fontmenu_items_pascal = { 0 };
-
-            fontmenu_items_pascal[0] = 0;
-            for (i = 0; (i < 255) && fontmenu_items[i]; i ++)
-            {
-                fontmenu_items_pascal[i + 1] = fontmenu_items[i];
-                fontmenu_items_pascal[0] = i + 1;
-            }
-            AppendMenu(maccurses_fontmenu, fontmenu_items_pascal);
-            {
-                fontmenu_items = "-;Original Font/T;-";
-                fontmenu_items_pascal[0] = 0;
-                for (i = 0; (i < 255) && fontmenu_items[i]; i ++)
-                {
-                    fontmenu_items_pascal[i + 1] = fontmenu_items[i];
-                    fontmenu_items_pascal[0] = i + 1;
-                }
-                AppendMenu(maccurses_fontmenu, fontmenu_items_pascal);
-#ifdef __CARBON__
-                CreateStandardFontMenu(maccurses_fontmenu,
-                                       CountMenuItems(maccurses_fontmenu) + 1,
-                                       MACCURSES_FONTMENU + 1,
-                                       kHierarchicalFontMenuOption,
-                                       NULL);
-#else /* ! defined(__CARBON__) */
-                AppendResMenu(maccurses_fontmenu, 'FONT');
-#endif /* ! defined(__CARBON__) */
-            }
-            InsertMenu(maccurses_fontmenu, 0);
-        }
-        MacDrawMenuBar();
+        maccurses_debug_flag = TRUE;
     }
-
-    maccurses_fontsize = (GetDefFontSize() >= 11) ? 12 : 9;
+    maccurses_use_acs_flag = TRUE;
+    if (myman_getenv("MACCURSES_ACS")
+        &&
+        *myman_getenv("MACCURSES_ACS"))
+    {
+        maccurses_use_acs_flag = atoi(myman_getenv("MACCURSES_ACS")) ? TRUE : FALSE;
+    }
+    maccurses_wide_flag = FALSE;
+    if (myman_getenv("MACCURSES_WIDE")
+        &&
+        *myman_getenv("MACCURSES_WIDE"))
+    {
+        maccurses_wide_flag = atoi(myman_getenv("MACCURSES_WIDE")) ? TRUE : FALSE;
+    }
+    maccurses_widefont_flag = maccurses_wide_flag;
+    if (myman_getenv("MACCURSES_WIDEFONT")
+        &&
+        *myman_getenv("MACCURSES_WIDEFONT"))
+    {
+        maccurses_widefont_flag = atoi(myman_getenv("MACCURSES_WIDEFONT")) ? TRUE : FALSE;
+    }
+    maccurses_fontsize = basefontsize = (GetDefFontSize() >= 11) ? 12 : 9;
 #ifdef MACCURSES_FONTSIZE
     if (MACCURSES_FONTSIZE) maccurses_fontsize = MACCURSES_FONTSIZE;
 #endif
@@ -1721,15 +2391,15 @@ static void maccurses_initscrWithHints(int h, int w, const char *title, const ch
     {
         maccurses_fontsize = atoi(myman_getenv("MACCURSES_FONTSIZE"));
         if (maccurses_fontsize < 1) maccurses_fontsize = 1;
-        if (maccurses_fontsize > 72) maccurses_fontsize = 72;
+        if (maccurses_fontsize > 32767) maccurses_fontsize = 32767;
     }
     for (i = 0; i < maccurses_zoom; i ++)
     {
         if (maccurses_fontsize < 3)
         {
-            maccurses_fontsize = maccurses_fontsize + 1;
+            maccurses_fontsize ++;
         }
-        else if (maccurses_fontsize < 72)
+        else if (maccurses_fontsize < 32767)
         {
             maccurses_fontsize = maccurses_fontsize * 4 / 3;
         }
@@ -1750,7 +2420,7 @@ static void maccurses_initscrWithHints(int h, int w, const char *title, const ch
         }
     }
     if (maccurses_fontsize < 1) maccurses_fontsize = 1;
-    if (maccurses_fontsize > 72) maccurses_fontsize = 72;
+    if (maccurses_fontsize > 32767) maccurses_fontsize = 32767;
     {
         SetRect(&coords, 100, 100,
                 100 + (w * maccurses_fontsize / 2), 100 + (h * maccurses_fontsize));
@@ -1770,9 +2440,20 @@ static void maccurses_initscrWithHints(int h, int w, const char *title, const ch
         {
             maccurses_hwnd = NewWindow(0, &coords, maccurses_title, true, zoomDocProc, (WindowRef)-1L, true, MACCURSES_MAINWIN);
         }
+        if (! maccurses_hwnd)
+        {
+            fprintf(stderr, "NewWindow failed\n");
+            fflush(stderr);
+            return 0;
+        }
         SetEventMask(keyDownMask | autoKeyMask | activMask | (maccurses_pixmap ? updateMask : 0) | mUpMask | mDownMask | osMask | highLevelEventMask);
         maccurses_port = GetWindowPort(maccurses_hwnd);
         SetPort((GrafPtr) maccurses_port);
+        maccurses_oldTextFont = GetPortTextFont(maccurses_port);
+        maccurses_oldTextFace = GetPortTextFace(maccurses_port);
+        maccurses_oldTextMode = GetPortTextMode(maccurses_port);
+        maccurses_oldTextSize = GetPortTextSize(maccurses_port);
+        maccurses_oldSpaceExtra = GetPortSpExtra(maccurses_port);
     }
     encoding_name = myman_getenv("MACCURSES_FONTENCODING");
 #ifdef MACCURSES_FONTENCODING
@@ -1789,6 +2470,32 @@ static void maccurses_initscrWithHints(int h, int w, const char *title, const ch
     {
         if (noErr == FMGetFontFamilyName(maccurses_custom_fontfamily, font_pascal))
         {
+            if (maccurses_debug_flag == TRUE)
+            {
+                int iii;
+
+                fprintf(stderr, "MACCURSES_FONT=");
+                for (iii = 0; iii < font_pascal[0]; ++iii)
+                {
+                    int c;
+
+                    c = (int) (unsigned) (unsigned char) font_pascal[iii + 1];
+                    if ((c == '\\') || (c == ' '))
+                    {
+                        fprintf(stderr, "\\");
+                    }
+                    if ((c >= 0x20) && (c < 0x7f))
+                    {
+                        fprintf(stderr, "%c", c);
+                    }
+                    else
+                    {
+                        fprintf(stderr, "\\%o", c);
+                    }
+                }
+                fprintf(stderr, "\nMACCURSES_FONTSIZE=%d\n", maccurses_fontsize);
+                fflush(stderr);
+            }
             maccurses_fontfamily = FMGetFontFamilyFromName(font_pascal);
         }
     }
@@ -1899,28 +2606,43 @@ static void maccurses_initscrWithHints(int h, int w, const char *title, const ch
     {
         GetFontName(maccurses_fontfamily, font_pascal);
     }
-    encoding = kTextEncodingMacRoman;
+    maccurses_encoding = kTextEncodingMacRoman;
     GetFontName(maccurses_fontfamily, font_pascal);
-    if ((noErr != FMGetFontFamilyTextEncoding(maccurses_fontfamily, &encoding))
+    if ((noErr != FMGetFontFamilyTextEncoding(maccurses_fontfamily, &maccurses_encoding))
         ||
-        (noErr != RevertTextEncodingToScriptInfo(encoding, &scriptID, NULL, NULL)))
+        (noErr != RevertTextEncodingToScriptInfo(maccurses_encoding, &scriptID, NULL, NULL)))
     {
         scriptID = FontToScript(maccurses_fontfamily);
         if (scriptID == smJapanese)
         {
-            encoding = kTextEncodingMacJapanese;
+            maccurses_encoding = kTextEncodingMacJapanese;
             if (! encoding_name) encoding_name = "MacJapanese";
+        }
+        else if (scriptID == smTradChinese)
+        {
+            maccurses_encoding = kTextEncodingMacChineseTrad;
+            if (! encoding_name) encoding_name = "MacChineseTrad";
+        }
+        else if (scriptID == smSimpChinese)
+        {
+            maccurses_encoding = kTextEncodingMacChineseSimp;
+            if (! encoding_name) encoding_name = "MacChineseSimp";
+        }
+        else if (scriptID == smKorean)
+        {
+            maccurses_encoding = kTextEncodingMacKorean;
+            if (! encoding_name) encoding_name = "MacKorean";
         }
         else if (scriptID == smRoman)
         {
-            encoding = kTextEncodingMacRoman;
+            maccurses_encoding = kTextEncodingMacRoman;
             if ((scriptID == smRoman)
                 &&
                 (font_pascal[0] == strlen("VT100"))
                 &&
                 (! memcmp((void *) (font_pascal + 1), (void *) "VT100", strlen("VT100"))))
             {
-                encoding = kTextEncodingMacVT100;
+                maccurses_encoding = kTextEncodingMacVT100;
                 if (! encoding_name) encoding_name = "MacVT100";
             }
             else
@@ -1934,12 +2656,12 @@ static void maccurses_initscrWithHints(int h, int w, const char *title, const ch
                  &&
                  (! memcmp((void *) (font_pascal + 1), (void *) "VT100", strlen("VT100"))))
         {
-            encoding = kTextEncodingMacVT100;
+            maccurses_encoding = kTextEncodingMacVT100;
             if (! encoding_name) encoding_name = "MacVT100";
         }
         else
         {
-            encoding = kTextEncodingUS_ASCII;
+            maccurses_encoding = kTextEncodingUS_ASCII;
         }
     }
     if (encoding_name && *encoding_name)
@@ -1954,7 +2676,11 @@ static void maccurses_initscrWithHints(int h, int w, const char *title, const ch
             encoding_name_pascal[i + 1] = encoding_name[i];
         }
 #if USE_TEXT_ENCODING_CONVERSION_MANAGER
-        if (noErr == TECGetTextEncodingFromInternetName(&encoding, encoding_name_pascal))
+        if (maccurses_use_text_encoding_conversion_manager
+            &&
+            TECGetTextEncodingFromInternetName
+            &&
+            (noErr == TECGetTextEncodingFromInternetName(&maccurses_encoding, encoding_name_pascal)))
         {
         }
         else
@@ -1968,15 +2694,31 @@ static void maccurses_initscrWithHints(int h, int w, const char *title, const ch
                 ||
                 (! strcasecmp(encoding_name, "Mac")))
             {
-                encoding = kTextEncodingMacRoman;
+                maccurses_encoding = kTextEncodingMacRoman;
             }
             else if (! strcasecmp(encoding_name, "MacJapanese"))
             {
-                encoding = kTextEncodingMacJapanese;
+                maccurses_encoding = kTextEncodingMacJapanese;
+            }
+            else if ((! strcasecmp(encoding_name, "MacChineseTrad"))
+                     ||
+                     (! strcasecmp(encoding_name, "MacTradChinese")))
+            {
+                maccurses_encoding = kTextEncodingMacChineseTrad;
+            }
+            else if ((! strcasecmp(encoding_name, "MacChineseSimp"))
+                     ||
+                     (! strcasecmp(encoding_name, "MacSimpChinese")))
+            {
+                maccurses_encoding = kTextEncodingMacChineseSimp;
+            }
+            else if (! strcasecmp(encoding_name, "MacKorean"))
+            {
+                maccurses_encoding = kTextEncodingMacKorean;
             }
             else if (! strcasecmp(encoding_name, "MacVT100"))
             {
-                encoding = kTextEncodingMacVT100;
+                maccurses_encoding = kTextEncodingMacVT100;
             }
             else if ((! strcasecmp(encoding_name, "cp437"))
                      ||
@@ -1986,28 +2728,40 @@ static void maccurses_initscrWithHints(int h, int w, const char *title, const ch
                      ||
                      (! strcasecmp(encoding_name, "DOSLatinUS")))
             {
-                encoding = kTextEncodingDOSLatinUS;
+                maccurses_encoding = kTextEncodingDOSLatinUS;
             }
             else
             {
-                encoding = kTextEncodingUS_ASCII;
+                maccurses_encoding = kTextEncodingUS_ASCII;
             }
         }
     }
 #ifndef UNICODE
-    if (encoding == kTextEncodingMacRoman)
+    if (GetTextEncodingBase(maccurses_encoding) == kTextEncodingMacRoman)
     {
         maccurses_cvtt = maccurses_macroman;
     }
-    else if (encoding == kTextEncodingMacJapanese)
+    else if (GetTextEncodingBase(maccurses_encoding) == kTextEncodingMacJapanese)
     {
         maccurses_cvtt = maccurses_macjapanese;
     }
-    else if (encoding == kTextEncodingMacVT100)
+    else if (GetTextEncodingBase(maccurses_encoding) == kTextEncodingMacChineseTrad)
+    {
+        maccurses_cvtt = maccurses_macchinesetrad;
+    }
+    else if (GetTextEncodingBase(maccurses_encoding) == kTextEncodingMacChineseSimp)
+    {
+        maccurses_cvtt = maccurses_macchinesesimp;
+    }
+    else if (GetTextEncodingBase(maccurses_encoding) == kTextEncodingMacKorean)
+    {
+        maccurses_cvtt = maccurses_mackorean;
+    }
+    else if (GetTextEncodingBase(maccurses_encoding) == kTextEncodingMacVT100)
     {
         maccurses_cvtt = maccurses_macvt100;
     }
-    else if (encoding == kTextEncodingDOSLatinUS)
+    else if (GetTextEncodingBase(maccurses_encoding) == kTextEncodingDOSLatinUS)
     {
         maccurses_cvtt = maccurses_cp437;
     }
@@ -2017,21 +2771,25 @@ static void maccurses_initscrWithHints(int h, int w, const char *title, const ch
     }
 
 #if USE_TEXT_ENCODING_CONVERSION_MANAGER
-    if ((encoding_determined == true)
-        ||
-        (noErr == FMGetFontFamilyTextEncoding(maccurses_fontfamily, &encoding))
-        ||
-        (noErr == UpgradeScriptInfoToTextEncoding(scriptID, kTextLanguageDontCare, kTextRegionDontCare, font_pascal, &encoding)))
+    if (maccurses_use_text_encoding_conversion_manager
+        &&
+        ((encoding_determined == true)
+         ||
+         (noErr == FMGetFontFamilyTextEncoding(maccurses_fontfamily, &maccurses_encoding))
+         ||
+         (UpgradeScriptInfoToTextEncoding
+          &&
+          (noErr == UpgradeScriptInfoToTextEncoding(scriptID, kTextLanguageDontCare, kTextRegionDontCare, font_pascal, &maccurses_encoding)))))
     {
         TextEncoding cp437;
         TECObjectRef cvt;
         OSStatus ret;
-        static unsigned short cvtd[256 * 2];
+        static maccurses_chtype cvtd[256 * 2];
 
         cvt = NULL;
         encoding_determined = true;
         cp437 = CreateTextEncoding(kTextEncodingDOSLatinUS, kTextEncodingDefaultVariant, kTextEncodingDefaultFormat);
-        ret = TECCreateConverter(&cvt, cp437, encoding);
+        ret = TECCreateConverter(&cvt, cp437, maccurses_encoding);
         if (noErr == ret)
         {
             UInt8 ibyte;
@@ -2082,20 +2840,238 @@ static void maccurses_initscrWithHints(int h, int w, const char *title, const ch
             {
                 cvtd[cvtu * 2] = 0;
                 cvtd[cvtu * 2 + 1] = 0;
-                maccurses_cvtt = cvtd;
+                if ((! maccurses_cvtt)
+                    ||
+                    (myman_getenv("MACCURSES_CONVERT")
+                     &&
+                     *myman_getenv("MACCURSES_CONVERT")
+                     &&
+                     atoi(myman_getenv("MACCURSES_CONVERT"))))
+                {
+                    maccurses_cvtt = cvtd;
+                }
             }
         }
-        else
+    }
+    if ((maccurses_debug_flag == TRUE) && maccurses_use_text_encoding_conversion_manager && GetTextEncodingName)
+    {
+        UInt8 name[256];
+        ByteCount namesz;
+
+        if (noErr == GetTextEncodingName(
+                maccurses_encoding,
+                kTextEncodingBaseName,
+                kTextRegionDontCare,
+                kTextEncodingMacRoman,
+                sizeof(name) - 1,
+                &namesz,
+                NULL,
+                NULL,
+                name))
         {
+            name[namesz] = '\0';
+            fprintf(stderr, "MACCURSES_FONTENCODING=%s\n", (char *) name);
+            fflush(stderr);
         }
     }
 #endif /* USE_TEXT_ENCODING_CONVERSION_MANAGER */
+    if (maccurses_debug_flag == TRUE)
+    {
+        fprintf(stderr, "MACCURSES_FONTENCODING=0x%lx\n", (unsigned long) maccurses_encoding);
+        fflush(stderr);
+    }
 #endif /* ! defined(UNICODE) */
+
+    maccurses_oldMainMenu = GetMenuBar();
+    {
+        int i;
+        /* 0x14, a.k.a. kMenuAppleLogoFilledGlyph */
+        const char *f8ffmenu_title = "\x14";
+        const char *filemenu_title = "File";
+        const char *editmenu_title = "Edit";
+        const char *sizemenu_title = "Size";
+        const char *fontmenu_title = "Font";
+        Str255 f8ffmenu_title_pascal = { 0 };
+        Str255 filemenu_title_pascal = { 0 };
+        Str255 editmenu_title_pascal = { 0 };
+        Str255 sizemenu_title_pascal = { 0 };
+        Str255 fontmenu_title_pascal = { 0 };
+        MenuRef f8ffmenu = NULL;
+        MenuRef filemenu = NULL;
+        MenuRef editmenu = NULL;
+        MenuRef sizemenu = NULL;
+
+        /* FIXME: we should figure out how to use shortname when running as an MPW tool */
+        if (shortname && 0)
+        {
+            f8ffmenu_title = (shortname && *shortname) ? shortname : "maccurses";
+        }
+        f8ffmenu_title_pascal[0] = 0;
+        for (i = 0; (i < 255) && f8ffmenu_title[i]; i ++)
+        {
+            f8ffmenu_title_pascal[i + 1] = f8ffmenu_title[i];
+            f8ffmenu_title_pascal[0] = i + 1;
+        }
+        f8ffmenu = NewMenu(MACCURSES_F8FFMENU, f8ffmenu_title_pascal);
+        if (f8ffmenu)
+        {
+            const char *f8ffmenu_items = "About/I;-";
+            Str255 f8ffmenu_items_pascal = { 0 };
+
+            f8ffmenu_items_pascal[0] = 0;
+            for (i = 0; (i < 255) && f8ffmenu_items[i]; i ++)
+            {
+                f8ffmenu_items_pascal[i + 1] = f8ffmenu_items[i];
+                f8ffmenu_items_pascal[0] = i + 1;
+            }
+            AppendMenu(f8ffmenu, f8ffmenu_items_pascal);
+            AppendResMenu(f8ffmenu, MACCURSES_FOUR_CHAR_CODE("DRVR"));
+            InsertMenu(f8ffmenu, 0);
+        }
+        filemenu_title_pascal[0] = 0;
+        for (i = 0; (i < 255) && filemenu_title[i]; i ++)
+        {
+            filemenu_title_pascal[i + 1] = filemenu_title[i];
+            filemenu_title_pascal[0] = i + 1;
+        }
+        filemenu = NewMenu(MACCURSES_FILEMENU, filemenu_title_pascal);
+        if (filemenu)
+        {
+            const char *filemenu_items = "Help/?;Interrupt/.;-;Quit/Q";
+            Str255 filemenu_items_pascal = { 0 };
+
+            filemenu_items_pascal[0] = 0;
+            for (i = 0; (i < 255) && filemenu_items[i]; i ++)
+            {
+                filemenu_items_pascal[i + 1] = filemenu_items[i];
+                filemenu_items_pascal[0] = i + 1;
+            }
+            AppendMenu(filemenu, filemenu_items_pascal);
+            InsertMenu(filemenu, 0);
+        }
+        editmenu_title_pascal[0] = 0;
+        for (i = 0; (i < 255) && editmenu_title[i]; i ++)
+        {
+            editmenu_title_pascal[i + 1] = editmenu_title[i];
+            editmenu_title_pascal[0] = i + 1;
+        }
+        editmenu = NewMenu(MACCURSES_EDITMENU, editmenu_title_pascal);
+        if (editmenu)
+        {
+            const char *editmenu_items = "Zoom/Z;-;Redraw/R";
+            Str255 editmenu_items_pascal = { 0 };
+
+            editmenu_items_pascal[0] = 0;
+            for (i = 0; (i < 255) && editmenu_items[i]; i ++)
+            {
+                editmenu_items_pascal[i + 1] = editmenu_items[i];
+                editmenu_items_pascal[0] = i + 1;
+            }
+            AppendMenu(editmenu, editmenu_items_pascal);
+            InsertMenu(editmenu, 0);
+        }
+        fontmenu_title_pascal[0] = 0;
+        for (i = 0; (i < 255) && fontmenu_title[i]; i ++)
+        {
+            fontmenu_title_pascal[i + 1] = fontmenu_title[i];
+            fontmenu_title_pascal[0] = i + 1;
+        }
+        maccurses_fontmenu = NewMenu(MACCURSES_FONTMENU, fontmenu_title_pascal);
+        if (maccurses_fontmenu)
+        {
+            const char *fontmenu_items = "Bigger Font/+;Smaller Font/-;Original Font Size/=";
+            Str255 fontmenu_items_pascal = { 0 };
+
+            fontmenu_items_pascal[0] = 0;
+            for (i = 0; (i < 255) && fontmenu_items[i]; i ++)
+            {
+                fontmenu_items_pascal[i + 1] = fontmenu_items[i];
+                fontmenu_items_pascal[0] = i + 1;
+            }
+            AppendMenu(maccurses_fontmenu, fontmenu_items_pascal);
+            {
+                fontmenu_items = "-;Original Font/T;-";
+                fontmenu_items_pascal[0] = 0;
+                for (i = 0; (i < 255) && fontmenu_items[i]; i ++)
+                {
+                    fontmenu_items_pascal[i + 1] = fontmenu_items[i];
+                    fontmenu_items_pascal[0] = i + 1;
+                }
+                AppendMenu(maccurses_fontmenu, fontmenu_items_pascal);
+                if ((maccurses_debug_flag == TRUE)
+                    &&
+                    ((maccurses_custom_fontfamily != kInvalidFontFamily)
+                     ||
+                     (maccurses_fontfamily != kInvalidFontFamily)))
+                {
+                    Str255 font_pascal;
+
+                    if (noErr == FMGetFontFamilyName(
+                            (maccurses_custom_fontfamily != kInvalidFontFamily)
+                            ? maccurses_custom_fontfamily
+                            : maccurses_fontfamily,
+                            font_pascal))
+                    {
+                        UInt16 count;
+
+                        AppendMenu(maccurses_fontmenu, font_pascal);
+                        count = CountMenuItems(maccurses_fontmenu);
+#if ! USE_OLD_TOOLBOX
+                        SetMenuItemTextEncoding(
+                            maccurses_fontmenu,
+                            count,
+                            maccurses_encoding);
+#endif
+                    }
+                }
+#ifdef __CARBON__
+                if (CreateStandardFontMenu
+                    &&
+                    noErr == CreateStandardFontMenu(maccurses_fontmenu,
+                                                    CountMenuItems(maccurses_fontmenu) + 1,
+                                                    MACCURSES_FONTMENU + 1,
+                                                    kHierarchicalFontMenuOption,
+                                                    NULL))
+                {
+                }
+                else
+#endif /* ! defined(__CARBON__) */
+                {
+                    AppendResMenu(maccurses_fontmenu, MACCURSES_FOUR_CHAR_CODE("FONT"));
+                }
+            }
+            InsertMenu(maccurses_fontmenu, 0);
+        }
+        sizemenu_title_pascal[0] = 0;
+        for (i = 0; (i < 255) && sizemenu_title[i]; i ++)
+        {
+            sizemenu_title_pascal[i + 1] = sizemenu_title[i];
+            sizemenu_title_pascal[0] = i + 1;
+        }
+        sizemenu = NewMenu(MACCURSES_SIZEMENU, sizemenu_title_pascal);
+        if (sizemenu)
+        {
+            const char *sizemenu_items = "-;Bigger Font/+;Smaller Font/-;Original Font Size/=;-;Zoom/Z";
+            Str255 sizemenu_items_pascal = { 0 };
+
+            sizemenu_items_pascal[0] = 0;
+            for (i = 0; (i < 255) && sizemenu_items[i]; i ++)
+            {
+                sizemenu_items_pascal[i + 1] = sizemenu_items[i];
+                sizemenu_items_pascal[0] = i + 1;
+            }
+            AppendMenu(sizemenu, sizemenu_items_pascal);
+            InsertMenu(sizemenu, 0);
+        }
+        MacDrawMenuBar();
+    }
+
     TextFont(maccurses_fontfamily);
     /*TextMode(transparent);*/
     TextMode(srcCopy);
     TextFace(0);
     TextSize(maccurses_fontsize);
+    SpaceExtra(0);
     GetFontInfo(&maccurses_fontinfo);
     maccurses_widMax = 0;
     for (i = 0x20; i < 0x7f; i ++)
@@ -2105,37 +3081,87 @@ static void maccurses_initscrWithHints(int h, int w, const char *title, const ch
 
         si[0] = 1;
         si[1] = i;
-        wid = StringWidth(si);
-        if (wid > maccurses_widMax) maccurses_widMax = wid;
+        if ((i != '#')
+            &&
+            (i != '$')
+            &&
+            (i != '\\')
+            &&
+            (i != '~'))
+        {
+            wid = StringWidth(si);
+            if (wid > maccurses_widMax)
+            {
+                maccurses_widMax = wid;
+            }
+        }
     }
 #ifndef UNICODE
     if (maccurses_cvtt)
     {
         if (! maccurses_cvtt[0])
         {
-            for (j = 0x80; j <= 0xff; j ++)
+            for (i = 0x80; i <= 0xff; i ++)
             {
-                Str255 si;
-                short wid;
-
-                si[0] = 1;
-                si[1] = j;
-                wid = StringWidth(si);
-                if (wid > maccurses_widMax)
+                if ((i != 0xdb)
+                    &&
+                    (i != 0xf3)
+                    &&
+                    (i != 0xf7))
                 {
-                    maccurses_widMax = wid;
+                    Str255 si;
+                    short wid;
+
+                    si[0] = 1;
+                    si[1] = i;
+                    wid = StringWidth(si);
+                    if (wid > maccurses_widMax)
+                    {
+                        maccurses_widMax = wid;
+                    }
                 }
             }
         }
         for (j = 0; maccurses_cvtt[j]; j += 2)
         {
-            if (maccurses_cvtt[j + 1] <= 0xff)
+            if ((((maccurses_cvtt[j + 1] & ~_MACCURSES_A_ATTR) <= 0xff)
+                 ||
+                 maccurses_wide_flag
+                 ||
+                 maccurses_widefont_flag)
+                &&
+                ((i = (maccurses_cvtt[j] & ~(maccurses_wide_flag ? 0x100 : 0))) <= 0xff)
+                &&
+                (i >= 0x20)
+                &&
+                ((i <= 0x7a) || (i > 0x7f))
+                &&
+                (i != 0xdb)
+                &&
+                (i != 0xf3)
+                &&
+                (i != 0xf7)
+                &&
+                (i != '#')
+                &&
+                (i != '$')
+                &&
+                (i != '\\'))
             {
                 Str255 si;
                 short wid;
 
-                si[0] = 1;
-                si[1] = maccurses_cvtt[j + 1];
+                if ((maccurses_cvtt[j + 1] & ~_MACCURSES_A_ATTR) <= 0xff)
+                {
+                    si[0] = 1;
+                    si[1] = maccurses_cvtt[j + 1] & 0xff;
+                }
+                else
+                {
+                    si[0] = 2;
+                    si[1] = (maccurses_cvtt[j + 1] >> 8) & 0xff;
+                    si[1] = maccurses_cvtt[j + 1] & 0xff;
+                }
                 wid = StringWidth(si);
                 if (wid > maccurses_widMax)
                 {
@@ -2146,6 +3172,24 @@ static void maccurses_initscrWithHints(int h, int w, const char *title, const ch
     }
 #endif /* ! defined(UNICODE) */
     if (! maccurses_widMax) maccurses_widMax = maccurses_fontinfo.widMax;
+    if (myman_getenv("MACCURSES_SQUARE")
+        &&
+        *myman_getenv("MACCURSES_SQUARE")
+        &&
+        atoi(myman_getenv("MACCURSES_SQUARE")))
+    {
+        maccurses_widMax = (maccurses_fontinfo.ascent + maccurses_fontinfo.descent);
+        if ((maccurses_wide_flag == FALSE)
+            &&
+            (maccurses_widefont_flag == FALSE))
+        {
+            maccurses_widMax /= 2;
+        }
+        if (maccurses_widMax < 1)
+        {
+            maccurses_widMax = 1;
+        }
+    }
     if ((w * maccurses_widMax) > 4096)
     {
         w = 4096 / maccurses_widMax;
@@ -2215,11 +3259,14 @@ static void maccurses_initscrWithHints(int h, int w, const char *title, const ch
                maccurses_size.v,
                true);
 #ifdef __CARBON__
-    ConstrainWindowToScreen(maccurses_hwnd,
-                            kWindowStructureRgn,
-                            kWindowConstrainMayResize,
-                            NULL,
-                            NULL);
+    if (ConstrainWindowToScreen)
+    {
+        ConstrainWindowToScreen(maccurses_hwnd,
+                                kWindowStructureRgn,
+                                kWindowConstrainMayResize,
+                                NULL,
+                                NULL);
+    }
 #endif /* ! defined(__CARBON__) */
     GetWindowBounds(maccurses_hwnd,
                     kWindowContentRgn,
@@ -2326,10 +3373,21 @@ static void maccurses_initscrWithHints(int h, int w, const char *title, const ch
     }
     maccurses_updateFontMenu();
     maccurses_erase();
+    return 1;
 }
 
 static int maccurses_endwin(void)
 {
+    if (maccurses_after_endwin)
+    {
+        return OK;
+    }
+    maccurses_after_endwin = 1;
+    TextFont(maccurses_oldTextFont);
+    TextFace(maccurses_oldTextFace);
+    TextMode(maccurses_oldTextMode);
+    TextSize(maccurses_oldTextSize);
+    SpaceExtra(maccurses_oldSpaceExtra);
     if (maccurses_pixmap)
     {
         UnlockPixels(maccurses_pixmap);
@@ -2423,7 +3481,38 @@ static int maccurses_doMenuItem(long msr)
 
     mr = GetMenuRef(msr >> 16);
     item = msr & 0xffffL;
-    GetItemCmd(mr, item, &ch);
+    ch = 0;
+    {
+#if USE_OLD_TOOLBOX
+        static UniversalProcPtr maccurses_trapGetItemCmd;
+
+        if (! maccurses_trapGetItemCmd)
+        {
+            maccurses_trapGetItemCmd = maccurses_getTrapAddress(_GetItemCmd);
+        }
+        if (maccurses_trapGetItemCmd == maccurses_trapUnimplemented)
+        {
+            Str255 itemString;
+
+            itemString[0] = 0;
+            GetMenuItemText(mr, item, itemString);
+            if (itemString[0])
+            {
+                char *accelText;
+
+                accelText = (char *) memchr((void *) (itemString + 1), '/', itemString[0]);
+                if (accelText && accelText[1])
+                {
+                    ch = accelText[1];
+                }
+            }
+        }
+        else
+#endif
+        {
+            GetItemCmd(mr, item, &ch);
+        }
+    }
     switch (ch)
     {
     case '-':
@@ -2758,7 +3847,12 @@ static int maccurses_getch(void)
                 case inCollapseBox:
                     if (TrackBox(win, er.where, wpc))
                     {
-                        CollapseWindow(win, IsWindowCollapsed(win) ? false : true);
+#if ! (defined(CollapseWindow) || USE_OLD_TOOLBOX)
+                        if (CollapseWindow)
+#endif
+                        {
+                            CollapseWindow(win, IsWindowCollapsed(win) ? false : true);
+                        }
                         maccurses_new_w = maccurses_w;
                         maccurses_new_h = maccurses_h;
                         maccurses_resize_pending = _MACCURSES_RESIZE_TIMER;
@@ -2790,7 +3884,7 @@ static int maccurses_getch(void)
 
                 ch = er.message & charCodeMask;
                 /* Handle other modifiers by trying to re-map the
-                 * keypress without the Command key;we only use the
+                 * keypress without the Command key; we only use the
                  * result if it's plain-ASCII. */
                 if (er.modifiers & ~cmdKey)
                 {
@@ -2802,9 +3896,23 @@ static int maccurses_getch(void)
                         UInt32 keystate, nch;
 
                         keystate = 0;
-                        nch = KeyTranslate(keymap,
-                                           ((er.message & keyCodeMask) >> 8) | (er.modifiers & ~(cmdKey | 0xff)),
-                                           &keystate);
+                        {
+#if USE_OLD_TOOLBOX
+                            static UniversalProcPtr maccurses_trapKeyTrans;
+
+                            nch = 0;
+                            if (! maccurses_trapKeyTrans)
+                            {
+                                maccurses_trapKeyTrans = maccurses_getTrapAddress(_KeyTrans);
+                            }
+                            if (maccurses_trapKeyTrans != maccurses_trapUnimplemented)
+#endif
+                            {
+                                nch = KeyTranslate(keymap,
+                                                   ((er.message & keyCodeMask) >> 8) | (er.modifiers & ~(cmdKey | 0xff)),
+                                                   &keystate);
+                            }
+                        }
                         if ((nch > 0)
                             &&
                             (nch <= 0x7f))
@@ -2903,6 +4011,10 @@ static int maccurses_addch(maccurses_chtype ch)
     short fg, bg;
     int wcw;
 
+    if (! maccurses_use_acs_flag)
+    {
+        ch &= ~_MACCURSES_A_ALTCHARSET;
+    }
     if (ch == '\n')
     {
         maccurses_move(maccurses_y + 1, 0);
@@ -3041,7 +4153,7 @@ static int maccurses_addch(maccurses_chtype ch)
             }
             for (j = 0; maccurses_cvtt[j]; j += 2)
             {
-                if (maccurses_cvtt[j]
+                if ((maccurses_cvtt[j] & ~(maccurses_wide_flag ? 0x100 : 0))
                     ==
                     (((ch & _MACCURSES_A_ALTCHARSET) == _MACCURSES_A_ALTCHARSET)
                      ?
@@ -3049,21 +4161,23 @@ static int maccurses_addch(maccurses_chtype ch)
                      :
                      ch))
                 {
-                    if ((maccurses_cvtt[j + 1] > 0xff)
+                    if (((maccurses_cvtt[j + 1] & ~_MACCURSES_A_ATTR) > 0xff)
                         &&
                         (ch & _MACCURSES_A_ALTCHARSET) != _MACCURSES_A_ALTCHARSET)
                     {
                         substituted = false;
-                        attr_extra = 0;
+                        usefake = false;
+                        attr_extra = maccurses_cvtt[j + 1] & _MACCURSES_A_ATTR;
                         si[0] = 2;
-                        si[1] = maccurses_cvtt[j + 1] >> 8;
+                        si[1] = (maccurses_cvtt[j + 1] >> 8) & 0xff;
                         si[2] = maccurses_cvtt[j + 1] & 0xff;
                     }
-                    else if (maccurses_cvtt[j + 1] <= 0xff)
+                    else if ((maccurses_cvtt[j + 1] & ~_MACCURSES_A_ATTR) <= 0xff)
                     {
                         substituted = false;
-                        attr_extra = 0;
-                        si[1] = maccurses_cvtt[j + 1];
+                        usefake = false;
+                        attr_extra = maccurses_cvtt[j + 1] & _MACCURSES_A_ATTR;
+                        si[1] = maccurses_cvtt[j + 1] & 0xff;
                     }
                     break;
                 }
@@ -3178,27 +4292,39 @@ static int maccurses_addch(maccurses_chtype ch)
                                                               &sty,
                                                               &lyo)))
                 {
-                    ATSUSetTransientFontMatching(lyo, true);
-                    if (noErr == ATSUMeasureTextImage(lyo,
+                    ATSUFontID substFontAttrValue = kATSUInvalidFontID;
+                    UniCharArrayOffset firstChanged = 0;
+                    UniCharCount numChanged = 0;
+
+                    if (noErr == ATSUMatchFontsToText(lyo,
                                                       kATSUFromTextBeginning,
                                                       kATSUToTextEnd,
-                                                      0,
-                                                      0,
-                                                      &dimen))
+                                                      &substFontAttrValue,
+                                                      &firstChanged,
+                                                      &numChanged))
                     {
-                        MoveTo(maccurses_x * maccurses_widMax /* + (wcw * maccurses_widMax - (dimen.right - dimen.left)) / 2 */,
-                               maccurses_y * (maccurses_fontinfo.ascent + maccurses_fontinfo.descent) + maccurses_fontinfo.ascent);
-                        if (noErr == ATSUDrawText(lyo,
-                                                  kATSUFromTextBeginning,
-                                                  kATSUToTextEnd,
-                                                  kATSUUseGrafPortPenLoc,
-                                                  kATSUUseGrafPortPenLoc))
+                        ATSUSetTransientFontMatching(lyo, true);
+                        if (noErr == ATSUMeasureTextImage(lyo,
+                                                          kATSUFromTextBeginning,
+                                                          kATSUToTextEnd,
+                                                          0,
+                                                          0,
+                                                          &dimen))
                         {
-                            /* woot. */
-                            atsuok = true;
+                            MoveTo(maccurses_x * maccurses_widMax /* + (wcw * maccurses_widMax - (dimen.right - dimen.left)) / 2 */,
+                                   maccurses_y * (maccurses_fontinfo.ascent + maccurses_fontinfo.descent) + maccurses_fontinfo.ascent);
+                            if (noErr == ATSUDrawText(lyo,
+                                                      kATSUFromTextBeginning,
+                                                      kATSUToTextEnd,
+                                                      kATSUUseGrafPortPenLoc,
+                                                      kATSUUseGrafPortPenLoc))
+                            {
+                                /* woot. */
+                                atsuok = true;
+                            }
                         }
-                        ATSUDisposeTextLayout(lyo);
                     }
+                    ATSUDisposeTextLayout(lyo);
                 }
                 ATSUDisposeStyle(sty);
             }
@@ -3210,13 +4336,15 @@ static int maccurses_addch(maccurses_chtype ch)
 #endif /* defined(UNICODE) */
         MoveTo(maccurses_x * maccurses_widMax + (wcw * maccurses_widMax - StringWidth(si)) / 2,
                maccurses_y * (maccurses_fontinfo.ascent + maccurses_fontinfo.descent) + maccurses_fontinfo.ascent);
-        if ((substituted == true)
-            ||
-            usefake
-            ||
-            (maccurses_widMax < 2)
-            ||
-            ((maccurses_fontinfo.ascent + maccurses_fontinfo.descent) < 2))
+        if (((substituted == true)
+             ||
+             usefake
+             ||
+             (maccurses_widMax < 2)
+             ||
+             ((maccurses_fontinfo.ascent + maccurses_fontinfo.descent) < 2))
+            &&
+            (maccurses_use_acs_flag == TRUE))
         {
             int x0, x1, x2, y0, y1, y2;
             maccurses_chtype chacs;

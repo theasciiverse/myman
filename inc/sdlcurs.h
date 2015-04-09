@@ -1042,7 +1042,7 @@ static int pair_content(int i, short *fg, short *bg) {
     return OK;
 }
 
-static void initscrWithHints(int h, int w, const char *title, const char *shortname)
+static int initscrWithHints(int h, int w, const char *title, const char *shortname)
 {
     int fg, bg;
     int auto_x, auto_y;
@@ -1071,7 +1071,7 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
     {
         fprintf(stderr, "SDL_Init failed\n");
         fflush(stderr);
-        exit(1);
+        return 0;
     }
     if (! (sdlcurses_screen = SDL_SetVideoMode(w * sdlcurses_charwidth, h * sdlcurses_charheight, 0, SDL_SWSURFACE)))
     {
@@ -1080,7 +1080,7 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
             SDL_Quit();
             fprintf(stderr, "SDL_SetVideoMode failed\n");
             fflush(stderr);
-            exit(1);
+            return 0;
         }
     }
     sdlParseMode("", &sdlcurses_mode);
@@ -1098,7 +1098,7 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
             fprintf(stderr, "sdlSetMode failed\n");
             fflush(stderr);
             SDL_Quit();
-            exit(1);
+            return 0;
         }
     }
     sdlGetMode(sdlcurses_screen, &sdlcurses_mode);
@@ -1178,7 +1178,7 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
         perror("malloc");
         fflush(stderr);
         SDL_Quit();
-        exit(1);
+        return 0;
     }
     memset((void *) sdlcurses_backing, 0, 2 * sdlcurses_w * sdlcurses_h * sizeof(sdlcurses_cell_t));
     sdlcurses_need_resize = 0.0;
@@ -1279,7 +1279,7 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
                  sdlcurses_frame));
         fflush(stderr);
         endwin();
-        exit(1);
+        return 0;
     }
     if ((sdlcurses_mode.frames > 1)
         &&
@@ -1306,7 +1306,7 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
                  sdlcurses_frame));
         fflush(stderr);
         endwin();
-        exit(1);
+        return 0;
     }
     if ((! sdlcurses_direct)
         &&
@@ -1325,7 +1325,7 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
                  sdlcurses_frame));
         fflush(stderr);
         endwin();
-        exit(1);
+        return 0;
     }
     if (sdlcurses_title) sdlWmhSetTitle(sdlcurses_screen, sdlcurses_title);
     sdlWmhAllowResize(sdlcurses_screen,
@@ -1336,6 +1336,7 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
                       /* step */
                       sdlcurses_charwidth, sdlcurses_charheight);
     sdlcurses_ready = 1;
+    return 1;
 }
 
 static void endwin(void) {

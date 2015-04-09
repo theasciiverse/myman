@@ -132,6 +132,102 @@ redistributing the files or sending in patches so that others will be
 able to read the files painlessly.
 
 
+Command-line Arguments, MYMANRC and the Environment
+---------------------------------------------------
+
+MyMan allows command-line arguments to be given in files and in an
+environment variable. This allows frequently-used options to be stored
+to save repetetive typing.
+
+MyMan reads and recursively expands (in depth-first order) the
+contents of the following according to the argument expansion file
+syntax:
+
+1. The $MYMANOPTS variable, if present. This text is parsed
+indentically to the contents of an argument expansion file (even
+comments are allowed.)
+
+2. The start-up file (MYMANRC), one of:
+
+2.1. The file $MYMANRC (if set, and if it points to a readable
+file); or
+
+2.2. The file ~/.mymanrc (if $HOME is not set "." is used
+as a fallback); or
+
+2.3. The file mymanrc.
+
+See below for file search rules.
+
+3. The contents of any words in the resulting command line.
+
+File Search Rules
+-----------------
+
+Files with relative paths (including mymanrc) are searched for
+first in the current directory, and then in $MYMANDIR
+(PRIVATEDATADIR is used as a fallback if defined at compilation
+time).
+
+When looking for .mymanrc, _mymanrc is allowed as a fallback.
+
+When looking for a filename not ending in .txt, .txt is
+appended and tried as a fallback.
+
+Argument Expansion Tokens
+-------------------------
+
+Command-line arguments (including those from $MYMANOPTS, MYMANRC and
+argument expansion files) can cause expansion when they take the
+following forms:
+
+@@foo -> "@foo"
+@ -> "@"
+@file -> expanded words from file
+@~/file -> expanded words from "$HOME/file" or "./file"
+@- -> expanded words from stdin
+
+Argument Expansion File Syntax
+------------------------------
+
+NUL is ignored.
+
+CR LF, LF CR, and CR are each treated as a single LF.
+
+QUOTE here represents a literal double-quote.
+
+EOF represents end of file or end of environment variable string.
+
+# ... -> comment to end of line or file
+
+foo#bar -> foo#bar (as a single arg)
+
+foo bar -> foo, bar (as separate args)
+
+QUOTE foo bar QUOTE -> foo bar (as a single arg)
+
+QUOTE foo
+
+bar QUOTE -> foo LF bar (as a single arg)
+
+QUOTE foo bar EOF -> foo bar (as a single arg)
+
+foo QUOTE EOF -> foo QUOTE (as a single arg)
+
+foo QUOTE bar baz QUOTE baq -> foobar bazbaq (as a single arg)
+
+QUOTE foo QUOTE QUOTE bar QUOTE -> foo QUOTE bar (as a single arg)
+
+QUOTE QUOTE foo bar QUOTE QUOTE baz QUOTE QUOTE baq -> QUOTE foo, bar
+QUOTE, baz QUOTE baq as separate args
+
+whitespace, LF -> ignored (works as a delimiter, though)
+
+NOTE: Argument file expansion is depth-first and only a total
+of $MYMAN_MAXINCLUDE argument expansion files are allowed
+(default: 12). Once this limit is reached, any further
+expansion attempts cause an error.
+
 Environment Variables
 ---------------------
 
@@ -139,8 +235,115 @@ Some configurations of MyMan are influenced by the values of
 environment variables, in addition to those behaviors documented for
 the underlying display libraries:
 
+
+ Program                Variable            Effect
+---------              ----------          --------
+
+ MyMan                  MYMAN_MAXINCLUDE    Limits recursion depth
+                                            for argument expansion.
+
+                        MYMAN_FIXEDPAL      nonzero inhibits color
+                                            palette operations.
+
+                        MYMAN_COLOR_SCALE   nonzero overrides color
+                                            channel scaling factor
+                                            for palette operations; default
+                                            is 1000.
+
+                        MYMAN_DEBUG_INPUT   Nonzero enables keystroke debugger.
+
+                        MYMAN_DEBUG         Nonzero enables some debugging
+                                            code.
+
+                        MYMAN_REV           Zero disables space and block color
+                                            fixes.
+
+                        MYMAN_REVBLOCK      Nonzero uses inverse-video spaces
+                                            rather than ACS_BLOCK.
+
+                        MYMAN_ACS           Zero disables basic (VT-100 + ncurses)
+                                            alternate character set.
+
+                        MYMAN_EXTRA_ACS     Zero disables extended box-drawing
+                                            alternate character set.
+
+                        MYMAN_ROUNDED       Nonzero uses rounded corners for
+                                            basic maze walls.
+
+                        MYMAN_DOUBLE        Nonzero uses double lines for outer
+                                            walls; zero uses thick lines.
+
+                        MYMAN_SINGLE        Nonzero uses only single lines.
+
+                        MYMAN_BITMAP        Nonzero simulates bitmap rendering
+                                            with half block graphics.
+
+                        MYMAN_SWAP_RB       Nonzero swaps the red and blue
+                                            color channels.
+
+                        MYMAN_CP437         Nonzero defaults to CP437 for tile
+                                            characters; zero defaults to UTF-8.
+
+                        MYMAN_FALSE_COLOR   Nonzero uses underline, bold, and
+                                            to simulate color.
+
+                        MYMAN_VGA_PALETTE   Nonzero uses the VGA 16 color
+                                            palette (brown).
+
+                        MYMAN_ANSI_PALETTE  Nonzero uses the ANSI-style 16 color
+                                            palette (dim yellow).
+
+                        MYMAN_IOCTL         Zero disables use of ioctl for
+                                            terminal size checks.
+
+                        MYMAN_RESIZE        Zero inhibits resize_term.
+
+                        MYMAN_TRANSPARENT   Zero inhibits use_default_colors.
+
+                        MYMANDIR            Override PRIVATEDATADIR
+                                            compile-time macro for
+                                            fallback file-loading path.
+
+                        MYMANOPTS           Additional command-line
+                                            arguments in argument
+                                            expansion file syntax.
+
+                        MYMANRC             Override argument expansion
+                                            file location.
+
+                        HOME                Set home directory for
+                                            expansion of @~/... and
+                                            ~/.mymanrc.
+
+                        LANG                Set default locale.
+
+                        LC_CTYPE            Override LANG for charset
+                                            determination.
+
+                        LC_ALL              Overide LANG and LC_*.
+
+
  Display Library        Variable            Effect
 -----------------      ----------          --------
+
+ PDCurses for SDL       PDC_FONT            Override font file; default is
+                                            pdcfont.bmp.
+
+                        PDC_BACKGROUND      Override background image; default
+                                            is pdcback.bmp.
+
+                        PDC_LINES           Override height.
+
+                        PDC_COLS            Override width.
+
+                        PDC_ICON            Override icon; default is
+                                            pdcicon.bmp.
+
+ S/Lang slcurses        SLANG_USE_UTF8      When nonzero, force S/Lang to use
+                                            UTF-8.
+
+                        SLANG_USE_TERMCAP   When nonzero, forces S/Lang to try
+                                            termcap.
 
  AA-Lib                 AACURSES_BITMAP     Nonempty value causes
                                             pseudo-bitmap rendering
@@ -149,8 +352,7 @@ the underlying display libraries:
                         DISPLAY             Absence or empty value
                                             inhibits auto-sizing
 
- libcaca 0.x
-                        CACA_DRIVER         Absence or value other
+ libcaca 0.x            CACA_DRIVER         Absence or value other
                                             than "x11" (case-insensitive)
                                             inhibits auto-sizing to
                                             large geometries
@@ -178,9 +380,7 @@ the underlying display libraries:
                                             Nonzero value forces use of
                                             Braille pseudo-bitmap characters
                                             on a Unicode display
-                        OPTCURSES_TALL
-                          or
-                        RAWCURSES_TALL      Nonzero value allows use
+                        OPTCURSES_TALL      Nonzero value allows use
                                             of the VT100 double-width,
                                             double-height characters by
                                             doubling each row.
@@ -248,9 +448,7 @@ the underlying display libraries:
                                             Nonzero value forces use of
                                             Braille pseudo-bitmap characters
                                             on a Unicode display
-                        OPTCURSES_TALL
-                          or
-                        RAWCURSES_TALL      Nonzero value allows use
+                        OPTCURSES_TALL      Nonzero value allows use
                                             of the VT100 double-width,
                                             double-height characters by
                                             doubling each row.
@@ -289,9 +487,7 @@ the underlying display libraries:
                                             Nonzero value forces use of
                                             Braille pseudo-bitmap characters
                                             on a Unicode display
-                        OPTCURSES_TALL
-                          or
-                        RAWCURSES_TALL      Nonzero value allows use
+                        OPTCURSES_TALL      Nonzero value allows use
                                             of the VT100 double-width,
                                             double-height characters by
                                             doubling each row.
@@ -336,9 +532,7 @@ the underlying display libraries:
                                             Nonzero value forces use of
                                             Braille pseudo-bitmap characters
                                             on a Unicode display
-                        OPTCURSES_TALL
-                          or
-                        RAWCURSES_TALL      Nonzero value allows use
+                        OPTCURSES_TALL      Nonzero value allows use
                                             of the VT100 double-width,
                                             double-height characters by
                                             doubling each row.
@@ -437,6 +631,9 @@ the underlying display libraries:
                         RAWCURSES_ADM3A     Nonzero value forces use of the
                                             ADM3A escape sequences when
                                             using stdio
+                        RAWCURSES_EMACS     Nonzero value forces use of the
+                                            emacs-terminal escape sequences when
+                                            using stdio
                         RAWCURSES_DUMB      Nonzero value forces use of
                                             dumb-terminal codes (actually Tek4014)
                                             when using stdio
@@ -495,14 +692,49 @@ the underlying display libraries:
                                             Nonzero value forces use of
                                             Braille pseudo-bitmap characters
                                             on a Unicode display
-                        OPTCURSES_TALL
-                          or
-                        RAWCURSES_TALL      Nonzero value allows use
+                        OPTCURSES_TALL      Nonzero value allows use
                                             of the VT100 double-width,
                                             double-height characters by
                                             doubling each row.
 
- Carbon/Toolbox         MACCURSES_FONT      Font name
+ Carbon/Toolbox
+
+                  NOTE: When run in non-command line environments, the
+                        Carbon/Toolbox versions of MyMan read
+                        environment variable overrides and default
+                        command-line arguments from the 'STR#'
+                        resource IDs 128 "envp" and 129 "argv",
+                        respectively. These values can be set using
+                        ResEdit for stand-alone Carbon CFM/Toolbox
+                        binaries, or by compiling resources into the
+                        data fork of the
+                        myman.app/Contents/Resources/myman.rsrc file
+                        for bundled Mac OS X Carbon Mach-O
+                        applications. For example, to reduce the
+                        default font size to 9, use raw tile
+                        characters and rotate the display, create a
+                        file "smallfont.r" with these contents:
+
+  type'STR#'{integer=$$countof(_);array _{pstring;};};
+  resource'STR#'(128,"envp"){{"MACCURSES_FONTSIZE=9"}};
+  resource'STR#'(129,"argv"){{"-r","-x"}};
+
+                        Compile the resource into the resource
+                        file in a bundled Mac OS X Carbon Mach-O
+                        application:
+
+  Rez -useDF -a -o myman.app/Contents/Resources/myman.rsrc smallfont.r
+
+                        For standalone Carbon CFM/Toolbox binaries
+                        compile the resource into the application
+                        binary's resource fork:
+
+  Rez -a -o carbon-smallman smallfont.r
+
+                        The changes should be visible at the next
+                        launch of the application.
+
+                        MACCURSES_FONT      Font name
                         MACCURSES_FONTSIZE  Initial font size in pixels
                         MACCURSES_FONTENCODING
                                             Font encoding name, possibly one of:
@@ -525,9 +757,7 @@ the underlying display libraries:
                                             Nonzero value forces use of
                                             Braille pseudo-bitmap characters
                                             on a Unicode display
-                        OPTCURSES_TALL
-                          or
-                        RAWCURSES_TALL      Nonzero value allows use
+                        OPTCURSES_TALL      Nonzero value allows use
                                             of the VT100 double-width,
                                             double-height characters by
                                             doubling each row.
@@ -550,9 +780,7 @@ the underlying display libraries:
                                             Nonzero value forces use of
                                             Braille pseudo-bitmap characters
                                             on a Unicode display
-                        OPTCURSES_TALL
-                          or
-                        RAWCURSES_TALL      Nonzero value allows use
+                        OPTCURSES_TALL      Nonzero value allows use
                                             of the VT100 double-width,
                                             double-height characters by
                                             doubling each row.
@@ -574,9 +802,7 @@ the underlying display libraries:
                                             Nonzero value forces use of
                                             Braille pseudo-bitmap characters
                                             on a Unicode display
-                        OPTCURSES_TALL
-                          or
-                        RAWCURSES_TALL      Nonzero value allows use
+                        OPTCURSES_TALL      Nonzero value allows use
                                             of the VT100 double-width,
                                             double-height characters by
                                             doubling each row.
@@ -589,13 +815,70 @@ the underlying display libraries:
                                              -2 graphics, most colors
                                              -1 original mode
                                             or any MDA/CGA/HGC/EGA/VGA/MCGA/VESA
-                                            mode number
+                                            mode number. Named modes are also
+                                            supported (case-insensitive):
+                                             MAXRESMODE gfxmode w/highest res.
+                                             MAXCOLORMODE gfxmode w/most colors
+                                             DEFAULTMODE original mode
+                                             TEXTBW40 40x25 text, 16 grey
+                                             TEXTC40 40x25 text, 16/8 color
+                                             TEXTBW80 80x25 text, 16 grey
+                                             TEXTC80 80x25 text, 16/8 color
+                                             MRES4COLOR 320x200, 4 color
+                                             MRESNOCOLOR 320x200, 4 grey
+                                             HRESBW 640x200, BW
+                                             TEXTMONO 80x25 text, BW
+                                             HERCMONO 720x350, BW
+                                             MRES16COLOR 320x200, 16 color
+                                             HRES16COLOR 640x200, 16 color
+                                             ERESNOCOLOR 640x350, BW
+                                             ERESCOLOR 640x350, 4 or 16 color
+                                             VRES2COLOR 640x480, BW
+                                             VRES16COLOR 640x480, 16 color
+                                             MRES256COLOR 320x200, 256 color
+                                             URES256COLOR 640x400, 256 color
+                                             VRES256COLOR 640x480, 256 color
+                                             SVRES16COLOR 800x600, 16 color
+                                             SVRES256COLOR 800x600, 256 color
+                                             XRES16COLOR 1024x768, 16 color
+                                             XRES256COLOR 1024x768, 256 color
+                                             YRES16COLOR 1280x1024, 16 color
+                                             YRES256COLOR 1280x1024, 256 color
+                                             SVTEXTC80X60 80x60 text
+                                             SVTEXTC132X25 132x25 text
+                                             SVTEXTC132X43 132x43 text
+                                             SVTEXTC132X50 132x50 text
+                                             SVTEXTC132X60 132x60 text
+                                             MRES32KCOLOR 320x200, 32K color
+                                             MRES64KCOLOR 320x200, 64K color
+                                             MRESTRUECOLOR 320x200, TRUE color
+                                             VRES32KCOLOR 640x480, 32K color
+                                             VRES64KCOLOR 640x480, 64K color
+                                             VRESTRUECOLOR 640x480, 16.8M color
+                                             SVRES32KCOLOR 800x600, 32K color
+                                             SVRES64KCOLOR 800x600, 64K color
+                                             SVRESTRUECOLOR 800x600, 16.8M color
+                                             XRES32KCOLOR 1024x768, 32K color
+                                             XRES64KCOLOR 1024x768, 64K color
+                                             XRESTRUECOLOR 1024x768, 16.8M color
+                                             YRES32KCOLOR 1280x1024, 32K color
+                                             YRES64KCOLOR 1280x1024, 64K color
+                                             YRESTRUECOLOR 1280x1024, 16.8M color
+                                             ZRES256COLOR 1600x1200, 256 color
+                                             ZRES32KCOLOR 1600x1200, 32K color
+                                             ZRES64KCOLOR 1600x1200, 64K color
+                                             ZRESTRUECOLOR 1600x1200, 16.8M color
                         GRAPHCURSES_ROWS    Display height in text rows or:
                                              -1 maximum height
                                               0 default height for mode
                         GRAPHCURSES_COLOR   Zero disables color
                         GRAPHCURSES_CCC     Zero disables EGA/VGA/MCGA/SVGA/VESA
                                             palette remapping
+                        GRAPHCURSES_BLEND   Control color blending for
+                                            half blocks in bitmap
+                                            mode:
+                                              0 do not blend colors
+                                              1 blend colors
                         GRAPHCURSES_PALETTE Select palette for CGA mode 4/5:
                                              -1 current palette
                                               0 dark green/red/brown
@@ -619,9 +902,7 @@ the underlying display libraries:
                                             Nonzero value forces use of
                                             Braille pseudo-bitmap characters
                                             on a Unicode display
-                        OPTCURSES_TALL
-                          or
-                        RAWCURSES_TALL      Nonzero value allows use
+                        OPTCURSES_TALL      Nonzero value allows use
                                             of the VT100 double-width,
                                             double-height characters by
                                             doubling each row.
@@ -643,18 +924,18 @@ the underlying display libraries:
                                             Nonzero value forces use of
                                             Braille pseudo-bitmap characters
                                             on a Unicode display
-                        OPTCURSES_TALL
-                          or
-                        RAWCURSES_TALL      Nonzero value allows use
+                        OPTCURSES_TALL      Nonzero value allows use
                                             of the VT100 double-width,
                                             double-height characters by
                                             doubling each row.
 
  newt
    or
- Borland-style CONIO    
+ Borland-style CONIO
    or
  Extensible Firmware Interface (EFI)
+   or
+ TWin
                         OPTCURSES_DIRECT    Nonzero value disables redraw
                                             optimization layer
                         OPTCURSES_INTERLACE Nonzero value renders by
@@ -669,9 +950,7 @@ the underlying display libraries:
                                             Nonzero value forces use of
                                             Braille pseudo-bitmap characters
                                             on a Unicode display
-                        OPTCURSES_TALL
-                          or
-                        RAWCURSES_TALL      Nonzero value allows use
+                        OPTCURSES_TALL      Nonzero value allows use
                                             of the VT100 double-width,
                                             double-height characters by
                                             doubling each row.
@@ -891,7 +1170,7 @@ COLORIZE                      1                     Try to use color.
                                                      monochrome)
 
 This compile-time option can be modified on the command-line, and
-toggled at run-time using 'c', provided USE_COLOR is non-zero.
+toggled at run-time using 'c', provided USE_COLOR is nonzero.
 
 Compile-time option           Default value       Description
 TILEFILE                      "chr/chr5x2.txt"    File containing maze tiles.
@@ -973,16 +1252,16 @@ following differences: a literal NUL (ASCII 0) in the description is
 treated as a transparent character, and the hex codes are as follows:
 
 00-07: level indicators (fruit, keys, etc.)
-08-09: "mean" ghost body animation
-0a: ghost eyes looking up
-0b: ghost eyes looking left
-0c: ghost eyes looking down
-0d: ghost eyes looking right
-0e-0f: "scared" ghost animation
+08-09: "mean" ghost body walking (ott*: up) animation
+0A: ghost eyes looking up
+0B: ghost eyes looking left
+0C: ghost eyes looking down
+0D: ghost eyes looking right
+0E-0F: "scared" ghost animation
 10-13: MyMan walking up animation
 14-17: MyMan walking left animation
-18-1b: MyMan dying animation
-1c-1f: MyMan walking right animation
+18-1B: MyMan dying animation
+1C-1F: MyMan walking right animation
 20-23: MyMan walking down animation
 24-28: (unused)
 29: 100 points
@@ -1003,25 +1282,66 @@ treated as a transparent character, and the hex codes are as follows:
 3C-3F: large MyMan walking right animation (upper-right quadrant)
 40-43: large MyMan walking right animation (lower-left quadrant)
 44-47: large MyMan walking right animation (lower-right quadrant)
-48-FF: (unused)
+48-7F: (unused)
+80: Myman facing left, intermediate frame (spr*, unused)
+81: Myman facing right, intermediate frame (spr*, unused)
+  = "mean" ghost body walking down animation first frame (ott*, unused)
+  = "mean" first ghost body walking animation first frame (pqs*, unused)
+82: "mean" ghost body walking left animation first frame (ott*, unused)
+  = "mean" second ghost body walking animation first frame (pqs*, unused)
+83: "mean" ghost body walking right animation first frame (ott*, unused)
+  = "mean" third ghost body walking animation first frame (pqs*, unused)
+84: "mean" fourth ghost body walking animation first frame (pqs*, unused)
+85-87: (unused)
+88: MyMan dying animation first intermediate frame (unused)
+89-90: (unused)
+91: "mean" ghost body walking down animation second frame (ott*, unused)
+  = "mean" first ghost body walking animation second frame (pqs*, unused)
+92: "mean" ghost body walking left animation second frame (ott*, unused)
+  = "mean" second ghost body walking animation second frame (pqs*, unused)
+93: "mean" ghost body walking right animation second frame (ott*, unused)
+  = "mean" third ghost body walking animation second frame (ott*, unused)
+94: "mean" fourth ghost body walking animation second frame (ott*, unused)
+95-98: (unused)
+99: MyMan dying animation second intermediate frame (after 19, before A9, unused)
+9A-A8: (unused)
+A9-AA: MyMan dying animation intermediate frames (after 99, before 1A, unused)
+AB-BA: (unused)
+BB: MyMan dying animation second intermediate frame (after 1A, before 1B, unused)
+BC-BF: (unused)
+C0: ghost eyes looking confused (spr*, ott*, unused)
+C1-FC: (unused)
+FD: ripple shade (spr*, unused)
+FE: gamma bracket (spr*, unused)
+FF: blank (spr*, ott*, unused)
 
 Compile-time option           Default value         Description
 MAZEFILE                      "lvl/maze.txt"        Maze description file.
 
-The maze description file starts with a line containing 'N WxH' or 'N
-WxH~F' and optional maze arguments ' arg1=value1 arg2=value2 ...', and
-the remaining lines are an ASCII picture of the maze. If present, F is
-a flag bitmap written as a decimal integer. The flag bits defined so
-far are "1", which indicates that maze changes only occur at game
-intermissions, "2", which indicates whether to repeat the FLIP_TO maze
-after showing the last maze, and "4", which indicates that wall color
-choice should be based on wall thickness, rather than whether a wall
-edge or a filled wall section is being drawn.
+The maze description file starts with a line containing 'N
+WxH[,WxH[,...]]' or 'N WxH[,WxH[,...]]~F' (the second and subsequent
+WxH apply to the second and subsequent mazes, with modular wrapping to
+determine the dimensions applying to all remaining mazes; the '[', ']'
+and '...' are not intended literally and merely serve indicate allowed
+optional ','-delimited repetition) and optional maze arguments '
+arg1=value1 arg2=value2 ...', and the remaining lines are an ASCII or
+UTF-8 picture of the maze. If present, F is a flag bitmap written as a
+decimal integer. The flag bits defined so far are "1", which indicates
+that maze changes only occur at game intermissions, "2", which
+indicates whether to repeat the FLIP_TO maze after showing the last
+maze, "4", which indicates that wall color choice should be based on
+wall thickness, rather than whether a wall edge or a filled wall
+section is being drawn, and "8", which indicates that the maze uses
+quad-dot geometry and sprites should be offset one half tile rightward
+and downward for drawing, and simultaneously occupy square blocks of
+four tiles.
 
 NOTE: The Python program scripts/asc2txt.py can be used to
       automatically convert plain-ASCII ".asc" mazes to UTF-8 ".txt"
       mazes. The output of scripts/asc2txt.py often needs some manual
-      cleanup.
+      cleanup; most such cleanups can then be edited into the
+      corresponding part of the ".asc" maze to automate further edits,
+      making the ".asc" file UTF-8 too.
 
 Maze argument                 Default value         Description
 ABOUT                         (none)                Textual description of this maze file
@@ -1073,11 +1393,11 @@ instead (colors listed in ANSI order):
 
 Red Grn Blu   Hex#    R%  G%  B%  MyMan color(s)             ANSI color
 ===-===-===--======--===-===-===--=========================--==========
-  0   0   0  000000    0   0   0  Black                      0 Black   
-238  75  35  EE4B23   93  29  13  Brown + Light Red          1 Red     
- 75 219   0  4BDB00   29  85   0  Green + Light Green        2 Green   
-255 219  35  FFDB23  100  85  13  Salmon + Yellow            3 Yellow  
- 16  16 221  1010DD    6   6  86  Blue + Light Blue          4 Blue    
-252 105 182  FC69B6   98  41  71  Magenta + Pink             5 Magenta 
-  0 238 221  00EEDD    0  93  86  Cyan + Light Cyan          6 Cyan    
-238 202 185  EECAB9   93  79  72  Light Yellow + Light Grey  7 White   
+  0   0   0  000000    0   0   0  Black                      0 Black
+238  75  35  EE4B23   93  29  13  Brown + Light Red          1 Red
+ 75 219   0  4BDB00   29  85   0  Green + Light Green        2 Green
+255 219  35  FFDB23  100  85  13  Salmon + Yellow            3 Yellow
+ 16  16 221  1010DD    6   6  86  Blue + Light Blue          4 Blue
+252 105 182  FC69B6   98  41  71  Magenta + Pink             5 Magenta
+  0 238 221  00EEDD    0  93  86  Cyan + Light Cyan          6 Cyan
+238 202 185  EECAB9   93  79  72  Light Yellow + Light Grey  7 White

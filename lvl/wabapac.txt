@@ -12,7 +12,7 @@ GAMEOVER=" GAME OVER." \
 ABOUT="Inspired by Sean Luke's Waba implementation of Java PacMan (maze reduced)"
 ╔════╕╒═══╕╒════╗
 ║····└┘···└┘····║
-║■╞╡····•····╞╡■║
+║■╞╡····∙····╞╡■║
 ║····╞╗···╔╡····║
 ║·┌┐··║·╥·║··┌┐·║
 ║·└╘╡·╨·║·╨·╞╛┘·║
@@ -20,7 +20,7 @@ ABOUT="Inspired by Sean Luke's Waba implementation of Java PacMan (maze reduced)
 ╙┐·╥·╥·┌╨┐·╥·╥·┌╜
 ╓┘·╨·╨·└~┘·╨·╨·└╖
 ║···············║
-║·┌──┐·•·•·┌──┐·║
+║·┌──┐·∙·∙·┌──┐·║
 ║·└──╖·····╓──┘·║
 ║····╨·╞╦╡·╨····║
 ║■╞╡····╨····╞╡■║

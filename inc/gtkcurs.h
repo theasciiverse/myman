@@ -953,7 +953,7 @@ static int resizeterm(int y, int x)
     return OK;
 }
 
-static void initscrWithHints(int h, int w, const char *title, const char *shortname)
+static int initscrWithHints(int h, int w, const char *title, const char *shortname)
 {
     int i, j;
     const char *font;
@@ -1139,6 +1139,7 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
             }
         }
     }
+    return 1;
 }
 
 static void endwin(void)

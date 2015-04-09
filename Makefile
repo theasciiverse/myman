@@ -1,4 +1,5 @@
 # Makefile - build script for the MyMan video game
+# -*- coding: utf-8-unix -*-
 # Copyright 1997-2009, Benjamin C. Wiley Sittler <bsittler@gmail.com>
 #
 # Permission is hereby granted, free of charge, to any person
@@ -548,7 +549,7 @@ ifeq ($(subst default,undefined,$(origin XQUACKMAN)),undefined)
 XQUACKMAN = xquack$(call s,$(call xq,my)%,%,${MYMAN})
 endif
 ifeq ($(subst default,undefined,$(origin MYMANCOMMAND)),undefined)
-MYMANCOMMAND = ${MYMAN}.command
+MYMANCOMMAND = ${MYMAN}
 endif
 ifeq ($(subst default,undefined,$(origin MYMAN_CT)),undefined)
 MYMAN_CT = ${MYMAN}.ct
@@ -778,6 +779,8 @@ GTK_CONFIG \
 GTKCFLAGS \
 GTKLIBS \
 host \
+MAC_ARGV \
+MAC_ENVP \
 MYMAN_CT_EXE \
 MYMAN_EXE \
 MYMANCOMMAND_EXE \
@@ -799,6 +802,7 @@ with_dmg \
 with_gtk2 \
 with_fltk2 \
 with_mac \
+with_app \
 with_mac_icon \
 with_win_icon \
 with_zip \
@@ -870,8 +874,12 @@ ifeq ($(subst default,undefined,$(origin BUILD_EXE_SUFFIX)),undefined)
 ifeq ($(subst -mint-,--,-${build}-),-${build}-)
 BUILD_EXE_SUFFIX = 
 else
-BUILD_EXE_SUFFIX = .prg
+#BUILD_EXE_SUFFIX = .prg
+BUILD_EXE_SUFFIX = .ttp
 endif
+endif
+ifeq ($(subst default,undefined,$(origin BUILD_RUN_SUFFIX)),undefined)
+BUILD_RUN_SUFFIX =
 endif
 ifeq ($(subst default,undefined,$(origin BUILD_TMP_SUFFIX)),undefined)
 BUILD_TMP_SUFFIX = .tmp
@@ -891,6 +899,9 @@ endif
 ifeq ($(subst default,undefined,$(origin BUILD_SH_SUFFIX)),undefined)
 BUILD_SH_SUFFIX = 
 endif
+ifeq ($(subst default,undefined,$(origin BUILD_CMD_SUFFIX)),undefined)
+BUILD_CMD_SUFFIX = .command
+endif
 
 else
 
@@ -903,6 +914,9 @@ BUILD_LIB_SUFFIX = .a
 endif
 ifeq ($(subst default,undefined,$(origin BUILD_EXE_SUFFIX)),undefined)
 BUILD_EXE_SUFFIX = .exe
+endif
+ifeq ($(subst default,undefined,$(origin BUILD_RUN_SUFFIX)),undefined)
+BUILD_RUN_SUFFIX =
 endif
 ifeq ($(subst default,undefined,$(origin BUILD_TMP_SUFFIX)),undefined)
 BUILD_TMP_SUFFIX = .tmp
@@ -922,46 +936,57 @@ endif
 ifeq ($(subst default,undefined,$(origin BUILD_SH_SUFFIX)),undefined)
 BUILD_SH_SUFFIX = .sh
 endif
+ifeq ($(subst default,undefined,$(origin BUILD_CMD_SUFFIX)),undefined)
+BUILD_CMD_SUFFIX = .sh
+endif
 endif
 
 # Option 3: FreeDOS, OpenDOS, etc. [does anyone use them now?]
 #BUILD_OBJ_SUFFIX=.obj
 #BUILD_LIB_SUFFIX=.lib
 #BUILD_EXE_SUFFIX=.exe
+#BUILD_RUN_SUFFIX=
 #BUILD_TMP_SUFFIX=.tmp
 #BUILD_HTM_SUFFIX=.htm
 #BUILD_TXT_SUFFIX=.txt
 #BUILD_TAR_SUFFIX=.tar
 #BUILD_TGZ_SUFFIX=.tgz
 #BUILD_SH_SUFFIX=.sh
+#BUILD_CMD_SUFFIX=.sh
 
 # Convenient abbreviated versions of the common suffices
-ifeq ($(subst default,undefined,$(origin o)),undefined)
+ifeq ($(subst default,undefined,$(origin O)),undefined)
 O = ${BUILD_OBJ_SUFFIX}
 endif
-ifeq ($(subst default,undefined,$(origin a)),undefined)
+ifeq ($(subst default,undefined,$(origin A)),undefined)
 A = ${BUILD_LIB_SUFFIX}
 endif
-ifeq ($(subst default,undefined,$(origin x)),undefined)
+ifeq ($(subst default,undefined,$(origin X)),undefined)
 X = ${BUILD_EXE_SUFFIX}
 endif
-ifeq ($(subst default,undefined,$(origin tmp)),undefined)
+ifeq ($(subst default,undefined,$(origin E)),undefined)
+E = ${BUILD_RUN_SUFFIX}
+endif
+ifeq ($(subst default,undefined,$(origin Tmp)),undefined)
 Tmp = ${BUILD_TMP_SUFFIX}
 endif
-ifeq ($(subst default,undefined,$(origin htm)),undefined)
+ifeq ($(subst default,undefined,$(origin Htm)),undefined)
 Htm = ${BUILD_HTM_SUFFIX}
 endif
-ifeq ($(subst default,undefined,$(origin txt)),undefined)
+ifeq ($(subst default,undefined,$(origin Txt)),undefined)
 Txt = ${BUILD_TXT_SUFFIX}
 endif
-ifeq ($(subst default,undefined,$(origin tar)),undefined)
+ifeq ($(subst default,undefined,$(origin Tar)),undefined)
 Tar = ${BUILD_TAR_SUFFIX}
 endif
-ifeq ($(subst default,undefined,$(origin tgz)),undefined)
+ifeq ($(subst default,undefined,$(origin Tgz)),undefined)
 Tgz = ${BUILD_TGZ_SUFFIX}
 endif
-ifeq ($(subst default,undefined,$(origin sh)),undefined)
+ifeq ($(subst default,undefined,$(origin Sh)),undefined)
 Sh = ${BUILD_SH_SUFFIX}
+endif
+ifeq ($(subst default,undefined,$(origin Cmd)),undefined)
+Cmd = ${BUILD_CMD_SUFFIX}
 endif
 
 ## Conventional filename suffices (host)
@@ -986,8 +1011,12 @@ ifeq ($(subst default,undefined,$(origin EXE_SUFFIX)),undefined)
 ifeq ($(subst -mint-,--,-${host}-),-${host}-)
 EXE_SUFFIX = 
 else
-EXE_SUFFIX = .prg
+#EXE_SUFFIX = .prg
+EXE_SUFFIX = .ttp
 endif
+endif
+ifeq ($(subst default,undefined,$(origin RUN_SUFFIX)),undefined)
+RUN_SUFFIX =
 endif
 ifeq ($(subst default,undefined,$(origin TMP_SUFFIX)),undefined)
 TMP_SUFFIX = .tmp
@@ -1007,6 +1036,9 @@ endif
 ifeq ($(subst default,undefined,$(origin SH_SUFFIX)),undefined)
 SH_SUFFIX = 
 endif
+ifeq ($(subst default,undefined,$(origin CMD_SUFFIX)),undefined)
+CMD_SUFFIX = .command
+endif
 
 else
 
@@ -1019,6 +1051,9 @@ LIB_SUFFIX = .a
 endif
 ifeq ($(subst default,undefined,$(origin EXE_SUFFIX)),undefined)
 EXE_SUFFIX = .exe
+endif
+ifeq ($(subst default,undefined,$(origin RUN_SUFFIX)),undefined)
+RUN_SUFFIX =
 endif
 ifeq ($(subst default,undefined,$(origin TMP_SUFFIX)),undefined)
 TMP_SUFFIX = .tmp
@@ -1038,18 +1073,23 @@ endif
 ifeq ($(subst default,undefined,$(origin SH_SUFFIX)),undefined)
 SH_SUFFIX = .sh
 endif
+ifeq ($(subst default,undefined,$(origin CMD_SUFFIX)),undefined)
+CMD_SUFFIX = .sh
+endif
 endif
 
 # Option 3: FreeDOS, OpenDOS, etc. [does anyone use them now?]
 #OBJ_SUFFIX=.obj
 #LIB_SUFFIX=.lib
 #EXE_SUFFIX=.exe
+#RUN_SUFFIX=
 #TMP_SUFFIX=.tmp
 #HTM_SUFFIX=.htm
 #TXT_SUFFIX=.txt
 #TAR_SUFFIX=.tar
 #TGZ_SUFFIX=.tgz
 #SH_SUFFIX=.sh
+#CMD_SUFFIX=.sh
 
 # Convenient abbreviated versions of the common suffices
 ifeq ($(subst default,undefined,$(origin o)),undefined)
@@ -1060,6 +1100,9 @@ a = ${LIB_SUFFIX}
 endif
 ifeq ($(subst default,undefined,$(origin x)),undefined)
 x = ${EXE_SUFFIX}
+endif
+ifeq ($(subst default,undefined,$(origin e)),undefined)
+e = ${RUN_SUFFIX}
 endif
 ifeq ($(subst default,undefined,$(origin tmp)),undefined)
 tmp = ${TMP_SUFFIX}
@@ -1078,6 +1121,9 @@ tgz = ${TGZ_SUFFIX}
 endif
 ifeq ($(subst default,undefined,$(origin sh)),undefined)
 sh = ${SH_SUFFIX}
+endif
+ifeq ($(subst default,undefined,$(origin cmd)),undefined)
+cmd = ${CMD_SUFFIX}
 endif
 
 # file removal
@@ -1193,6 +1239,14 @@ PROD_FINDER = prod_finder() { \
         char_newline=`echo ;echo :` && char_newline="$${char_newline%:}" && export char_newline && \
         dir=`dirname "$$1"`; base=`basename "$$1"`; cd "$$dir" && ${OSASCRIPT} -e $(call q,on run argv${char_newline}tell application "Finder" to update item 1 of argv as POSIX file${char_newline}end run) "`pwd`/$$base"; }; prod_finder
 endif
+ifeq ($(subst default,undefined,$(origin create_mac_rsrc)),undefined)
+# create_mac_rsrc: create resource file with command-line arguments $1
+# and environment strings $2
+create_mac_rsrc = create_mac_rsrc() { \
+        char_newline=`echo ;echo :` && char_newline="$${char_newline%:}" && export char_newline && \
+        body=$(call q,type 'STR${char_number_sign}' {integer=$$$$countof${char_left_parenthesis}list${char_right_parenthesis}; array list { pstring; }; }; resource 'STR${char_number_sign}' ${char_left_parenthesis}128${char_comma} "envp"${char_right_parenthesis} { { $(foreach word,$2,"$(call cq,${word})";) }; }; resource 'STR${char_number_sign}' ${char_left_parenthesis}129${char_comma} "argv"${char_right_parenthesis} { { $(foreach word,$1,"$(call cq,${word})";) }; };) && \
+        eval $(call q,${REZ} -useDF -o "$$1" <<.${char_newline}$${body}${char_newline}.${char_newline}); }; create_mac_rsrc
+endif
 ifeq ($(subst default,undefined,$(origin set_mac_icon)),undefined)
 set_mac_icon = set_mac_icon() { \
         char_newline=`echo ;echo :` && char_newline="$${char_newline%:}" && export char_newline && \
@@ -1203,6 +1257,9 @@ set_mac_icon = set_mac_icon() { \
 endif
 
 # Win32 BMP creation for icons
+ifeq ($(subst default,undefined,$(origin IMAGEMAGICK)),undefined)
+IMAGEMAGICK = convert
+endif
 ifeq ($(subst default,undefined,$(origin ANYTOPNM)),undefined)
 ANYTOPNM = anytopnm
 endif
@@ -1212,6 +1269,7 @@ endif
 ifeq ($(subst default,undefined,$(origin CONVERT_TO_BMP)),undefined)
 CONVERT_TO_BMP = ${ECHOLINEX} creating $(call q,$@) from $(call q,$<) && \
         ${ANYTOPNM} $< | ${PPMTOBMP} -windows > $@ || \
+        ${ANYTOPNM} $< | ${PPMTOBMP} -windows -bpp 24 > $@ || \
             ( \
                 ${REMOVE} $(call q,$@) ; \
                 exit 1 \
@@ -1232,29 +1290,83 @@ else
 HOSTRC = ${RC}
 endif
 endif
+ifeq ($(subst default,undefined,$(origin HOSTBIND)),undefined)
+HOSTBIND = ${HOSTRC}
+endif
 ifeq ($(subst default,undefined,$(origin HOSTCOMPILE_RESOURCE)),undefined)
 ifneq (,$(findstring rcc,${HOSTRC}))
+# rcc
 HOSTCOMPILE_RESOURCE = ${ECHOLINEX} creating $(call q,$@) from $(call q,$<) && \
             ${HOSTRC} -r -o$(call q,$@) $(call q,$<)
 hostbind_resource = ${ECHOLINEX} binding $(call q,$1) to $(call q,$@) && \
-            ${HOSTRC} -o$(call q,$@) $(call q,$1) || \
+            ${HOSTBIND} -o$(call q,$@) $(call q,$1) || \
             (${ECHOLINEX} removing file $(call q,$@) && \
-                 ${REMOVE} $(call q,$@))
+                 ( \
+                     ${REMOVE} $(call q,$@) ; \
+                     exit 1 \
+                 ))
 else
-ifeq (,$(findstring wrc,${HOSTRC})$(findstring windres,${HOSTRC}))
+ifeq (,$(findstring wrc,${HOSTRC})$(findstring windres,${HOSTRC})$(findstring wbind,${HOSTBIND}))
+# other, e.g. brc32
 HOSTCOMPILE_RESOURCE = ${ECHOLINEX} creating $(call q,$@) from $(call q,$<) && \
             ${HOSTRC} -r -fo$(call q,$@) $(call q,$<)
 hostbind_resource = ${ECHOLINEX} binding $(call q,$1) to $(call q,$@) && \
-            ${HOSTRC} -fe$(call q,$@) $(call q,$1) || \
+            ${HOSTBIND} -fe$(call q,$@) $(call q,$1) || \
             (${ECHOLINEX} removing file $(call q,$@) && \
-                 ${REMOVE} $(call q,$@))
+                 ( \
+                     ${REMOVE} $(call q,$@) ; \
+                     exit 1 \
+                 ))
 else
+ifeq (,$(findstring wrc,${HOSTRC})$(findstring wbind,${HOSTBIND}))
+# windres
 HOSTCOMPILE_RESOURCE = ${ECHOLINEX} creating $(call q,$@) from $(call q,$<) && \
             ${HOSTRC} -r $(call q,$<) $(call q,$@)
 hostbind_resource = ${ECHOLINEX} binding $(call q,$1) to $(call q,$@) && \
-            ${HOSTRC} $(call q,$1) $(call q,$@) || \
+            ${HOSTBIND} $(call q,$1) $(call q,$@) || \
             (${ECHOLINEX} removing file $(call q,$@) && \
-                 ${REMOVE} $(call q,$@))
+                 ( \
+                     ${REMOVE} $(call q,$@) ; \
+                     exit 1 \
+                 ))
+else
+ifneq (,$(findstring wine,${HOSTCC}))
+# wine wrc
+HOSTCOMPILE_RESOURCE = ${ECHOLINEX} creating $(call q,$@) from $(call q,$<) && \
+            ${HOSTRC} -r $(call q,$<) -o $(call q,$@)
+hostbind_resource = ${ECHOLINEX} binding $(call q,$1) to $(call q,$@) && \
+            ${HOSTBIND} $(call q,$1) -o $(call q,$@) || \
+            (${ECHOLINEX} removing file $(call q,$@) && \
+                 ( \
+                     ${REMOVE} $(call q,$@) ; \
+                     exit 1 \
+                 ))
+else
+ifneq (,$(findstring wbind,${HOSTBIND}))
+# owcc wrc+wbind
+HOSTCOMPILE_RESOURCE = ${ECHOLINEX} creating $(call q,$@) from $(call q,$<) && \
+            ${HOSTRC} -q -r -fo=$(call q,$@) $(call q,$<)
+hostbind_resource = ${ECHOLINEX} binding $(call q,$1) to $(call q,$@) && \
+            ${HOSTBIND} -q $(call q,$@) -R -q $(call q,$1) $(call q,$@) || \
+            (${ECHOLINEX} removing file $(call q,$@) && \
+                 ( \
+                     ${REMOVE} $(call q,$@) ; \
+                     exit 1 \
+                 ))
+else
+# owcc wrc
+HOSTCOMPILE_RESOURCE = ${ECHOLINEX} creating $(call q,$@) from $(call q,$<) && \
+            ${HOSTRC} -r -fo=$(call q,$@) $(call q,$<)
+hostbind_resource = ${ECHOLINEX} binding $(call q,$1) to $(call q,$@) && \
+            ${HOSTBIND} $(call q,$1) $(call q,$@) || \
+            (${ECHOLINEX} removing file $(call q,$@) && \
+                 ( \
+                     ${REMOVE} $(call q,$@) ; \
+                     exit 1 \
+                 ))
+endif
+endif
+endif
 endif
 endif
 endif
@@ -1481,7 +1593,7 @@ ifeq ($(subst default,undefined,$(origin STRIPINSTALLFLAGS)),undefined)
 STRIPINSTALLFLAGS = 
 endif
 ifeq ($(subst default,undefined,$(origin INSTALL_PROGRAM)),undefined)
-INSTALL_PROGRAM = ${INSTALL} ${INSTALLFLAGS} ${EXTRAINSTALLFLAGS}
+INSTALL_PROGRAM = ${INSTALL} -m 755 ${INSTALLFLAGS} ${EXTRAINSTALLFLAGS}
 endif
 ifeq ($(subst default,undefined,$(origin INSTALL_DATA)),undefined)
 INSTALL_DATA = ${INSTALL} -m 644
@@ -1501,7 +1613,11 @@ endif
 ## non-backslash-interpreting "echo"-equivalent used during file
 ## generation (internal version invoked directly by make subshell)
 ifeq ($(subst default,undefined,$(origin ECHOLINE_internal)),undefined)
+ifeq (${with_printf},yes)
+ECHOLINE_internal = printf $(call q,%s\n)
+else
 ECHOLINE_internal = ${SHELL} $(call q,${src})configure --dump=non_option_arguments --
+endif
 endif
 
 ## non-backslash-interpreting "echo"-equivalent used during file generation
@@ -1543,6 +1659,9 @@ MYMAN_APP = $(call program,${MYMAN}).app
 endif
 ifeq ($(subst default,undefined,$(origin MYMAN_ICNS)),undefined)
 MYMAN_ICNS = $(call program,${MYMAN}).icns
+endif
+ifeq ($(subst default,undefined,$(origin MYMAN_RSRC)),undefined)
+MYMAN_RSRC = $(call program,${MYMAN}).rsrc
 endif
 ifeq ($(subst default,undefined,$(origin PLATFORM)),undefined)
 PLATFORM = MacOS
@@ -1646,6 +1765,20 @@ endif
 
 # Compiler for build machine
 
+# FLTK requires our code to be compiled as C++
+ifeq (yes,${with_fltk})
+ifeq ($(subst default,undefined,$(origin CC)),undefined)
+CC = g++
+endif
+endif
+
+# Carbon requires our code to be built with GCC 4.0 or earlier
+ifeq (yes,${with_mac})
+ifeq ($(subst default,undefined,$(origin CC)),undefined)
+CC = gcc-4.0
+endif
+endif
+
 # Option 1: GNU C or C++ compiler (g++ or gcc)
 #CC = g++ -g -Wall
 ifeq ($(subst default,undefined,$(origin CC)),undefined)
@@ -1671,6 +1804,11 @@ ifeq ($(subst default,undefined,$(origin CFLAGS)),undefined)
 CFLAGS = ${EXTRACFLAGS} -g
 endif
 
+endif
+
+# Command to run compiled executable on build machine (usually empty)
+ifeq ($(subst default,undefined,$(origin RUN)),undefined)
+RUN =
 endif
 
 
@@ -2102,7 +2240,124 @@ cgpuck \
 hungry \
 hungry2 \
 paczx3 \
-cc
+cc \
+pcman3 \
+qpac \
+ghostma1 \
+quad \
+qkpacman \
+crocky \
+pacoric \
+spectres \
+macman2 \
+munchma2 \
+monster2 \
+gag \
+chomper2 \
+qspac \
+qbpac \
+specman2 \
+planet10 \
+androide \
+miracle \
+roboriot \
+pakacuda \
+compo \
+munchma3 \
+pac98 \
+tta \
+plus \
+newbrain \
+newbrn1 \
+newbrn2 \
+capman \
+smallcap \
+pacmar \
+gobblemn \
+mz80b \
+spac \
+spac2 \
+munchit \
+munchit2 \
+munchit3 \
+pieguy \
+capman2 \
+hacman \
+cpcpac \
+haunted \
+tpac \
+pacascii \
+asciimn2 \
+pacxgs2 \
+veripac \
+pacxgs1 \
+msreturn \
+doormat \
+doormat2 \
+chalk \
+chalk2 \
+pac8001 \
+pc8001 \
+puckman3 \
+puckmn3x \
+pacxl \
+mspacxl \
+pacf \
+comx \
+pacgirl \
+msaftdrk \
+zola \
+zolas \
+trojans \
+trojans2 \
+trojans3 \
+rogue \
+interton \
+mc10b \
+mc10b2 \
+pacar \
+pac48 \
+toru2 \
+plus48 \
+gbapac \
+simple \
+simple2 \
+zx81 \
+cookie \
+logo \
+logo2 \
+qpac2 \
+crozza \
+crozza2 \
+crozza3 \
+mscrozza \
+babynes \
+baby26 \
+wall \
+wall2 \
+toru78 \
+jaw \
+jaw2 \
+msbaby \
+tardis \
+toru78b \
+baby78 \
+baby78b \
+ww \
+drot \
+drot2 \
+ww2 \
+qrevenge \
+revenge2 \
+patuman \
+winpac \
+pac30 \
+muncher2 \
+mywoman \
+smwoman \
+tinywomn \
+qwoman \
+avrpac4
 
 all_sizes = \
 small \
@@ -2150,7 +2405,9 @@ kpac8 \
 bitmap9a \
 kpac9 \
 otto3a \
-rogue
+rogue \
+qsquare \
+bsquare
 
 ## game sizes and variants to actually build
 ifeq ($(subst default,undefined,$(origin enable_variants)),undefined)
@@ -2181,7 +2438,7 @@ endif
 ifeq ($(subst default,undefined,$(origin BOOTSTRAP)),undefined)
 BOOTSTRAP = ${obj}s1${GAME}
 endif
-# bootstrap version basename as it is passed to the shell
+# bootstrap version basename as it is passed to the shell as an argument to ${RUN}
 ifeq ($(subst default,undefined,$(origin XBOOTSTRAP)),undefined)
 ifeq (,${obj})
 XBOOTSTRAP = ${objdir}/${BOOTSTRAP}
@@ -2197,7 +2454,7 @@ mymanvariant_data = ${obj}s2v$(call idx,$1,${all_variants})
 ifeq ($(subst default,undefined,$(origin DATADEFS)),undefined)
 DATADEFS = -DBUILTIN_MAZE -DBUILTIN_TILE -DBUILTIN_SPRITE -DBUILTIN_SIZE -DBUILTIN_VARIANT -Dmain=main_builtin
 endif
-datafiledefs = -Dbuiltin_tilefile=builtin_tilefile_$2 -Dtile=tile_$2 -Dtile_used=tile_used_$2 -Dtile_color=tile_color_$2 -Dtile_w=tile_w_$2 -Dtile_h=tile_h_$2 -Dtile_flags=tile_flags_$2 -Dtile_args=tile_args_$2 -Dbuiltin_spritefile=builtin_spritefile_$2 -Dsprite=sprite_$2 -Dsprite_used=sprite_used_$2 -Dsprite_color=sprite_color_$2 -Dsprite_w=sprite_w_$2 -Dsprite_h=sprite_h_$2 -Dsprite_flags=sprite_flags_$2 -Dsprite_args=sprite_args_$2 -Dbuiltin_mazefile=builtin_mazefile_$1 -Dmaze_n=maze_n_$1 -Dmaze_w=maze_w_$1 -Dmaze_h=maze_h_$1 -Dmaze_flags=maze_flags_$1 -Dmaze_args=maze_args_$1 -Dmaze_color_data=maze_color_data_$1 -Dmaze_data=maze_data_$1
+datafiledefs = -Dtile_s=tile_s_$2 -Dtile_d=tile_d_$2 -Dtile_u=tile_u_$2 -Dtile_c=tile_c_$2 -Dtile_w=tile_w_$2 -Dtile_h=tile_h_$2 -Dtile_f=tile_f_$2 -Dtile_a=tile_a_$2 -Dsprite_s=sprite_s_$2 -Dsprite_d=sprite_d_$2 -Dsprite_u=sprite_u_$2 -Dsprite_c=sprite_c_$2 -Dsprite_w=sprite_w_$2 -Dsprite_h=sprite_h_$2 -Dsprite_f=sprite_f_$2 -Dsprite_a=sprite_a_$2 -Dmaze_s=maze_s_$1 -Dmaze_n=maze_n_$1 -Dmaze_w=maze_w_$1 -Dmaze_h=maze_h_$1 -Dmaze_f=maze_f_$1 -Dmaze_a=maze_a_$1 -Dmaze_c=maze_c_$1 -Dmaze_d=maze_d_$1
 
 ### libiconv options
 
@@ -2270,6 +2527,10 @@ ifeq ($(subst default,undefined,$(origin CURSES_FLAVOR)),undefined)
 CURSES_FLAVOR = FLTK 2
 endif
 
+ifeq ($(subst default,undefined,$(origin CURSES_FLAVOR_TARGET)),undefined)
+CURSES_FLAVOR_TARGET = a graphical display
+endif
+
 # FLTK 2
 ifeq ($(subst default,undefined,$(origin FLTK_CONFIG)),undefined)
 FLTK_CONFIG = ${hostprefix}fltk2-config
@@ -2283,6 +2544,10 @@ with_gtk = yes
 
 ifeq ($(subst default,undefined,$(origin CURSES_FLAVOR)),undefined)
 CURSES_FLAVOR = GTK+ 2.0
+endif
+
+ifeq ($(subst default,undefined,$(origin CURSES_FLAVOR_TARGET)),undefined)
+CURSES_FLAVOR_TARGET = a graphical display
 endif
 
 # GTK+ 2.0
@@ -2487,6 +2752,10 @@ ifeq ($(subst default,undefined,$(origin CURSES_FLAVOR)),undefined)
 CURSES_FLAVOR = EFI console
 endif
 
+ifeq ($(subst default,undefined,$(origin CURSES_FLAVOR_TARGET)),undefined)
+CURSES_FLAVOR_TARGET = firmware
+endif
+
 # EFI (Extensible Firmware Interface)
 CURSOPTS += -DEFICURSES ${EFICFLAGS}
 
@@ -2495,6 +2764,10 @@ ifeq (yes,${with_disp})
 
 ifeq ($(subst default,undefined,$(origin CURSES_FLAVOR)),undefined)
 CURSES_FLAVOR = disp
+endif
+
+ifeq ($(subst default,undefined,$(origin CURSES_FLAVOR_TARGET)),undefined)
+CURSES_FLAVOR_TARGET = a console
 endif
 
 # disp
@@ -2507,6 +2780,10 @@ ifeq ($(subst default,undefined,$(origin CURSES_FLAVOR)),undefined)
 CURSES_FLAVOR = conio
 endif
 
+ifeq ($(subst default,undefined,$(origin CURSES_FLAVOR_TARGET)),undefined)
+CURSES_FLAVOR_TARGET = a console
+endif
+
 # Borland-style CONIO
 CURSOPTS += -DCONIOCURSES ${DISPCFLAGS}
 
@@ -2515,6 +2792,10 @@ ifeq (yes,${with_graph})
 
 ifeq ($(subst default,undefined,$(origin CURSES_FLAVOR)),undefined)
 CURSES_FLAVOR = graph
+endif
+
+ifeq ($(subst default,undefined,$(origin CURSES_FLAVOR_TARGET)),undefined)
+CURSES_FLAVOR_TARGET = a console
 endif
 
 # Open Watcom-style graph.h
@@ -2542,9 +2823,8 @@ ifeq ($(subst default,undefined,$(origin CURSES_FLAVOR)),undefined)
 CURSES_FLAVOR = FLTK
 endif
 
-# FLTK requires our code to be compiled as C++
-ifeq ($(subst default,undefined,$(origin CC)),undefined)
-CC = g++
+ifeq ($(subst default,undefined,$(origin CURSES_FLAVOR_TARGET)),undefined)
+CURSES_FLAVOR_TARGET = a graphical display
 endif
 
 # FLTK
@@ -2576,6 +2856,10 @@ ifeq ($(subst default,undefined,$(origin SDKROOT)),undefined)
 SDKROOT = /Developer/SDKs/MacOSX10.4u.sdk
 endif
 
+ifeq ($(subst default,undefined,$(origin MACOSX_DEPLOYMENT_TARGET)),undefined)
+MACOSX_DEPLOYMENT_TARGET = 10.4
+endif
+
 ifeq ($(subst default,undefined,$(origin ARCHS)),undefined)
 ARCHS = ppc i386
 endif
@@ -2588,18 +2872,38 @@ ifeq ($(subst default,undefined,$(origin CARBONLIBS)),undefined)
 CARBONLIBS = ${CARBONCFLAGS}
 endif
 
-HOSTCFLAGS += -isysroot ${SDKROOT} $(foreach arch,${ARCHS},-arch ${arch})
-HOSTLIBS += -isysroot ${SDKROOT} $(foreach arch,${ARCHS},-arch ${arch})
+HOSTCFLAGS += -isysroot ${SDKROOT} -mmacosx-version-min=${MACOSX_DEPLOYMENT_TARGET} $(foreach arch,${ARCHS},-arch ${arch})
+HOSTLIBS += -isysroot ${SDKROOT} -mmacosx-version-min=${MACOSX_DEPLOYMENT_TARGET} $(foreach arch,${ARCHS},-arch ${arch})
 
 ifeq (,${hostprefix})
-CFLAGS += -isysroot ${SDKROOT} $(foreach arch,${ARCHS},-arch ${arch})
-LIBS += -isysroot ${SDKROOT} $(foreach arch,${ARCHS},-arch ${arch})
+CFLAGS += -isysroot ${SDKROOT} -mmacosx-version-min=${MACOSX_DEPLOYMENT_TARGET} $(foreach arch,${ARCHS},-arch ${arch})
+LIBS += -isysroot ${SDKROOT} -mmacosx-version-min=${MACOSX_DEPLOYMENT_TARGET} $(foreach arch,${ARCHS},-arch ${arch})
 endif
 
 # Carbon/Toolbox
 CURSOPTS += -DMACCURSES ${CARBONCFLAGS}
 
 CURSESLIBS += ${CARBONLIBS}
+
+# Mac OS X does not give an easy way to pass command-line arguments to
+# GUI applications, so we allow them to be written into a resource
+# file. Similar to classic Mac OS versions of GNU Emacs, we read
+# environment variables from STR# resource ID 128 and command-line
+# arguments (including argv[0]!) from STR# resource ID 129. Default
+# values for these resources can be given at build-time in the
+# MAC_ENVP and MAC_ARGV makefile variables with the limitation that
+# embedded whitespace is not representable (whitespace is used to
+# separate the items in the list.)
+ifeq ($(origin MAC_ARGV),undefined)
+MAC_ARGV :=
+# Non-trivial example:
+#MAC_ARGV := -r2 -zsquare
+endif
+ifeq ($(origin MAC_ENVP),undefined)
+MAC_ENVP :=
+# Non-trivial example:
+#MAC_ENVP := MACCURSES_FONTSIZE=7 MYMAN_DEBUG=1
+endif
 
 else
 ifeq (yes,${with_raw})
@@ -2624,6 +2928,10 @@ ifeq (yes,${with_allegro})
 
 ifeq ($(subst default,undefined,$(origin CURSES_FLAVOR)),undefined)
 CURSES_FLAVOR = allegro
+endif
+
+ifeq ($(subst default,undefined,$(origin CURSES_FLAVOR_TARGET)),undefined)
+CURSES_FLAVOR_TARGET = a graphical display
 endif
 
 # Allegro
@@ -2651,6 +2959,10 @@ ifeq ($(subst default,undefined,$(origin CURSES_FLAVOR)),undefined)
 CURSES_FLAVOR = libcaca
 endif
 
+ifeq ($(subst default,undefined,$(origin CURSES_FLAVOR_TARGET)),undefined)
+CURSES_FLAVOR_TARGET = a text terminal, console or terminal emulator
+endif
+
 # libcaca
 ifeq ($(subst default,undefined,$(origin CACA_CONFIG)),undefined)
 CACA_CONFIG = ${hostprefix}caca-config
@@ -2671,6 +2983,10 @@ ifeq (yes,${with_gtk})
 
 ifeq ($(subst default,undefined,$(origin CURSES_FLAVOR)),undefined)
 CURSES_FLAVOR = GTK+
+endif
+
+ifeq ($(subst default,undefined,$(origin CURSES_FLAVOR_TARGET)),undefined)
+CURSES_FLAVOR_TARGET = a graphical display
 endif
 
 # GTK+
@@ -2742,14 +3058,14 @@ EXTRAWRAPPERDEFS += -DXCURSES
 else
 ifeq (yes,${with_ncursesw})
 
-# ncurses 5.x (wide character version)
+# ncurses 5.x or 6.x (wide character version)
 
 ifeq ($(subst default,undefined,$(origin CURSES_FLAVOR)),undefined)
 CURSES_FLAVOR = ncursesw
 endif
 
 ifeq ($(subst default,undefined,$(origin NCURSESW_CONFIG)),undefined)
-NCURSESW_CONFIG = ${hostprefix}ncursesw5-config
+NCURSESW_CONFIG = ncursesw_config() { ${hostprefix}ncursesw6-config "$$@" 2>/dev/null || ${hostprefix}ncursesw5-config "$$@"; }; ncursesw_config
 endif
 ifeq ($(origin NCURSESWLIBS),undefined)
 NCURSESWLIBS := $(call shell,${NCURSESW_CONFIG} --libs)
@@ -2769,14 +3085,14 @@ CURSOPTS += -DNCURSES_XOPEN_HACK
 else
 ifeq (yes,${with_ncurses})
 
-# ncurses 5.x in the usual place, but called "ncurses" instead of "curses"
+# ncurses 5.x or 6.x in the usual place, but called "ncurses" instead of "curses"
 
 ifeq ($(subst default,undefined,$(origin CURSES_FLAVOR)),undefined)
 CURSES_FLAVOR = ncurses
 endif
 
 ifeq ($(subst default,undefined,$(origin NCURSES_CONFIG)),undefined)
-NCURSES_CONFIG = ${hostprefix}ncurses5-config
+NCURSES_CONFIG = ncurses_config() { ${hostprefix}ncurses6-config "$$@" 2>/dev/null || ${hostprefix}ncurses5-config "$$@"; }; ncurses_config
 endif
 ifeq ($(origin NCURSESLIBS),undefined)
 NCURSESLIBS := $(call shell,${NCURSES_CONFIG} --libs)
@@ -2880,14 +3196,38 @@ ifeq ($(subst default,undefined,$(origin CURSES_FLAVOR_SECTION)),undefined)
 CURSES_FLAVOR_SECTION = 3
 endif
 
+ifeq ($(subst default,undefined,$(origin with_app)),undefined)
+ifeq (yes,${with_mac})
+with_app = yes
+else
+ifeq ($(subst -apple-,--,-${host}-),-${host}-)
+with_app =
+else
+ifeq (yes,${with_pdcursessdl})
+with_app = yes
+else
+ifeq (yes,${with_fltk})
+with_app = yes
+else
+with_app =
+endif
+endif
+endif
+endif
+endif
+
 ifeq ($(subst default,undefined,$(origin with_mac_icon)),undefined)
 ifeq (yes,${with_mac})
+with_mac_icon = yes
+else
+ifeq (yes,${with_app})
 with_mac_icon = yes
 else
 ifeq ($(subst -apple-,--,-${host}-),-${host}-)
 with_mac_icon =
 else
 with_mac_icon = yes
+endif
 endif
 endif
 endif
@@ -2899,10 +3239,14 @@ else
 ifeq (yes,${with_mac_icon})
 with_dmg = yes
 else
+ifeq (yes,${with_app})
+with_dmg = yes
+else
 ifeq ($(subst -apple-,--,-${host}-),-${host}-)
 with_dmg =
 else
 with_dmg = yes
+endif
 endif
 endif
 endif
@@ -2926,7 +3270,7 @@ endif
 
 ## variable substitution
 
-# names of variables to subtitute
+# names of variables to substitute
 substitute_vars = \
 MYMAN \
 MYMANVERSION \
@@ -2948,7 +3292,9 @@ ${dir_vars} \
 HTM_SUFFIX \
 TXT_SUFFIX \
 EXE_SUFFIX \
+RUN_SUFFIX \
 SH_SUFFIX \
+CMD_SUFFIX \
 SHELL \
 MYMAN_CT \
 MYMAN_EXE \
@@ -2972,7 +3318,7 @@ this_file_undergoes_variable_substitution
 
 # special support for NeXTSTEP-style application bundles
 
-ifeq (yes,${with_mac})
+ifeq (yes,${with_app})
 
 public_dir_vars += \
 appdir
@@ -3122,10 +3468,14 @@ TILEFILE_small = khr2h.txt
 SPRITEFILE_small = spr2h.txt
 TILEFILE_quack = khr2h.txt
 SPRITEFILE_quack = quack2h.txt
+TILEFILE_qsquare = khr1.txt
+SPRITEFILE_qsquare = spr2.txt
 TILEFILE_custom = khr1b.txt
 SPRITEFILE_custom = spr3.txt
 TILEFILE_rogue = rogue.txt
 SPRITEFILE_rogue = rogues.txt
+TILEFILE_bsquare = chr2c.txt
+SPRITEFILE_bsquare = spr3b.txt
 
 # Tile and sprite definitions for the selected size
 tilefile = ${src}chr/$(firstword $(TILEFILE_$1) $1.txt)
@@ -3199,10 +3549,8 @@ install:: coreutils.ok
 
 .NOTPARALLEL: all
 
-# this rule is depended upon by the principal targets to verify that
-# ${SED} works; its value is not cached
-sed.ok: $(call mw,${MAKEFILE})
-	@(export sedflag bogusflag; \
+ifeq ($(subst default,undefined,$(origin check_sed)),undefined)
+check_sed := export sedflag bogusflag; \
         sedflag='silent'; \
         bogusflag='not-a-valid-option'; \
         if ${SHELL} -c $(call q,${SED})' --$$sedflag --help $$bogusflag | grep -v $$bogusflag | grep $$sedflag' </dev/null >/dev/null; \
@@ -3215,15 +3563,16 @@ sed.ok: $(call mw,${MAKEFILE})
             echo '** ' makefile variable to contain its full path and >&2; \
             echo '** ' recompile >&2; \
             exit 1; \
-        fi)
+        fi
+endif
 
 # this rule is depended upon by the principal targets to verify that
-# ${INSTALL} and ${RMDIR} work; its value is not cached; the "exit 1"
-# here is unparenthesized intentionally, so that it will terminate an
-# installation script
-coreutils.ok: $(call mw,${MAKEFILE})
-	${POST_UNPACK}
-	@export installflag rmdirflag bogusflag; \
+# ${SED} works; its value is not cached
+sed.ok: $(call mw,${MAKEFILE})
+	@($(call check_sed))
+
+ifeq ($(subst default,undefined,$(origin check_coreutils)),undefined)
+check_coreutils := export installflag rmdirflag bogusflag; \
         installflag='strip'; \
         rmdirflag='ignore-fail-on-non-empty'; \
         bogusflag='not-a-valid-option'; \
@@ -3239,6 +3588,15 @@ coreutils.ok: $(call mw,${MAKEFILE})
             echo '** ' recompile >&2; \
             exit 1; \
         fi
+endif
+
+# this rule is depended upon by the principal targets to verify that
+# ${INSTALL} and ${RMDIR} work; its value is not cached; the "exit 1"
+# here is unparenthesized intentionally, so that it will terminate an
+# installation script
+coreutils.ok: $(call mw,${MAKEFILE})
+	${POST_UNPACK}
+	@$(call check_coreutils)
 	${NORMAL_UNPACK}
 
 .PHONY: gnumake.ok
@@ -3285,10 +3643,9 @@ endif
 
 .PHONY: configure.ok
 
-# this rule is depended upon by the principal targets to perform a
-# sanity check of the configure system; its value is not cached
-configure.ok: $(call mw,${MAKEFILE})
-	@(if test :$(call qs,$(call xq,unknown),${nil},${date}) != :${nil}; \
+
+ifeq ($(subst default,undefined,$(origin check_configure)),undefined)
+check_configure := if test :$(call qs,$(call xq,unknown),${nil},${date}) != :${nil}; \
         then \
             :; \
         else \
@@ -3296,7 +3653,13 @@ configure.ok: $(call mw,${MAKEFILE})
             ${ECHOLINEX} '** ' $(call q,${SHELL} $(call q,${src})configure --dump=date) failed, >&2; \
             echo '** ' your shell might not work\; see INSTALL for hints >&2; \
             exit 1; \
-        fi)
+        fi
+endif
+
+# this rule is depended upon by the principal targets to perform a
+# sanity check of the configure system; its value is not cached
+configure.ok: $(call mw,${MAKEFILE})
+	@($(call check_configure))
 
 # this rule is depended upon by the principal targets to perform a
 # sanity check of the compiler and linker for the build machine
@@ -3304,13 +3667,13 @@ ${obj}compiler.ok: $(call mw,${MAKEFILE})
 	@${MAKE} ${MAKELOOP} \
             sanity_return=0 \
             _sanity0$X
-	@ ./_sanity0
-	@${REMOVE} $(call q,${obj}_sanity0.c) _sanity0 $(call q,${obj}_sanity0$O)
+	@ ${RUN} $(call q,./_sanity0$E)
+	@${REMOVE} $(call q,${obj}_sanity0.c) _sanity0$X $(call q,${obj}_sanity0$O)
 	@${MAKE} ${MAKELOOP} \
             sanity_return=1 \
             _sanity1$X
-	@( ./_sanity1 && exit 1 || : )
-	@${REMOVE} $(call q,${obj}_sanity1.c) _sanity1 $(call q,${obj}_sanity1$O)
+	@( ${RUN} $(call q,./_sanity1$E) && exit 1 || : )
+	@${REMOVE} $(call q,${obj}_sanity1.c) _sanity1$X $(call q,${obj}_sanity1$O)
 	@${ECHOLINEX} your compiler appears to work, so creating $(call q,$@)
 	@${ECHOLINEX} You may safely remove this file with \`$(call q,${REMOVE} $@)\'. > $(call q,$@)
 
@@ -3355,15 +3718,28 @@ maintainer-clean:: distclean wipe-dir-xq-$(call mwxq,${CVSDUMP})
 pdcicon.bmp: ${src}gfx/myman.png
 	@-${CONVERT_TO_BMP}
 
-myman_ico_deps = ${src}gfx/myman64.png ${src}gfx/myman48.png ${src}gfx/myman32.png
+myman_ico_deps = ${src}gfx/myman64.png ${src}gfx/myman48.png ${src}gfx/myman32.png ${src}gfx/myman16.png ${src}gfx/myman12.png
 
-${obj}myman.ico: $(foreach dep,${myman_ico_deps},$(call mw,${dep}))
-	@-${ECHOLINEX} creating $(call q,$@) from $(call q,${myman_ico_deps}) && \
+ifeq ($(subst default,undefined,$(origin CREATEWINICON)),undefined)
+ifeq (${with_imagemagick},yes)
+CREATEWINICON = ${ECHOLINEX} creating $(call q,$@) from $(call q,${myman_ico_deps}) && \
+        ${IMAGEMAGICK} $(foreach dep,${myman_ico_deps}, $(call q,${dep})) $(call q,$@) || \
+            ( \
+                ${REMOVE} $(call q,$@) ; \
+                exit 1 \
+            )
+else
+CREATEWINICON = ${ECHOLINEX} creating $(call q,$@) from $(call q,${myman_ico_deps}) && \
         ( $(foreach dep,${myman_ico_deps},${ANYTOPNM} $(call q,${dep});) ) | ${PPMTOWINICON} $(foreach dep,${myman_ico_deps},-) > $(call q,$@) || \
             ( \
                 ${REMOVE} $(call q,$@) ; \
                 exit 1 \
             )
+endif
+endif
+
+${obj}myman.ico: $(foreach dep,${myman_ico_deps},$(call mw,${dep}))
+	@-${CREATEWINICON}
 
 doc_files = \
 ChangeLog \
@@ -3388,15 +3764,26 @@ utl/bitmap4.py \
 utl/cpmbuild.sh \
 utl/lsic.sh \
 utl/macbuild.txt \
+utl/macicons.py \
 utl/mach_acs \
 utl/mach_mypal \
+utl/nacl.sh \
 utl/vmsbuild.com \
 utl/tccwin32.bat \
+utl/tccglibc.sh \
+utl/lsic.bat \
+utl/pacificc.bat \
+utl/turboc.bat \
+utl/watcom.bat \
+utl/watcom32.bat \
+utl/aztecc.bat \
 utl/dmcwin32.bat \
 utl/dmcdos16.bat \
 utl/myman.ct \
 utl/pacificc.sh \
 utl/turboc.sh \
+utl/watcom.sh \
+utl/watcom32.sh \
 utl/aztecc.sh \
 utl/txt2asc.sh \
 debian/postinst \
@@ -3419,6 +3806,8 @@ chr/chr2.asc \
 chr/chr2.txt \
 chr/chr2b.asc \
 chr/chr2b.txt \
+chr/chr2c.asc \
+chr/chr2c.txt \
 chr/chr2h.asc \
 chr/chr2h.txt \
 chr/chr2hb.asc \
@@ -3497,27 +3886,74 @@ chr/prq28h.txt \
 chr/prq7.asc \
 chr/prq7.txt \
 chr/rogue.txt \
+debian/changelog \
+debian/control \
+efilibc/ctype.h \
+efilibc/efilibc.c \
+efilibc/errno.h \
+efilibc/math.h \
+efilibc/signal.h \
+efilibc/stdio.h \
+efilibc/stdlib.h \
+efilibc/string.h \
+efilibc/sys/types.h \
+efilibc/time.h \
+efilibc/wchar.h \
+fink/myman.info \
 game.html \
 gfx/monster.gif \
 gfx/monster.xcf \
 gfx/monsterleft.gif \
 gfx/myman.png \
 gfx/myman.svg \
+gfx/myman.r \
+gfx/myman12.png \
+gfx/myman16.png \
 gfx/myman32.png \
 gfx/myman48.png \
 gfx/myman64.png \
 gfx/otto.gif \
 gfx/otto.xcf \
 gfx/ottoup.gif \
+glibcnoh/ctype.h \
+glibcnoh/errno.h \
+glibcnoh/fcntl.h \
+glibcnoh/langinfo.h \
+glibcnoh/limits.h \
+glibcnoh/linux/err.h \
+glibcnoh/linux/fcntl.h \
+glibcnoh/linux/fs.h \
+glibcnoh/linux/ioctl.h \
+glibcnoh/linux/posix_types.h \
+glibcnoh/linux/termios.h \
+glibcnoh/linux/time.h \
+glibcnoh/linux/types.h \
+glibcnoh/linux/unistd.h \
+glibcnoh/locale.h \
+glibcnoh/math.h \
+glibcnoh/signal.h \
+glibcnoh/stdio.h \
+glibcnoh/stdlib.h \
+glibcnoh/string.h \
+glibcnoh/sys/cdefs.h \
+glibcnoh/sys/ioctl.h \
+glibcnoh/sys/socket.h \
+glibcnoh/sys/stat.h \
+glibcnoh/sys/time.h \
+glibcnoh/sys/types.h \
+glibcnoh/termios.h \
+glibcnoh/time.h \
+glibcnoh/unistd.h \
+glibcnoh/wchar.h \
 inc/aacurses.h \
 inc/allegcur.h \
 inc/cacacurs.h \
 inc/coniocur.h \
-inc/graphcur.h \
 inc/dispcurs.h \
 inc/eficurs.h \
 inc/fltkcurs.h \
 inc/ggicurs.h \
+inc/graphcur.h \
 inc/gtkcurs.h \
 inc/guess.h \
 inc/maccurs.h \
@@ -3548,6 +3984,8 @@ lvl/and3.asc \
 lvl/and3.txt \
 lvl/and4.asc \
 lvl/and4.txt \
+lvl/androide.asc \
+lvl/androide.txt \
 lvl/apollo.asc \
 lvl/apollo.txt \
 lvl/armpac2.asc \
@@ -3556,6 +3994,8 @@ lvl/arrange.asc \
 lvl/arrange.txt \
 lvl/asciiman.asc \
 lvl/asciiman.txt \
+lvl/asciimn2.asc \
+lvl/asciimn2.txt \
 lvl/ascpac.asc \
 lvl/ascpac.txt \
 lvl/avrpac.asc \
@@ -3564,8 +4004,18 @@ lvl/avrpac2.asc \
 lvl/avrpac2.txt \
 lvl/avrpac3.asc \
 lvl/avrpac3.txt \
+lvl/avrpac4.asc \
+lvl/avrpac4.txt \
 lvl/baby2.asc \
 lvl/baby2.txt \
+lvl/baby26.asc \
+lvl/baby26.txt \
+lvl/baby78.asc \
+lvl/baby78.txt \
+lvl/baby78b.asc \
+lvl/baby78b.txt \
+lvl/babynes.asc \
+lvl/babynes.txt \
 lvl/babypac.asc \
 lvl/babypac.txt \
 lvl/bb.asc \
@@ -3588,6 +4038,10 @@ lvl/bugman.asc \
 lvl/bugman.txt \
 lvl/byh.asc \
 lvl/byh.txt \
+lvl/capman.asc \
+lvl/capman.txt \
+lvl/capman2.asc \
+lvl/capman2.txt \
 lvl/catchum.asc \
 lvl/catchum.txt \
 lvl/cattrax.asc \
@@ -3598,12 +4052,18 @@ lvl/cgkit.asc \
 lvl/cgkit.txt \
 lvl/cgpuck.asc \
 lvl/cgpuck.txt \
+lvl/chalk.asc \
+lvl/chalk.txt \
+lvl/chalk2.asc \
+lvl/chalk2.txt \
 lvl/chicky.asc \
 lvl/chicky.txt \
 lvl/chomp.asc \
 lvl/chomp.txt \
 lvl/chomper.asc \
 lvl/chomper.txt \
+lvl/chomper2.asc \
+lvl/chomper2.txt \
 lvl/chomperm.asc \
 lvl/chomperm.txt \
 lvl/chompman.asc \
@@ -3618,8 +4078,24 @@ lvl/clone64.asc \
 lvl/clone64.txt \
 lvl/clsweep.asc \
 lvl/clsweep.txt \
+lvl/compo.asc \
+lvl/compo.txt \
+lvl/comx.asc \
+lvl/comx.txt \
+lvl/cookie.asc \
+lvl/cookie.txt \
+lvl/cpcpac.asc \
+lvl/cpcpac.txt \
 lvl/crazyg.asc \
 lvl/crazyg.txt \
+lvl/crocky.asc \
+lvl/crocky.txt \
+lvl/crozza.asc \
+lvl/crozza.txt \
+lvl/crozza2.asc \
+lvl/crozza2.txt \
+lvl/crozza3.asc \
+lvl/crozza3.txt \
 lvl/cruncher.asc \
 lvl/cruncher.txt \
 lvl/crush.asc \
@@ -3634,6 +4110,14 @@ lvl/deluxe2.asc \
 lvl/deluxe2.txt \
 lvl/demon.asc \
 lvl/demon.txt \
+lvl/drot.asc \
+lvl/drot.txt \
+lvl/drot2.asc \
+lvl/drot2.txt \
+lvl/doormat.asc \
+lvl/doormat.txt \
+lvl/doormat2.asc \
+lvl/doormat2.txt \
 lvl/dotman.asc \
 lvl/dotman.txt \
 lvl/eatit.asc \
@@ -3648,10 +4132,16 @@ lvl/fhmcpac.asc \
 lvl/fhmcpac.txt \
 lvl/full188.asc \
 lvl/full188.txt \
+lvl/gag.asc \
+lvl/gag.txt \
+lvl/gbapac.asc \
+lvl/gbapac.txt \
 lvl/ghost.asc \
 lvl/ghost.txt \
 lvl/ghost2.asc \
 lvl/ghost2.txt \
+lvl/ghostma1.asc \
+lvl/ghostma1.txt \
 lvl/ghostma2.asc \
 lvl/ghostma2.txt \
 lvl/ghostman.asc \
@@ -3668,6 +4158,8 @@ lvl/gobble2.asc \
 lvl/gobble2.txt \
 lvl/gobbleag.asc \
 lvl/gobbleag.txt \
+lvl/gobblemn.asc \
+lvl/gobblemn.txt \
 lvl/gobbler.asc \
 lvl/gobbler.txt \
 lvl/gobbler0.asc \
@@ -3694,6 +4186,8 @@ lvl/hackem.asc \
 lvl/hackem.txt \
 lvl/hackem2.asc \
 lvl/hackem2.txt \
+lvl/hacman.asc \
+lvl/hacman.txt \
 lvl/hangly.asc \
 lvl/hangly.txt \
 lvl/hangly26.asc \
@@ -3706,6 +4200,8 @@ lvl/hasewolf.asc \
 lvl/hasewolf.txt \
 lvl/hatman.asc \
 lvl/hatman.txt \
+lvl/haunted.asc \
+lvl/haunted.txt \
 lvl/hedges.asc \
 lvl/hedges.txt \
 lvl/human.asc \
@@ -3716,6 +4212,8 @@ lvl/hungry2.asc \
 lvl/hungry2.txt \
 lvl/iitpac.asc \
 lvl/iitpac.txt \
+lvl/interton.asc \
+lvl/interton.txt \
 lvl/ipac.asc \
 lvl/ipac.txt \
 lvl/javapac.asc \
@@ -3724,6 +4222,10 @@ lvl/javapac1.asc \
 lvl/javapac1.txt \
 lvl/javapac2.asc \
 lvl/javapac2.txt \
+lvl/jaw.asc \
+lvl/jaw.txt \
+lvl/jaw2.asc \
+lvl/jaw2.txt \
 lvl/jelly2.asc \
 lvl/jelly2.txt \
 lvl/jellymon.asc \
@@ -3760,8 +4262,12 @@ lvl/limghost.asc \
 lvl/limghost.txt \
 lvl/lives.asc \
 lvl/lives.txt \
+lvl/logo.txt \
+lvl/logo2.txt \
 lvl/macman.asc \
 lvl/macman.txt \
+lvl/macman2.asc \
+lvl/macman2.txt \
 lvl/makman.asc \
 lvl/makman.txt \
 lvl/mania.asc \
@@ -3778,6 +4284,10 @@ lvl/mazewar.asc \
 lvl/mazewar.txt \
 lvl/mc10.asc \
 lvl/mc10.txt \
+lvl/mc10b.asc \
+lvl/mc10b.txt \
+lvl/mc10b2.asc \
+lvl/mc10b2.txt \
 lvl/meter.asc \
 lvl/meter.txt \
 lvl/mini.asc \
@@ -3786,6 +4296,8 @@ lvl/minijs.asc \
 lvl/minijs.txt \
 lvl/minipac.asc \
 lvl/minipac.txt \
+lvl/miracle.asc \
+lvl/miracle.txt \
 lvl/misspac.asc \
 lvl/misspac.txt \
 lvl/misstiny.asc \
@@ -3800,14 +4312,22 @@ lvl/mmproto.asc \
 lvl/mmproto.txt \
 lvl/monster.asc \
 lvl/monster.txt \
+lvl/monster2.asc \
+lvl/monster2.txt \
 lvl/mrpac26.asc \
 lvl/mrpac26.txt \
+lvl/msaftdrk.asc \
+lvl/msaftdrk.txt \
+lvl/msbaby.asc \
+lvl/msbaby.txt \
 lvl/msblitz.asc \
 lvl/msblitz.txt \
 lvl/mschamp.asc \
 lvl/mschamp.txt \
 lvl/mschomp.asc \
 lvl/mschomp.txt \
+lvl/mscrozza.asc \
+lvl/mscrozza.txt \
 lvl/mshack.asc \
 lvl/mshack.txt \
 lvl/mslim.asc \
@@ -3840,6 +4360,8 @@ lvl/mspaclnx.asc \
 lvl/mspaclnx.txt \
 lvl/mspacnes.asc \
 lvl/mspacnes.txt \
+lvl/mspacxl.asc \
+lvl/mspacxl.txt \
 lvl/mspaczx.asc \
 lvl/mspaczx.txt \
 lvl/msport.asc \
@@ -3857,24 +4379,48 @@ lvl/mspwlnx.asc \
 lvl/mspwlnx.txt \
 lvl/mspwlnx2.asc \
 lvl/mspwlnx2.txt \
+lvl/msreturn.asc \
+lvl/msreturn.txt \
 lvl/mssmall.asc \
 lvl/mssmall.txt \
 lvl/mstiny.asc \
 lvl/mstiny.txt \
 lvl/muncher.asc \
 lvl/muncher.txt \
+lvl/muncher2.asc \
+lvl/muncher2.txt \
 lvl/munchie.asc \
 lvl/munchie.txt \
+lvl/munchit.asc \
+lvl/munchit.txt \
+lvl/munchit2.asc \
+lvl/munchit2.txt \
+lvl/munchit3.asc \
+lvl/munchit3.txt \
 lvl/munchkin.asc \
 lvl/munchkin.txt \
+lvl/munchma2.asc \
+lvl/munchma2.txt \
+lvl/munchma3.asc \
+lvl/munchma3.txt \
 lvl/munchman.asc \
 lvl/munchman.txt \
 lvl/munchy.asc \
 lvl/munchy.txt \
+lvl/mywoman.asc \
+lvl/mywoman.txt \
+lvl/mz80b.asc \
+lvl/mz80b.txt \
 lvl/nascom.asc \
 lvl/nascom.txt \
 lvl/nespac.asc \
 lvl/nespac.txt \
+lvl/newbrain.asc \
+lvl/newbrain.txt \
+lvl/newbrn1.asc \
+lvl/newbrn1.txt \
+lvl/newbrn2.asc \
+lvl/newbrn2.txt \
 lvl/newpuc2.asc \
 lvl/newpuc2.txt \
 lvl/nibble.asc \
@@ -3898,6 +4444,10 @@ lvl/pac26.asc \
 lvl/pac26.txt \
 lvl/pac2600.asc \
 lvl/pac2600.txt \
+lvl/pac30.asc \
+lvl/pac30.txt \
+lvl/pac48.asc \
+lvl/pac48.txt \
 lvl/pac49.asc \
 lvl/pac49.txt \
 lvl/pac4a.asc \
@@ -3910,10 +4460,18 @@ lvl/pac700.asc \
 lvl/pac700.txt \
 lvl/pac78.asc \
 lvl/pac78.txt \
+lvl/pac8001.asc \
+lvl/pac8001.txt \
 lvl/pac8bit.asc \
 lvl/pac8bit.txt \
+lvl/pac98.asc \
+lvl/pac98.txt \
 lvl/pac99.asc \
 lvl/pac99.txt \
+lvl/pacar.asc \
+lvl/pacar.txt \
+lvl/pacascii.asc \
+lvl/pacascii.txt \
 lvl/pacbox.asc \
 lvl/pacbox.txt \
 lvl/paccdi.asc \
@@ -3926,6 +4484,8 @@ lvl/pacdude.asc \
 lvl/pacdude.txt \
 lvl/pacex2.asc \
 lvl/pacex2.txt \
+lvl/pacf.asc \
+lvl/pacf.txt \
 lvl/pacgal.asc \
 lvl/pacgal.txt \
 lvl/pacgalax.asc \
@@ -3934,6 +4494,8 @@ lvl/pacgem.asc \
 lvl/pacgem.txt \
 lvl/pacgent.asc \
 lvl/pacgent.txt \
+lvl/pacgirl.asc \
+lvl/pacgirl.txt \
 lvl/pacjr.asc \
 lvl/pacjr.txt \
 lvl/pacjs.asc \
@@ -3962,6 +4524,8 @@ lvl/pacmanvs.asc \
 lvl/pacmanvs.txt \
 lvl/pacmanx.asc \
 lvl/pacmanx.txt \
+lvl/pacmar.asc \
+lvl/pacmar.txt \
 lvl/pacmen.asc \
 lvl/pacmen.txt \
 lvl/pacmes.asc \
@@ -3976,6 +4540,8 @@ lvl/pacnc.asc \
 lvl/pacnc.txt \
 lvl/pacnstuf.asc \
 lvl/pacnstuf.txt \
+lvl/pacoric.asc \
+lvl/pacoric.txt \
 lvl/pacpdp11.asc \
 lvl/pacpdp11.txt \
 lvl/pacpsion.asc \
@@ -3994,12 +4560,20 @@ lvl/pacvms.asc \
 lvl/pacvms.txt \
 lvl/pacxgs.asc \
 lvl/pacxgs.txt \
+lvl/pacxgs1.asc \
+lvl/pacxgs1.txt \
+lvl/pacxgs2.asc \
+lvl/pacxgs2.txt \
+lvl/pacxl.asc \
+lvl/pacxl.txt \
 lvl/paczx.asc \
 lvl/paczx.txt \
 lvl/paczx2.asc \
 lvl/paczx2.txt \
 lvl/paczx3.asc \
 lvl/paczx3.txt \
+lvl/pakacuda.asc \
+lvl/pakacuda.txt \
 lvl/pakkman.asc \
 lvl/pakkman.txt \
 lvl/pakpak.asc \
@@ -4008,10 +4582,16 @@ lvl/pakus.asc \
 lvl/pakus.txt \
 lvl/paques.asc \
 lvl/paques.txt \
+lvl/patuman.asc \
+lvl/patuman.txt \
+lvl/pc8001.asc \
+lvl/pc8001.txt \
 lvl/pcman.asc \
 lvl/pcman.txt \
 lvl/pcman2.asc \
 lvl/pcman2.txt \
+lvl/pcman3.asc \
+lvl/pcman3.txt \
 lvl/pcmania4.asc \
 lvl/pcmania4.txt \
 lvl/pcsmall.asc \
@@ -4030,10 +4610,18 @@ lvl/pet2.asc \
 lvl/pet2.txt \
 lvl/petx.asc \
 lvl/petx.txt \
+lvl/pieguy.asc \
+lvl/pieguy.txt \
+lvl/planet10.asc \
+lvl/planet10.txt \
 lvl/plaque.asc \
 lvl/plaque.txt \
 lvl/plaque2.asc \
 lvl/plaque2.txt \
+lvl/plus.asc \
+lvl/plus.txt \
+lvl/plus48.asc \
+lvl/plus48.txt \
 lvl/pman.asc \
 lvl/pman.txt \
 lvl/pman2.asc \
@@ -4050,22 +4638,48 @@ lvl/ptmx.asc \
 lvl/ptmx.txt \
 lvl/puck.asc \
 lvl/puck.txt \
+lvl/puckman3.asc \
+lvl/puckman3.txt \
+lvl/puckmn3x.asc \
+lvl/puckmn3x.txt \
 lvl/puckmon.asc \
 lvl/puckmon.txt \
 lvl/puckpock.asc \
 lvl/puckpock.txt \
+lvl/qbpac.asc \
+lvl/qbpac.txt \
+lvl/qkpacman.asc \
+lvl/qkpacman.txt \
 lvl/qman.asc \
 lvl/qman.txt \
+lvl/qpac.asc \
+lvl/qpac.txt \
+lvl/qpac2.asc \
+lvl/qpac2.txt \
+lvl/qrevenge.asc \
+lvl/qrevenge.txt \
+lvl/qspac.asc \
+lvl/qspac.txt \
 lvl/quackman.asc \
 lvl/quackman.txt \
+lvl/quad.asc \
+lvl/quad.txt \
 lvl/quikman.asc \
 lvl/quikman.txt \
+lvl/qwoman.asc \
+lvl/qwoman.txt \
 lvl/remake.asc \
 lvl/remake.txt \
 lvl/remix.asc \
 lvl/remix.txt \
 lvl/revenge.asc \
 lvl/revenge.txt \
+lvl/revenge2.asc \
+lvl/revenge2.txt \
+lvl/roboriot.asc \
+lvl/roboriot.txt \
+lvl/rogue.asc \
+lvl/rogue.txt \
 lvl/ruckman.asc \
 lvl/ruckman.txt \
 lvl/salomon.asc \
@@ -4082,6 +4696,10 @@ lvl/sidtool.asc \
 lvl/sidtool.txt \
 lvl/simpel.asc \
 lvl/simpel.txt \
+lvl/simple.asc \
+lvl/simple.txt \
+lvl/simple2.asc \
+lvl/simple2.txt \
 lvl/simplej.asc \
 lvl/simplej.txt \
 lvl/sir.asc \
@@ -4092,6 +4710,8 @@ lvl/small188.asc \
 lvl/small188.txt \
 lvl/smallbk.asc \
 lvl/smallbk.txt \
+lvl/smallcap.asc \
+lvl/smallcap.txt \
 lvl/smallmac.asc \
 lvl/smallmac.txt \
 lvl/smallpac.asc \
@@ -4100,6 +4720,8 @@ lvl/smalltax.asc \
 lvl/smalltax.txt \
 lvl/smartpac.asc \
 lvl/smartpac.txt \
+lvl/smwoman.asc \
+lvl/smwoman.txt \
 lvl/snackatk.asc \
 lvl/snackatk.txt \
 lvl/snail.asc \
@@ -4112,10 +4734,18 @@ lvl/sol.asc \
 lvl/sol.txt \
 lvl/solx.asc \
 lvl/solx.txt \
+lvl/spac.asc \
+lvl/spac.txt \
+lvl/spac2.asc \
+lvl/spac2.txt \
 lvl/spear.asc \
 lvl/spear.txt \
 lvl/specman.asc \
 lvl/specman.txt \
+lvl/specman2.asc \
+lvl/specman2.txt \
+lvl/spectres.asc \
+lvl/spectres.txt \
 lvl/spook.asc \
 lvl/spook.txt \
 lvl/spooky.asc \
@@ -4124,6 +4754,8 @@ lvl/strange.asc \
 lvl/strange.txt \
 lvl/sympac.asc \
 lvl/sympac.txt \
+lvl/tardis.asc \
+lvl/tardis.txt \
 lvl/taxman.asc \
 lvl/taxman.txt \
 lvl/thief.asc \
@@ -4138,6 +4770,8 @@ lvl/tinypac.asc \
 lvl/tinypac.txt \
 lvl/tinypac2.asc \
 lvl/tinypac2.txt \
+lvl/tinywomn.asc \
+lvl/tinywomn.txt \
 lvl/titanman.asc \
 lvl/titanman.txt \
 lvl/tituspac.asc \
@@ -4149,15 +4783,33 @@ lvl/tomyport.asc \
 lvl/tomyport.txt \
 lvl/toru.asc \
 lvl/toru.txt \
+lvl/toru2.asc \
+lvl/toru2.txt \
+lvl/toru78.asc \
+lvl/toru78.txt \
+lvl/toru78b.asc \
+lvl/toru78b.txt \
 lvl/toyman.asc \
 lvl/toyman.txt \
+lvl/tpac.asc \
+lvl/tpac.txt \
 lvl/trashman.asc \
 lvl/trashman.txt \
+lvl/trojans.asc \
+lvl/trojans.txt \
+lvl/trojans2.asc \
+lvl/trojans2.txt \
+lvl/trojans3.asc \
+lvl/trojans3.txt \
+lvl/tta.asc \
+lvl/tta.txt \
 lvl/ultrapac.asc \
 lvl/ultrapac.txt \
-lvl/upacthin.txt \
 lvl/upac78.asc \
 lvl/upac78.txt \
+lvl/upacthin.txt \
+lvl/veripac.asc \
+lvl/veripac.txt \
 lvl/vermin.asc \
 lvl/vermin.txt \
 lvl/vicman.asc \
@@ -4168,6 +4820,16 @@ lvl/wabapac.asc \
 lvl/wabapac.txt \
 lvl/wabapac2.asc \
 lvl/wabapac2.txt \
+lvl/wall.asc \
+lvl/wall.txt \
+lvl/wall2.asc \
+lvl/wall2.txt \
+lvl/winpac.asc \
+lvl/winpac.txt \
+lvl/ww.asc \
+lvl/ww.txt \
+lvl/ww2.asc \
+lvl/ww2.txt \
 lvl/xensrvng.asc \
 lvl/xensrvng.txt \
 lvl/xfred.asc \
@@ -4176,8 +4838,14 @@ lvl/yoyopac.asc \
 lvl/yoyopac.txt \
 lvl/zaurus.asc \
 lvl/zaurus.txt \
+lvl/zola.asc \
+lvl/zola.txt \
+lvl/zolas.asc \
+lvl/zolas.txt \
 lvl/zuckman.asc \
 lvl/zuckman.txt \
+lvl/zx81.asc \
+lvl/zx81.txt \
 mygetopt/ChangeLog \
 mygetopt/getopt.3 \
 mygetopt/getopt.h \
@@ -4188,17 +4856,8 @@ mygetopt/Makefile \
 mygetopt/mygetopt.c \
 mygetopt/mygetopt.h \
 mygetopt/README \
-efilibc/ctype.h \
-efilibc/efilibc.c \
-efilibc/errno.h \
-efilibc/math.h \
-efilibc/signal.h \
-efilibc/stdio.h \
-efilibc/stdlib.h \
-efilibc/string.h \
-efilibc/sys/types.h \
-efilibc/time.h \
-efilibc/wchar.h \
+patches/bitmap.diff \
+patches/bitmap_libcaca.diff \
 pdcfont.bmp \
 pdcfont0.bmp \
 pdcfont1.bmp \
@@ -4261,12 +4920,15 @@ spr/spr16.png \
 spr/spr16.txt \
 spr/spr16h.asc \
 spr/spr16h.txt \
+spr/spr2.txt \
 spr/spr2h.txt \
 spr/spr3.txt \
 spr/spr32.asc \
 spr/spr32.txt \
 spr/spr32h.asc \
 spr/spr32h.txt \
+spr/spr3b.asc \
+spr/spr3b.txt \
 spr/spr4.asc \
 spr/spr4.txt \
 spr/spr4b.asc \
@@ -4322,7 +4984,6 @@ utl/jrpac.term \
 utl/jrpac2.term \
 utl/kpacman.term \
 utl/kpacman2.term \
-utl/lsic.bat \
 utl/msbit.term \
 utl/msbit2.term \
 utl/msbit3.term \
@@ -4335,10 +4996,7 @@ utl/msbit8.term \
 utl/myman.term \
 utl/myman2.term \
 utl/mymancmd.in \
-utl/pacificc.bat \
 utl/quackman.term \
-utl/turboc.bat \
-utl/aztecc.bat \
 utl/xbigman.in \
 utl/xbitman.in \
 utl/xbitman2.in \
@@ -4352,11 +5010,6 @@ utl/xmyman2.in \
 utl/xmyman3.in \
 utl/xmyman4.in \
 utl/xquack.in \
-debian/changelog \
-debian/control \
-fink/myman.info \
-patches/bitmap.diff \
-patches/bitmap_libcaca.diff \
 ${website_files}
 
 website_files = \
@@ -4376,6 +5029,9 @@ inc \
 mygetopt \
 efilibc \
 efilibc/sys \
+glibcnoh \
+glibcnoh/sys \
+glibcnoh/linux \
 lvl \
 chr \
 spr \
@@ -4758,14 +5414,14 @@ fill-dir-xq-${BINDIST}:: $(call mw,${MAKEFILE}) all $(addprefix $(call mw,${src}
             > ${BINDIST}/$(call q,install.sh)
 	-chmod 755 ${BINDIST}/$(call q,install.sh)
 	@${MAKE} ${MAKELOOP} \
-             install-program-xq-$(call qxq,./${BINDIST}/${MYMANCOMMAND_EXE}) \
-             program_file=$(call qmq,${MYMANCOMMAND})
+             install-program-xq-$(call qxq,./${BINDIST}/${MYMANCOMMAND_EXE}${cmd}) \
+             program_file=$(call qmq,${MYMANCOMMAND}${cmd})
 	@-${SYMLINK} $(call q,${distroot}${bindir}/${MYMAN_EXE}$x) $(call q,./${BINDIST}/${MYMAN_EXE}$x) \
              || ${MAKE} ${MAKELOOP} \
              install-program-xq-$(call qxq,./${BINDIST}/${MYMAN_EXE}$x) \
              program_file=$(call qmq,${MYMAN}$x) \
              INSTALLFLAGS=$(call qmq,${INSTALLFLAGS} ${STRIPINSTALLFLAGS})
-ifeq (yes,${with_mac})
+ifeq (yes,${with_app})
 	@-${SYMLINK} $(call q,${distroot}${appdir_MYMAN_APP}) $(call q,./${BINDIST}/${MYMAN_APP})
 endif
 
@@ -4812,7 +5468,7 @@ info check installcheck:
 TAGS:: $(addprefix $(call mw,${src}),${dist_files})
 	etags -o $@ $(addprefix $(call q,${src}),${dist_files})
 
-all:: $(call mw,${MAKEFILE}) ${MYMAN}$x $(call mw,${MYMANCOMMAND})
+all:: $(call mw,${MAKEFILE}) ${MYMAN}$x $(call mw,${MYMANCOMMAND}${cmd})
 
 ifeq (yes,${with_rxvt})
 all install-files:: $(call mw,${XMYMAN2}${sh})
@@ -4875,8 +5531,8 @@ ifeq (yes,${with_mac_icon})
 
 all:: $(call mw,${obj}${MYMAN}.icns)
 
-${obj}${MYMAN}.tiff: ${src}gfx/myman.png ${src}gfx/myman64.png ${src}gfx/myman48.png ${src}gfx/myman32.png
-	-${TIFFUTIL} -cat ${src}gfx/myman.png ${src}gfx/myman64.png ${src}gfx/myman48.png ${src}gfx/myman32.png -out $(call q,$@) || \
+${obj}${MYMAN}.tiff: ${src}gfx/myman.png ${src}gfx/myman64.png ${src}gfx/myman48.png ${src}gfx/myman32.png ${src}gfx/myman16.png ${src}gfx/myman12.png
+	-${TIFFUTIL} -cat ${src}gfx/myman.png ${src}gfx/myman64.png ${src}gfx/myman48.png ${src}gfx/myman32.png ${src}gfx/myman16.png ${src}gfx/myman12.png -out $(call q,$@) || \
             ( \
                 ${REMOVE} $(call q,$@) ; \
                 exit 1 \
@@ -4891,13 +5547,17 @@ ${obj}${MYMAN}.icns: $(call mw,${obj}${MYMAN}.tiff)
 
 endif
 
-ifeq (yes,${with_mac})
+ifeq (yes,${with_app})
 
-all:: ${MYMAN}.app/Contents/Info.plist ${MYMAN}.app/Contents/PkgInfo ${MYMAN}.app/Contents/${PLATFORM}/${MYMAN}$x $(call mw,${obj}${MYMAN}.plist)
+all:: ${MYMAN}.app/Contents/Info.plist ${MYMAN}.app/Contents/PkgInfo ${MYMAN}.app/Contents/${PLATFORM}/${MYMAN}$x $(call mw,${obj}${MYMAN}.plist) ${MYMAN}.app/Contents/Resources/${MYMAN}.rsrc $(call mw,${obj}${MYMAN}.rsrc)
 
 ifeq (yes,${with_mac_icon})
 all:: ${MYMAN}.app/Contents/Resources/${MYMAN}.icns
 endif
+
+${obj}${MYMAN}.rsrc: $(call mw,${src})configure $(call mw,${MAKEFILE})
+	@${ECHOLINEX} creating $(call q,$@) && \
+	($(call create_mac_rsrc,${MAC_ARGV},${MAC_ENVP}) $(call q,$@))
 
 ${obj}${MYMAN}.plist: $(call mw,${src})configure $(call mw,${MAKEFILE})
 	@-${REMOVE} $(call q,$@)
@@ -4971,11 +5631,17 @@ ${MYMAN}.app/Contents/Resources/${MYMAN}.icns: $(call mw,${obj}${MYMAN}.icns)
              install-data-xq-$(call qxq,$@) \
              data_file=$(call qmq,$<)
 
+${MYMAN}.app/Contents/Resources/${MYMAN}.rsrc: $(call mw,${obj}${MYMAN}.rsrc)
+	@${MKPARENTDIR}
+	@-${MAKE} ${MAKELOOP} \
+             install-data-xq-$(call qxq,$@) \
+             data_file=$(call qmq,$<)
+
 ifeq (yes,${with_mac_icon})
 ${MYMAN}.app/Contents/${PLATFORM}/${MYMAN}$x: $(call mw,${MYMAN}.app/Contents/Resources/${MYMAN}.icns)
 endif
 
-${MYMAN}.app/Contents/${PLATFORM}/${MYMAN}$x: ${MYMAN}$x $(call mw,${MYMAN}.app/Contents/Info.plist) $(call mw,${MYMAN}.app/Contents/PkgInfo)
+${MYMAN}.app/Contents/${PLATFORM}/${MYMAN}$x: ${MYMAN}$x $(call mw,${MYMAN}.app/Contents/Info.plist) $(call mw,${MYMAN}.app/Contents/PkgInfo) $(call mw,${MYMAN}.app/Contents/Resources/${MYMAN}.rsrc)
 	@${MKPARENTDIR}
 	@${MAKE} ${MAKELOOP} \
              install-dir-xq-$(call qxq,${MYMAN}.app/Contents/${PLATFORM}) \
@@ -4992,7 +5658,7 @@ doc docs: ${MYMAN}${man6ext} ${MYMAN}${txt} ${MYMAN}.ps dvi ${MYMAN}${htm} $(add
 
 dvi: ${MYMAN}.dvi
 
-ifeq (yes,${with_mac})
+ifeq (yes,${with_app})
 clean:: wipe-dir-xq-$(call mwxq,${MYMAN}.app)
 endif
 
@@ -5014,11 +5680,11 @@ endif
 ifeq (yes,${with_efi})
 	-${REMOVE} $(call q,${objdir})/${MYMAN}.so
 endif
-	-${REMOVE} ${MYMAN}${htm}${tmp} $(call q,${objdir})/*$o ${MYMAN}$x TAGS
+	-${REMOVE} ${MYMAN}${htm}${tmp} $(call q,${objdir})/*$o ${MYMAN}$x ${MYMAN}.rex TAGS
 	-${REMOVE} $(call q,${objdir})/*$O
 	-${REMOVE} _sanity?$X $(call q,${obj}_sanity)?.c
 	-${REMOVE} ${MYMAN}${man6ext} ${MYMAN}${txt} ${MYMAN}.ps ${MYMAN}.dvi ${MYMAN}${htm}
-	-${REMOVE} ${XMYMAN}${sh} ${XMYMAN2}${sh} ${XMYMAN3}${sh} ${XMYMAN4}${sh} ${XBIGMAN}${sh} ${XHUGEMAN}${sh} ${XBITMAN}${sh} ${XBITMAN2}${sh} ${XBITMAN3}${sh} ${XBITMAN4}${sh} ${XBITMAN5}${sh} ${XBITMAN6}${sh} ${XQUACKMAN}${sh} ${MYMANCOMMAND}
+	-${REMOVE} ${XMYMAN}${sh} ${XMYMAN2}${sh} ${XMYMAN3}${sh} ${XMYMAN4}${sh} ${XBIGMAN}${sh} ${XHUGEMAN}${sh} ${XBITMAN}${sh} ${XBITMAN2}${sh} ${XBITMAN3}${sh} ${XBITMAN4}${sh} ${XBITMAN5}${sh} ${XBITMAN6}${sh} ${XQUACKMAN}${sh} ${MYMANCOMMAND}${cmd}
 	-${REMOVE} $(foreach variant,${MYMANVARIANTS},$(call q,$(call mymanvariant_data,${variant}).c))
 	-${REMOVE} $(foreach size,${MYMANSIZES},$(call q,$(call mymansize_data,${size}).c))
 	-${REMOVE} ${hostprefix}${GAME}$x $(call q,${BOOTSTRAP}$X)
@@ -5026,8 +5692,8 @@ endif
 ifeq (yes,${with_win_icon})
 	-${REMOVE} ${obj}winicon.rc ${obj}winicon.res ${obj}winicon.c
 endif
-ifeq (yes,${with_mac})
-	-${REMOVE} $(call q,${obj}${MYMAN}.plist)
+ifeq (yes,${with_app})
+	-${REMOVE} $(call q,${obj}${MYMAN}.plist) $(call q,${obj}${MYMAN}.rsrc)
 endif
 ifeq (yes,${with_mac_icon})
 	-${REMOVE} $(call q,${obj}${MYMAN}.tiff) $(call q,${obj}${MYMAN}.icns)
@@ -5039,8 +5705,8 @@ uninstall:: $(call mw,${MAKEFILE})
 	@${MAKE} ${MAKELOOP} \
             uninstalldirs
 
-ifeq (yes,${with_mac})
-install-files:: $(call mw,${obj}${MYMAN}.plist) $(call mw,${MYMAN}.app/Contents/PkgInfo)
+ifeq (yes,${with_app})
+install-files:: $(call mw,${obj}${MYMAN}.plist) $(call mw,${MYMAN}.app/Contents/PkgInfo) $(call mw,${obj}${MYMAN}.rsrc)
 endif
 
 ifeq (yes,${with_mac_icon})
@@ -5049,7 +5715,7 @@ endif
 
 all install-files:: docs
 
-install-files:: $(call mw,${MAKEFILE}) installdirs ${MYMAN}$x $(call mw,${MYMANCOMMAND}) $(call mw,${src})utl/myman.ct $(foreach variant,${MYMANVARIANTS},$(call mw,$(call mazefile,${variant}))) $(foreach size,${MYMANSIZES},$(call mw,$(call tilefile,${size})) $(call mw,$(call spritefile,${size}))) ${src}gfx/myman.png ${src}gfx/myman64.png ${src}gfx/myman48.png ${src}gfx/myman32.png $(foreach extraprog,${EXTRAPROGS},$(call mw,${extraprog}))
+install-files:: $(call mw,${MAKEFILE}) installdirs ${MYMAN}$x $(call mw,${MYMANCOMMAND}${cmd}) $(call mw,${src})utl/myman.ct $(foreach variant,${MYMANVARIANTS},$(call mw,$(call mazefile,${variant}))) $(foreach size,${MYMANSIZES},$(call mw,$(call tilefile,${size})) $(call mw,$(call spritefile,${size}))) ${src}gfx/myman.png ${src}gfx/myman64.png ${src}gfx/myman48.png ${src}gfx/myman32.png ${src}gfx/myman16.png ${src}gfx/myman12.png $(foreach extraprog,${EXTRAPROGS},$(call mw,${extraprog}))
 	@${MAKE} ${MAKELOOP} \
              install-program-xq-$(call qxq,${DESTDIR}${bindir}/${MYMAN_EXE}$x) \
              program_file=$(call qmq,${MYMAN}$x) \
@@ -5066,10 +5732,16 @@ install-files:: $(call mw,${MAKEFILE}) installdirs ${MYMAN}$x $(call mw,${MYMANC
 	@${MAKE} ${MAKELOOP} \
              install-data-xq-$(call qxq,${DESTDIR}${gfxdir}/myman32.png) \
              data_file=$(call qmq,${src}gfx/myman32.png)
+	@${MAKE} ${MAKELOOP} \
+             install-data-xq-$(call qxq,${DESTDIR}${gfxdir}/myman16.png) \
+             data_file=$(call qmq,${src}gfx/myman16.png)
+	@${MAKE} ${MAKELOOP} \
+             install-data-xq-$(call qxq,${DESTDIR}${gfxdir}/myman12.png) \
+             data_file=$(call qmq,${src}gfx/myman12.png)
 ifeq (yes,${with_mac_icon})
 	@-($(call set_mac_icon,${obj}${MYMAN}.icns) $(call q,${DESTDIR}/${bindir}/${MYMAN_EXE}$x))
 endif
-ifeq (yes,${with_mac})
+ifeq (yes,${with_app})
 	@${MAKE} ${MAKELOOP} \
              install-data-xq-$(call qxq,${DESTDIR}${appdir_MYMAN_APP_CONTENTS}/Info.plist) \
              data_file=$(call qmq,${obj}${MYMAN}.plist)
@@ -5080,6 +5752,9 @@ ifeq (yes,${with_mac})
              install-program-xq-$(call qxq,${DESTDIR}${appdir_MYMAN_APP_CONTENTS_PLATFORM}/${MYMAN_EXE}$x) \
              program_file=$(call qmq,${MYMAN}$x) \
              INSTALLFLAGS=$(call qmq,${INSTALLFLAGS} ${STRIPINSTALLFLAGS})
+	@-${MAKE} ${MAKELOOP} \
+             install-data-xq-$(call qxq,${DESTDIR}${appdir_MYMAN_APP_CONTENTS_RESOURCES}/${MYMAN_rsrc}) \
+             data_file=$(call qmq,${obj}${MYMAN}.rsrc)
 ifeq (yes,${with_mac_icon})
 	@-${MAKE} ${MAKELOOP} \
              install-data-xq-$(call qxq,${DESTDIR}${appdir_MYMAN_APP_CONTENTS_RESOURCES}/${MYMAN_ICNS}) \
@@ -5093,6 +5768,9 @@ endif
              install-program-xq-$(call qxq,${DESTDIR}${bindir}/${DIST_EXE}$x) \
              program_file=$(call qmq,${MYMAN}$x) \
              INSTALLFLAGS=$(call qmq,${INSTALLFLAGS} ${STRIPINSTALLFLAGS})
+ifeq (yes,${with_mac_icon})
+	@-($(call set_mac_icon,${obj}${MYMAN}.icns) $(call q,${DESTDIR}/${bindir}/${DIST_EXE}$x))
+endif
 ifeq (yes,${with_rxvt})
 	@${MAKE} ${MAKELOOP} \
              install-program-xq-$(call qxq,${DESTDIR}${bindir}/${XMYMAN2_EXE}${sh}) \
@@ -5140,8 +5818,8 @@ ifeq (yes,${with_xterm})
 endif
 
 	@${MAKE} ${MAKELOOP} \
-             install-program-xq-$(call qxq,${DESTDIR}${bindir}/${MYMANCOMMAND_EXE}) \
-             program_file=$(call qmq,${MYMANCOMMAND})
+             install-program-xq-$(call qxq,${DESTDIR}${bindir}/${MYMANCOMMAND_EXE}${cmd}) \
+             program_file=$(call qmq,${MYMANCOMMAND}${cmd})
 ifneq (,${EXTRAPROGS})
 	@($(foreach extraprog,${EXTRAPROGS}, \
 	${MAKE} ${MAKELOOP} \
@@ -5234,7 +5912,7 @@ ifeq (yes,${with_xterm})
              manlink_file=$(call qmqs,$(call xq,${mandir}/)%,%,${man6dir}/${DIST}${man6ext})
 endif
 	@-${MAKE} ${MAKELOOP} \
-             install-manlink-xq-$(call qxq,${DESTDIR}${man6dir}/${MYMANCOMMAND_EXE}${man6ext}) \
+             install-manlink-xq-$(call qxq,${DESTDIR}${man6dir}/${MYMANCOMMAND_EXE}${cmd}${man6ext}) \
              manlink_file=$(call qmqs,$(call xq,${mandir}/)%,%,${man6dir}/${DIST}${man6ext})
 ifneq (${sh},)
 ifeq (yes,${with_rxvt})
@@ -5329,13 +6007,14 @@ update-whatis:
         fi)
 
 uninstall-files: $(call mw,${MAKEFILE})
-ifeq (yes,${with_mac})
+ifeq (yes,${with_app})
 	@($(call uninstall_file,${DESTDIR}${appdir_MYMAN_APP_CONTENTS}/Info.plist))
 	@($(call uninstall_file,${DESTDIR}${appdir_MYMAN_APP_CONTENTS}/PkgInfo))
 	@($(call uninstall_file,${DESTDIR}${appdir_MYMAN_APP_CONTENTS_PLATFORM}/${MYMAN_EXE}$x))
+	@($(call uninstall_file,${DESTDIR}${appdir_MYMAN_APP_CONTENTS_RESOURCES}/${MYMAN_RSRC}))
 	@($(call uninstall_file,${DESTDIR}${appdir_MYMAN_APP_CONTENTS_RESOURCES}/${MYMAN_ICNS}))
 endif
-	@${NOP}$(foreach file,${DESTDIR}${bindir}/${MYMAN_EXE}$x ${DESTDIR}${bindir}/${DIST_EXE}$x ${DESTDIR}${bindir}/${XMYMAN_EXE}${sh} ${DESTDIR}${bindir}/${XMYMAN2_EXE}${sh} ${DESTDIR}${bindir}/${XMYMAN3_EXE}${sh} ${DESTDIR}${bindir}/${XMYMAN4_EXE}${sh} ${DESTDIR}${bindir}/${XBIGMAN_EXE}${sh} ${DESTDIR}${bindir}/${XHUGEMAN_EXE}${sh} ${DESTDIR}${bindir}/${XBITMAN_EXE}${sh} ${DESTDIR}${bindir}/${XBITMAN2_EXE}${sh} ${DESTDIR}${bindir}/${XBITMAN3_EXE}${sh} ${DESTDIR}${bindir}/${XBITMAN4_EXE}${sh} ${DESTDIR}${bindir}/${XBITMAN5_EXE}${sh} ${DESTDIR}${bindir}/${XBITMAN6_EXE}${sh} ${DESTDIR}${bindir}/${XQUACKMAN_EXE}${sh} ${DESTDIR}${bindir}/${MYMANCOMMAND_EXE} $(foreach extraprog,${EXTRAPROGS},${DESTDIR}${bindir}/$(call program,${extraprog})) ${DESTDIR}${bindir}/${MYMAN_CT_EXE} ${DESTDIR}${privatedocdir}/${MYMAN}${txt} ${DESTDIR}${privatedocdir}/${MYMAN}.ps ${DESTDIR}${privatedocdir}/${MYMAN}.dvi ${DESTDIR}${privatedocdir}/${MYMAN}${htm} ${DESTDIR}${man6dir}/${MYMAN_EXE}${man6ext} ${DESTDIR}${man6dir}/${MYMAN_CT_EXE}${man6ext} ${DESTDIR}${man6dir}/${XQUACKMAN_EXE}${man6ext} ${DESTDIR}${man6dir}/${MYMANCOMMAND_EXE}${man6ext} ${DESTDIR}${man6dir}/${XHUGEMAN_EXE}${man6ext} ${DESTDIR}${man6dir}/${XBITMAN_EXE}${man6ext} ${DESTDIR}${man6dir}/${XBITMAN2_EXE}${man6ext} ${DESTDIR}${man6dir}/${XBITMAN3_EXE}${man6ext} ${DESTDIR}${man6dir}/${XBITMAN4_EXE}${man6ext} ${DESTDIR}${man6dir}/${XBITMAN5_EXE}${man6ext} ${DESTDIR}${man6dir}/${XBITMAN6_EXE}${man6ext} ${DESTDIR}${man6dir}/${XBIGMAN_EXE}${man6ext} ${DESTDIR}${man6dir}/${XMYMAN4_EXE}${man6ext} ${DESTDIR}${man6dir}/${XMYMAN3_EXE}${man6ext} ${DESTDIR}${man6dir}/${XMYMAN2_EXE}${man6ext} ${DESTDIR}${man6dir}/${XMYMAN_EXE}${man6ext} ${DESTDIR}${man6dir}/${DIST_EXE}${man6ext} ${DESTDIR}${man6dir}/${MYMAN_EXE}$x${man6ext} ${DESTDIR}${man6dir}/${DIST_EXE}$x${man6ext} ${DESTDIR}${man6dir}/${XQUACKMAN_EXE}${sh}${man6ext} ${DESTDIR}${man6dir}/${XHUGEMAN_EXE}${sh}${man6ext} ${DESTDIR}${man6dir}/${XBITMAN_EXE}${sh}${man6ext} ${DESTDIR}${man6dir}/${XBITMAN2_EXE}${sh}${man6ext} ${DESTDIR}${man6dir}/${XBITMAN3_EXE}${sh}${man6ext} ${DESTDIR}${man6dir}/${XBITMAN4_EXE}${sh}${man6ext} ${DESTDIR}${man6dir}/${XBITMAN5_EXE}${sh}${man6ext} ${DESTDIR}${man6dir}/${XBITMAN6_EXE}${sh}${man6ext} ${DESTDIR}${man6dir}/${XBIGMAN_EXE}${sh}${man6ext} ${DESTDIR}${man6dir}/${XMYMAN4_EXE}${sh}${man6ext} ${DESTDIR}${man6dir}/${XMYMAN3_EXE}${sh}${man6ext} ${DESTDIR}${man6dir}/${XMYMAN2_EXE}${sh}${man6ext} ${DESTDIR}${man6dir}/${XMYMAN_EXE}${sh}${man6ext} ${DESTDIR}${gfxdir}/myman.png ${DESTDIR}${gfxdir}/myman64.png ${DESTDIR}${gfxdir}/myman48.png ${DESTDIR}${gfxdir}/myman32.png $(foreach file,${doc_files},${DESTDIR}${privatedocdir}/${file}) $(foreach variant,${MYMANVARIANTS},$(call s,$(call xq,${src}lvl/)%,$(call xq,${DESTDIR}${mazedir}/)%,$(call mazefile,${variant}))) $(foreach size,${MYMANSIZES},$(call s,$(call xq,${src}chr/)%,$(call xq,${DESTDIR}${tiledir}/)%,$(call tilefile,${size})) $(call s,$(call xq,${src}spr/)%,$(call xq,${DESTDIR}${spritedir}/)%,$(call spritefile,${size}))),${char_newline}${char_tab}@(\
+	@${NOP}$(foreach file,${DESTDIR}${bindir}/${MYMAN_EXE}$x ${DESTDIR}${bindir}/${DIST_EXE}$x ${DESTDIR}${bindir}/${XMYMAN_EXE}${sh} ${DESTDIR}${bindir}/${XMYMAN2_EXE}${sh} ${DESTDIR}${bindir}/${XMYMAN3_EXE}${sh} ${DESTDIR}${bindir}/${XMYMAN4_EXE}${sh} ${DESTDIR}${bindir}/${XBIGMAN_EXE}${sh} ${DESTDIR}${bindir}/${XHUGEMAN_EXE}${sh} ${DESTDIR}${bindir}/${XBITMAN_EXE}${sh} ${DESTDIR}${bindir}/${XBITMAN2_EXE}${sh} ${DESTDIR}${bindir}/${XBITMAN3_EXE}${sh} ${DESTDIR}${bindir}/${XBITMAN4_EXE}${sh} ${DESTDIR}${bindir}/${XBITMAN5_EXE}${sh} ${DESTDIR}${bindir}/${XBITMAN6_EXE}${sh} ${DESTDIR}${bindir}/${XQUACKMAN_EXE}${sh} ${DESTDIR}${bindir}/${MYMANCOMMAND_EXE}${cmd} $(foreach extraprog,${EXTRAPROGS},${DESTDIR}${bindir}/$(call program,${extraprog})) ${DESTDIR}${bindir}/${MYMAN_CT_EXE} ${DESTDIR}${privatedocdir}/${MYMAN}${txt} ${DESTDIR}${privatedocdir}/${MYMAN}.ps ${DESTDIR}${privatedocdir}/${MYMAN}.dvi ${DESTDIR}${privatedocdir}/${MYMAN}${htm} ${DESTDIR}${man6dir}/${MYMAN_EXE}${man6ext} ${DESTDIR}${man6dir}/${MYMAN_CT_EXE}${man6ext} ${DESTDIR}${man6dir}/${XQUACKMAN_EXE}${man6ext} ${DESTDIR}${man6dir}/${MYMANCOMMAND_EXE}${cmd}${man6ext} ${DESTDIR}${man6dir}/${XHUGEMAN_EXE}${man6ext} ${DESTDIR}${man6dir}/${XBITMAN_EXE}${man6ext} ${DESTDIR}${man6dir}/${XBITMAN2_EXE}${man6ext} ${DESTDIR}${man6dir}/${XBITMAN3_EXE}${man6ext} ${DESTDIR}${man6dir}/${XBITMAN4_EXE}${man6ext} ${DESTDIR}${man6dir}/${XBITMAN5_EXE}${man6ext} ${DESTDIR}${man6dir}/${XBITMAN6_EXE}${man6ext} ${DESTDIR}${man6dir}/${XBIGMAN_EXE}${man6ext} ${DESTDIR}${man6dir}/${XMYMAN4_EXE}${man6ext} ${DESTDIR}${man6dir}/${XMYMAN3_EXE}${man6ext} ${DESTDIR}${man6dir}/${XMYMAN2_EXE}${man6ext} ${DESTDIR}${man6dir}/${XMYMAN_EXE}${man6ext} ${DESTDIR}${man6dir}/${DIST_EXE}${man6ext} ${DESTDIR}${man6dir}/${MYMAN_EXE}$x${man6ext} ${DESTDIR}${man6dir}/${DIST_EXE}$x${man6ext} ${DESTDIR}${man6dir}/${XQUACKMAN_EXE}${sh}${man6ext} ${DESTDIR}${man6dir}/${XHUGEMAN_EXE}${sh}${man6ext} ${DESTDIR}${man6dir}/${XBITMAN_EXE}${sh}${man6ext} ${DESTDIR}${man6dir}/${XBITMAN2_EXE}${sh}${man6ext} ${DESTDIR}${man6dir}/${XBITMAN3_EXE}${sh}${man6ext} ${DESTDIR}${man6dir}/${XBITMAN4_EXE}${sh}${man6ext} ${DESTDIR}${man6dir}/${XBITMAN5_EXE}${sh}${man6ext} ${DESTDIR}${man6dir}/${XBITMAN6_EXE}${sh}${man6ext} ${DESTDIR}${man6dir}/${XBIGMAN_EXE}${sh}${man6ext} ${DESTDIR}${man6dir}/${XMYMAN4_EXE}${sh}${man6ext} ${DESTDIR}${man6dir}/${XMYMAN3_EXE}${sh}${man6ext} ${DESTDIR}${man6dir}/${XMYMAN2_EXE}${sh}${man6ext} ${DESTDIR}${man6dir}/${XMYMAN_EXE}${sh}${man6ext} ${DESTDIR}${gfxdir}/myman.png ${DESTDIR}${gfxdir}/myman64.png ${DESTDIR}${gfxdir}/myman48.png ${DESTDIR}${gfxdir}/myman32.png $(foreach file,${doc_files},${DESTDIR}${privatedocdir}/${file}) $(foreach variant,${MYMANVARIANTS},$(call s,$(call xq,${src}lvl/)%,$(call xq,${DESTDIR}${mazedir}/)%,$(call mazefile,${variant}))) $(foreach size,${MYMANSIZES},$(call s,$(call xq,${src}chr/)%,$(call xq,${DESTDIR}${tiledir}/)%,$(call tilefile,${size})) $(call s,$(call xq,${src}spr/)%,$(call xq,${DESTDIR}${spritedir}/)%,$(call spritefile,${size}))),${char_newline}${char_tab}@(\
             $(call uninstall_file,${file}) \
                 || exit $$?; \
         ))
@@ -5507,6 +6186,8 @@ ${MYMAN}$x: $(call mw,${obj}${MYMAN}$o) $(foreach object,${MYMAN_objs},$(call mw
 	${HOSTLINK} $(foreach object,${MYMAN_objs},$(call q,${object})) ${CURSESLIBS} ${ICONVLIBS} ${HOSTLIBS}
 ifeq (yes,${with_win_icon})
 ifneq (,$(findstring owcc,${HOSTLINK}))
+	@-${REMOVE} ${MYMAN}.rex
+	@${INSTALL_PROGRAM} $(call q,$@) ${MYMAN}.rex
 	@$(call hostbind_resource,${obj}winicon.res)
 endif
 endif
@@ -5538,7 +6219,7 @@ ${XQUACKMAN}${sh}: $(call mw,${src})utl/xquack.in $(call mw,${MAKEFILE}) $(call 
 	@${SH_SUBSTITUTE}
 	-chmod 755 $(call q,$@)
 
-${MYMANCOMMAND}: $(call mw,${src})utl/mymancmd.in $(call mw,${MAKEFILE}) $(call mw,${src})VERSION $(call mw,${src})COPYRIGHT
+${MYMANCOMMAND}${cmd}: $(call mw,${src})utl/mymancmd.in $(call mw,${MAKEFILE}) $(call mw,${src})VERSION $(call mw,${src})COPYRIGHT
 	@${SH_SUBSTITUTE}
 	-chmod 755 $(call q,$@)
 
@@ -5627,7 +6308,7 @@ define variant_template
 $$(call mymanvariant_data,$1).c: $$(call mw,$${BOOTSTRAP}$$X) $$(call mw,$$(call tilefile,$${MYMANSIZE})) $$(call mw,$$(call spritefile,$${MYMANSIZE})) $$(call mw,$$(call mazefile,$1))
 	@${MKPARENTDIR}
 	@($${ECHOLINEX} $$(call q,creating $$(call mymanvariant_data,$1).c from $$(call mazefile,$1) for --variant=$1); \
-            $$(call q,$${XBOOTSTRAP}) -m $$(call q,$$(call mazefile,$1)) -MF $$(call q,$$(call mymanvariant_data,$1).c) \
+            $${RUN} $$(call q,$${XBOOTSTRAP}$E) -m $$(call q,$$(call mazefile,$1)) -MF $$(call q,$$(call mymanvariant_data,$1).c) \
             || exit $$$$?; \
         )
 endef
@@ -5638,7 +6319,7 @@ define size_template
 $$(call mymansize_data,$1).c: $$(call mw,$${BOOTSTRAP}$$X) $$(call mw,$$(call tilefile,$1)) $$(call mw,$$(call spritefile,$1)) $$(call mw,$$(call mazefile,${MYMANVARIANT}))
 	@${MKPARENTDIR}
 	@($${ECHOLINEX} $$(call q,creating $$(call mymansize_data,$1).c from $$(call tilefile,$1) and $$(call spritefile,$1) for --size=$1) ; \
-            $$(call q,$${XBOOTSTRAP}) -t $$(call q,$$(call tilefile,$1)) -s $$(call q,$$(call spritefile,$1)) -STF $$(call q,$$(call mymansize_data,$1).c) \
+            $${RUN} $$(call q,$${XBOOTSTRAP}$E) -t $$(call q,$$(call tilefile,$1)) -s $$(call q,$$(call spritefile,$1)) -STF $$(call q,$$(call mymansize_data,$1).c) \
             || exit $$$$?; \
         )
 endef
@@ -5712,4 +6393,6 @@ summary:
 	@$(foreach var,$(filter-out this_file_undergoes_variable_substitution,${substitute_vars}),echo '    '${var}': '$(call q,$(${var}));)
 
 # LocalWords:  myman
-
+# Local Variables:
+# eval: (makefile-gmake-mode)
+# End:

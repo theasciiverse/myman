@@ -1,0 +1,33 @@
+﻿1 21x21 ABOUT="Inspired by Robert Turner's 'Chomper'/'Muncher' for the ZX Spectrum" \
+RTOP=10.5 \
+RGHOST=11.5 CGHOST=10.5 ROGHOST=1 COGHOST=1 \
+RFRUIT=13.5 CFRUIT=10.5 \
+ RHERO=17.5  CHERO=10.5 \
+  RMSG=13     CMSG=7 \
+ RMSG2=9     CMSG2=7 \
+   READY=" READY!" \
+ PLAYER1=" P ONE " \
+ PLAYER2=" P TWO " \
+GAMEOVER="GOODBYE" \
+NOTE="Dots, layout and starting positions adjusted to look and work better"
+╔═════════╦═════════╗
+║·········║·········║
+║·┌─┐·┌─┐·║·┌─┐·┌─┐·║
+║■│ │·│ │·║·│ │·│ │■║
+║·└─┘·└─┘·╨·└─┘·└─┘·║
+║···················║
+║·╞═╡·╥·╞═╦═╡·╥·╞═╡·║
+║·····║···║···║·····║
+╚═══╗·╠═╡ ╨ ╞═╣·╔═══╝
+    ║·║       ║·║    
+════╝·╨ ╔═≡═╗ ╨·╚════
+     ·  ║   ║  ·     
+════╗·╥ ╚═══╝ ╥·╔════
+    ║·║       ║·║    
+╔═══╝·╨ ╞═╦═╡ ╨·╚═══╗
+║·········║·········║
+║■╞═╗·╞═╡·╨·╞═╡·╔═╡■║
+║···║···········║···║
+╚═╗·╨·╞═══════╡·╨·╔═╝
+  ║···············║  
+  ╚═══════════════╝  

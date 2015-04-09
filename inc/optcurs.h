@@ -55,6 +55,7 @@ OPTCURSES_GLOBAL(const char *optcurses_interlace, = NULL);
 OPTCURSES_GLOBAL(const char *optcurses_bitmap, = NULL);
 OPTCURSES_GLOBAL(const char *optcurses_bitmap_force, = NULL);
 OPTCURSES_GLOBAL(const char *optcurses_bitmap_braille, = NULL);
+OPTCURSES_GLOBAL(const char *optcurses_hbitmap, = NULL);
 OPTCURSES_GLOBAL(const char *optcurses_tall, = NULL);
 
 /*
@@ -170,9 +171,11 @@ static optcurses_row_t *optcurses_resize_backing(optcurses_row_t *old_backing, i
 
 #define OPTCURSES__DIRECT (optcurses_direct && *optcurses_direct)
 #define OPTCURSES__BITMAP (optcurses_bitmap && *optcurses_bitmap && ! OPTCURSES__DIRECT)
+#define OPTCURSES__HBITMAP (optcurses_hbitmap && *optcurses_hbitmap && ! OPTCURSES__DIRECT)
 #define OPTCURSES__BITMAP_FORCE (optcurses_bitmap_force && *optcurses_bitmap_force)
 #define OPTCURSES__BITMAP_BRAILLE (optcurses_bitmap_braille && *optcurses_bitmap_braille)
 #define OPTCURSES__TALL (optcurses_tall && *optcurses_tall && ! optcurses_after_endwin)
+#define OPTCURSES__COLS (COLS * (OPTCURSES__HBITMAP ? 2 : 1))
 #define OPTCURSES__LINES (LINES * (OPTCURSES__BITMAP ? 2 : 1))
 
 static int OPTCURSES_IS_ROW_DIRTY(int y)
@@ -199,6 +202,29 @@ static void OPTCURSES_CLEAN_ROW(int y)
 #endif
 #endif
 #endif
+
+#ifdef OPTCURSES_UNICODE
+
+#define OPTCURSES__ACS_THALF 0x2580U
+
+#define OPTCURSES__ACS_BHALF 0x2584U
+
+#define OPTCURSES__ACS_LHALF 0x258CU
+
+#define OPTCURSES__ACS_RHALF 0x2590U
+
+#else
+
+#define OPTCURSES__ACS_THALF 0xdfU
+
+#define OPTCURSES__ACS_BHALF 0xdcU
+
+#define OPTCURSES__ACS_LHALF 0xddU
+
+#define OPTCURSES__ACS_RHALF 0xdeU
+
+#endif
+
 
 static void optcurses_initenv(void)
 {
@@ -232,10 +258,18 @@ static void optcurses_initenv(void)
         if (! optcurses_bitmap_braille) optcurses_bitmap_braille = "";
         if (! strcmp(optcurses_bitmap_braille, "0")) optcurses_bitmap_braille = "";
     }
+    if (! optcurses_hbitmap)
+    {
+        optcurses_hbitmap = myman_getenv("OPTCURSES_HBITMAP");
+        if (! optcurses_hbitmap) optcurses_hbitmap = "";
+        if (! strcmp(optcurses_hbitmap, "0")) optcurses_hbitmap = "";
+    }
     if (! optcurses_tall)
     {
         optcurses_tall = myman_getenv("OPTCURSES_TALL");
+#ifdef MYMAN_RAWCURS_H_INCLUDED
         if (! optcurses_tall) optcurses_tall = myman_getenv("RAWCURSES_TALL");
+#endif
         if (! optcurses_tall) optcurses_tall = "";
         if (! strcmp(optcurses_tall, "0")) optcurses_tall = "";
     }
@@ -244,31 +278,37 @@ static void optcurses_initenv(void)
 static void optcurses_init(void)
 {
     if ((optcurses_x == -1) || (optcurses_y == -1)) getyx(stdscr, optcurses_y, optcurses_x);
-    if ((COLS != optcurses_w)
+    if ((OPTCURSES__COLS != optcurses_w)
         ||
         (OPTCURSES__LINES != optcurses_h))
     {
         optcurses_initenv();
         if (OPTCURSES__DIRECT
             ||
-            ((COLS * OPTCURSES__LINES) <= 1))
+            ((OPTCURSES__COLS * OPTCURSES__LINES) <= 1))
         {
             /* no backing */
             optcurses_backing = optcurses_delete_backing(optcurses_backing, optcurses_w, optcurses_h);
             optcurses_bitmap = 0;
+            optcurses_hbitmap = 0;
         }
         else if (! optcurses_backing)
         {
-            optcurses_backing = optcurses_create_backing(COLS, OPTCURSES__LINES);
+            optcurses_backing = optcurses_create_backing(OPTCURSES__COLS, OPTCURSES__LINES);
             if (! optcurses_backing)
             {
                 optcurses_bitmap = 0;
+                optcurses_hbitmap = 0;
             }
         }
         else
         {
-            optcurses_backing = optcurses_resize_backing(optcurses_backing, optcurses_w, optcurses_h, COLS, OPTCURSES__LINES);
-            if (! optcurses_backing) optcurses_bitmap = 0;
+            optcurses_backing = optcurses_resize_backing(optcurses_backing, optcurses_w, optcurses_h, OPTCURSES__COLS, OPTCURSES__LINES);
+            if (! optcurses_backing)
+            {
+                optcurses_bitmap = 0;
+                optcurses_hbitmap = 0;
+            }
             if (optcurses_backing)
             {
                 int y;
@@ -276,12 +316,12 @@ static void optcurses_init(void)
                 /* invalidate screen backing buffer */
                 for (y = 0; y < OPTCURSES__LINES; y ++)
                 {
-                    memset((void *) optcurses_backing[y].backing[1], 0, COLS * sizeof(*(optcurses_backing[y].backing[1])));
+                    memset((void *) optcurses_backing[y].backing[1], 0, OPTCURSES__COLS * sizeof(*(optcurses_backing[y].backing[1])));
                     OPTCURSES_DIRTY_ROW(y);
                 }
             }
         }
-        optcurses_w = COLS;
+        optcurses_w = OPTCURSES__COLS;
         optcurses_h = OPTCURSES__LINES;
     }
     if (optcurses_x < 0) optcurses_x = 0;
@@ -467,7 +507,7 @@ static int optcurses_clrtoeol(void)
         oa = optcurses_attr;
         optcurses_attrset(0);
         optcurses_getyx(&oy, &ox);
-        for (x = ox; x < COLS; x ++)
+        for (x = ox; x < OPTCURSES__COLS; x ++)
         {
             optcurses_move(oy, x);
             optcurses_addch(' ');
@@ -613,8 +653,10 @@ static int optcurses_mvprintw(int y, int x, const char *s)
 
 #ifdef INITSCR_WITH_HINTS
 
-static void optcurses_initscrWithHints(int h, int w, const char *title, const char *shortname)
+static int optcurses_initscrWithHints(int h, int w, const char *title, const char *shortname)
 {
+    int ret;
+
     optcurses_after_endwin = 0;
     optcurses_w = 0;
     optcurses_h = 0;
@@ -629,12 +671,51 @@ static void optcurses_initscrWithHints(int h, int w, const char *title, const ch
     {
         h *= 2;
     }
-    initscrWithHints((OPTCURSES__BITMAP ? ((h + 1) / 2) : h), w, title, shortname);
+    ret = !!initscrWithHints((OPTCURSES__BITMAP ? ((h + 1) / 2) : h), (OPTCURSES__HBITMAP ? ((w + 1) / 2) : w), title, shortname);
     optcurses_init();
     optcurses_refresh();
+    return ret;
 }
 
-#else
+#else /* ! defined(INITSCR_WITH_HINTS) */
+
+#ifdef INITSCR_WITH_HINTS_AND_ARGS
+
+static int optcurses_initscrWithHintsAndArgs(int h, int w, const char *title, const char *shortname, int argc, char **argv)
+{
+    int ret;
+
+    optcurses_after_endwin = 0;
+    optcurses_w = 0;
+    optcurses_h = 0;
+    optcurses_x = -1;
+    optcurses_y = -1;
+    optcurses_attr = 0;
+    optcurses_clearok_flag = 0;
+    optcurses_direct = NULL;
+    optcurses_backing = optcurses_delete_backing(optcurses_backing, optcurses_w, optcurses_h);
+    optcurses_initenv();
+    if (OPTCURSES__TALL)
+    {
+        h *= 2;
+    }
+    ret = !!initscrWithHintsAndArgs((OPTCURSES__BITMAP ? ((h + 1) / 2) : h), (OPTCURSES__HBITMAP ? ((w + 1) / 2) : w), title, shortname, argc, argv);
+    optcurses_init();
+    optcurses_refresh();
+    return ret;
+}
+
+static const char *optcurses_initscrHelp(FILE *stream, const char *progname)
+{
+    return initscrHelp(stream, progname);
+}
+
+static const char *optcurses_initscrUsage(FILE *stream, const char *progname)
+{
+    return initscrUsage(stream, progname);
+}
+
+#else /* ! defined(INITSCR_WITH_HINTS_AND_ARGS) */
 
 static WINDOW *optcurses_initscr(void)
 {
@@ -656,7 +737,9 @@ static WINDOW *optcurses_initscr(void)
     return stdscr;
 }
 
-#endif
+#endif /* ! defined(INITSCR_WITH_HINTS_AND_ARGS) */
+
+#endif /* ! defined(INITSCR_WITH_HINTS) */
 
 static int optcurses__combine_bitmap_attr_ok(attr_t fgattr, attr_t bgattr)
 {
@@ -1038,7 +1121,11 @@ static void optcurses__combine_bitmap(chtype *chout, attr_t *attrout, chtype ch,
                 fg = bg;
                 bg = tmp;
             }
-            if ((ch == ACS_BLOCK)
+            if ((ch == '#')
+#ifdef ACS_BLOCK
+                ||
+                (ch == ACS_BLOCK)
+#endif
 #ifdef OPTCURSES_UNICODE
                 ||
                 (ch == 0x2588u)
@@ -1048,8 +1135,7 @@ static void optcurses__combine_bitmap(chtype *chout, attr_t *attrout, chtype ch,
                 ||
                 (ch == 0xdb)
 #endif
-                ||
-                (ch == '#'))
+                )
             {
                 short tmp;
 
@@ -1119,7 +1205,11 @@ static void optcurses__combine_bitmap(chtype *chout, attr_t *attrout, chtype ch,
                 fg = bg;
                 bg = tmp;
             }
-            if ((ch1 == ACS_BLOCK)
+            if ((ch1 == '#')
+#ifdef ACS_BLOCK
+                ||
+                (ch1 == ACS_BLOCK)
+#endif
 #ifdef OPTCURSES_UNICODE
                 ||
                 (ch1 == 0x2588u)
@@ -1129,8 +1219,7 @@ static void optcurses__combine_bitmap(chtype *chout, attr_t *attrout, chtype ch,
                 ||
                 (ch1 == 0xdb)
 #endif
-                ||
-                (ch1 == '#'))
+                )
             {
                 short tmp;
 
@@ -1185,14 +1274,8 @@ static void optcurses__combine_bitmap(chtype *chout, attr_t *attrout, chtype ch,
         if ((attr1 & revmask)
             &&
             (! OPTCURSES__BITMAP_BRAILLE)
-#ifdef OPTCURSES_UNICODE
             &&
-            (wcwidth(0x2580u) == 1)
-#else
-            &&
-            (wcwidth(0xdf) == 1)
-#endif
-            )
+            (wcwidth(OPTCURSES__ACS_THALF) == 1))
         {
             attr1 &= ~revmask;
             optcurses__combine_bitmap(chout, attrout, ch, attr, ch1, attr1);
@@ -1299,9 +1382,9 @@ static void optcurses__combine_bitmap(chtype *chout, attr_t *attrout, chtype ch,
         else
         {
 #ifdef OPTCURSES_UNICODE
-            ch = OPTCURSES__BITMAP_BRAILLE ? 0x28e4u : 0x2584u;
+            ch = OPTCURSES__BITMAP_BRAILLE ? 0x28e4u : OPTCURSES__ACS_BHALF;
 #else
-            ch = 0xdc;
+            ch = OPTCURSES__ACS_BHALF;
 #endif
             if (wcwidth(ch) != 1)
             {
@@ -1331,9 +1414,9 @@ static void optcurses__combine_bitmap(chtype *chout, attr_t *attrout, chtype ch,
             )
         {
 #ifdef OPTCURSES_UNICODE
-            ch = OPTCURSES__BITMAP_BRAILLE ? 0x281bu : 0x2580u;
+            ch = OPTCURSES__BITMAP_BRAILLE ? 0x281bu : OPTCURSES__ACS_THALF;
 #else
-            ch = 0xdf;
+            ch = OPTCURSES__ACS_THALF;
 #endif
             if (wcwidth(ch) != 1)
             {
@@ -1345,9 +1428,9 @@ static void optcurses__combine_bitmap(chtype *chout, attr_t *attrout, chtype ch,
             if ((optcurses__cmp_bitmap_attr(attr, attr1) < 0) && optcurses__combine_bitmap_attr_ok(attr, attr1))
             {
 #ifdef OPTCURSES_UNICODE
-                ch = OPTCURSES__BITMAP_BRAILLE ? 0x28e4u : 0x2584u;
+                ch = OPTCURSES__BITMAP_BRAILLE ? 0x28e4u : OPTCURSES__ACS_BHALF;
 #else
-                ch = 0xdc;
+                ch = OPTCURSES__ACS_BHALF;
 #endif
                 if (wcwidth(ch) != 1)
                 {
@@ -1362,9 +1445,9 @@ static void optcurses__combine_bitmap(chtype *chout, attr_t *attrout, chtype ch,
             else if ((optcurses__cmp_bitmap_attr(attr, attr1) > 0) && optcurses__combine_bitmap_attr_ok(attr, attr1))
             {
 #ifdef OPTCURSES_UNICODE
-                ch = OPTCURSES__BITMAP_BRAILLE ? 0x281bu : 0x2580u;
+                ch = OPTCURSES__BITMAP_BRAILLE ? 0x281bu : OPTCURSES__ACS_THALF;
 #else
-                ch = 0xdf;
+                ch = OPTCURSES__ACS_THALF;
 #endif
                 if (wcwidth(ch) != 1)
                 {
@@ -1408,6 +1491,42 @@ static void optcurses__combine_bitmap(chtype *chout, attr_t *attrout, chtype ch,
     *attrout = attr;
 }
 
+static void optcurses__combine_hbitmap(chtype *chout, attr_t *attrout, chtype ch, attr_t attr, chtype ch1, attr_t attr1)
+{
+    chtype chout2;
+
+    ch = ((ch == OPTCURSES__ACS_THALF) || (ch == '\"'))
+        ? OPTCURSES__ACS_LHALF
+        : ((ch == OPTCURSES__ACS_BHALF) || (ch == ','))
+        ? OPTCURSES__ACS_RHALF
+        : (ch == OPTCURSES__ACS_LHALF)
+        ? OPTCURSES__ACS_THALF
+        : (ch == OPTCURSES__ACS_RHALF)
+        ? OPTCURSES__ACS_BHALF
+        : ch;
+    ch1 = ((ch1 == OPTCURSES__ACS_THALF) || (ch1 == '\"'))
+        ? OPTCURSES__ACS_LHALF
+        : ((ch1 == OPTCURSES__ACS_BHALF) || (ch1 == ','))
+        ? OPTCURSES__ACS_RHALF
+        : (ch1 == OPTCURSES__ACS_LHALF)
+        ? OPTCURSES__ACS_THALF
+        : (ch1 == OPTCURSES__ACS_RHALF)
+        ? OPTCURSES__ACS_BHALF
+        : ch1;
+    chout2 = *chout;
+    optcurses__combine_bitmap(&chout2, attrout, ch, attr, ch1, attr1);
+    chout2 = ((chout2 == OPTCURSES__ACS_THALF) || (chout2 == '\"'))
+        ? OPTCURSES__ACS_LHALF
+        : ((chout2 == OPTCURSES__ACS_BHALF) || (chout2 == ','))
+        ? OPTCURSES__ACS_RHALF
+        : (chout2 == OPTCURSES__ACS_LHALF)
+        ? OPTCURSES__ACS_THALF
+        : (chout2 == OPTCURSES__ACS_RHALF)
+        ? OPTCURSES__ACS_BHALF
+        : chout2;
+    *chout = chout2;
+}
+
 static int optcurses_refresh(void)
 {
     if (! optcurses_after_endwin)
@@ -1447,7 +1566,7 @@ static int optcurses_refresh(void)
                 y = (optcurses_interlace && *optcurses_interlace) ? (2 * (y_permute % ((optcurses_h + 1) / 2)) + (y_permute / ((optcurses_h + 1) / 2))) : y_permute;
                 if ((y < OPTCURSES__LINES) && OPTCURSES_IS_ROW_DIRTY(y))
                 {
-                    for (x = 0; (x < optcurses_w) && (x < COLS); x ++)
+                    for (x = 0; (x < optcurses_w) && (x < OPTCURSES__COLS); x += (OPTCURSES__HBITMAP ? 2 : 1))
                     {
                         attr_t attr, attr2;
                         chtype ch, ch2;
@@ -1475,6 +1594,44 @@ static int optcurses_refresh(void)
                             optcurses__combine_bitmap(&ch, &attr, ch, attr, ch1, attr1);
                             optcurses__combine_bitmap(&ch2, &attr2, ch2, attr2, ch3, attr3);
                         }
+                        if (OPTCURSES__HBITMAP)
+                        {
+                            attr_t attr1, attr3;
+                            chtype ch1, ch3;
+
+                            attr1 = attr;
+                            ch1 = ERR;
+                            attr3 = attr2;
+                            ch3 = ERR;
+                            if ((x + 1) < OPTCURSES__COLS)
+                            {
+                                attr1 = optcurses_backing[y].backing[0][x + 1].attr;
+                                ch1 = optcurses_backing[y].backing[0][x + 1].ch;
+                                attr3 = optcurses_backing[y].backing[1][x + 1].attr;
+                                ch3 = optcurses_backing[y].backing[1][x + 1].ch;
+                                if (OPTCURSES__BITMAP)
+                                {
+                                    attr_t attr4, attr5;
+                                    chtype ch4, ch5;
+
+                                    attr4 = attr1;
+                                    ch4 = ERR;
+                                    attr5 = attr3;
+                                    ch5 = ERR;
+                                    if ((y + 1) < OPTCURSES__LINES)
+                                    {
+                                        attr4 = optcurses_backing[y + 1].backing[0][x + 1].attr;
+                                        ch4 = optcurses_backing[y + 1].backing[0][x + 1].ch;
+                                        attr5 = optcurses_backing[y + 1].backing[1][x + 1].attr;
+                                        ch5 = optcurses_backing[y + 1].backing[1][x + 1].ch;
+                                    }
+                                    optcurses__combine_bitmap(&ch1, &attr1, ch1, attr1, ch4, attr4);
+                                    optcurses__combine_bitmap(&ch3, &attr3, ch3, attr3, ch5, attr5);
+                                }
+                            }
+                            optcurses__combine_hbitmap(&ch, &attr, ch, attr, ch1, attr1);
+                            optcurses__combine_hbitmap(&ch2, &attr2, ch2, attr2, ch3, attr3);
+                        }
                         if (! ch2) ch2 = ' ';
                         if ((ch
                              !=
@@ -1493,6 +1650,18 @@ static int optcurses_refresh(void)
                                        (void *) &(optcurses_backing[y + 1].backing[0][x]),
                                        sizeof(optcurses_backing[y + 1].backing[1][x]));
                             }
+                            if (OPTCURSES__HBITMAP)
+                            {
+                                memcpy((void *) &(optcurses_backing[y].backing[1][x + 1]),
+                                       (void *) &(optcurses_backing[y].backing[0][x + 1]),
+                                       sizeof(optcurses_backing[y].backing[1][x + 1]));
+                                if (OPTCURSES__BITMAP)
+                                {
+                                    memcpy((void *) &(optcurses_backing[y + 1].backing[1][x + 1]),
+                                           (void *) &(optcurses_backing[y + 1].backing[0][x + 1]),
+                                           sizeof(optcurses_backing[y + 1].backing[1][x + 1]));
+                                }
+                            }
                             if (ch
                                 &&
                                 (ch != (chtype) ERR))
@@ -1501,7 +1670,10 @@ static int optcurses_refresh(void)
                                 int wcw;
 
                                 changed = 1;
-                                if ((ox != x) || (oy != y)) move(y / (OPTCURSES__BITMAP ? 2 : 1), x);
+                                if ((ox != x) || (oy != y))
+                                {
+                                    move(y / (OPTCURSES__BITMAP ? 2 : 1), x / (OPTCURSES__HBITMAP ? 2 : 1));
+                                }
                                 if (a != attr)
                                 {
                                     if (! attr) standend();
@@ -1511,7 +1683,7 @@ static int optcurses_refresh(void)
                                 }
                                 wcw = optcurses_wcwidth(ch);
                                 if (wcw < 1) wcw = 1;
-                                if ((x > 0) && ((x + wcw) == optcurses_w) && ((y + (OPTCURSES__BITMAP ? 1 : 0)) >= (OPTCURSES__LINES - 1)))
+                                if ((x > 0) && ((x + wcw + (OPTCURSES__HBITMAP ? 1 : 0)) >= optcurses_w) && ((y + (OPTCURSES__BITMAP ? 1 : 0)) >= (OPTCURSES__LINES - 1)))
                                 {
                                     int i;
                                     chtype chprev;
@@ -1541,7 +1713,35 @@ static int optcurses_refresh(void)
                                             }
                                             optcurses__combine_bitmap(&chprev, &attrprev, chprev, attrprev, chprev1, attrprev1);
                                         }
-                                        move(y / (OPTCURSES__BITMAP ? 2 : 1), x - i);
+                                        if (OPTCURSES__HBITMAP)
+                                        {
+                                            attr_t attrprev1;
+                                            chtype chprev1;
+
+                                            attrprev1 = attrprev;
+                                            chprev1 = ((chtype) ERR);
+                                            if ((x + 1) < OPTCURSES__COLS)
+                                            {
+                                                attrprev1 = optcurses_backing[y].backing[1][x + 1].attr;
+                                                chprev1 = optcurses_backing[y].backing[1][x + 1].ch;
+                                                if (OPTCURSES__BITMAP)
+                                                {
+                                                    attr_t attrprev2;
+                                                    chtype chprev2;
+
+                                                    attrprev2 = attrprev1;
+                                                    chprev2 = ((chtype) ERR);
+                                                    if ((y + 1) < OPTCURSES__LINES)
+                                                    {
+                                                        attrprev2 = optcurses_backing[y + 1].backing[1][x + 1].attr;
+                                                        chprev2 = optcurses_backing[y + 1].backing[1][x + 1].ch;
+                                                    }
+                                                    optcurses__combine_bitmap(&chprev1, &attrprev1, chprev1, attrprev1, chprev2, attrprev2);
+                                                }
+                                            }
+                                            optcurses__combine_hbitmap(&chprev, &attrprev, chprev, attrprev, chprev1, attrprev1);
+                                        }
+                                        move(y / (OPTCURSES__BITMAP ? 2 : 1), (x - i) / (OPTCURSES__HBITMAP ? 2 : 1));
                                         delch();
                                         delch();
                                         if (insch(ch) != ERR)
@@ -1565,25 +1765,25 @@ static int optcurses_refresh(void)
                                         }
                                     }
                                 }
-                                move(y / (OPTCURSES__BITMAP ? 2 : 1), x);
+                                move(y / (OPTCURSES__BITMAP ? 2 : 1), x / (OPTCURSES__HBITMAP ? 2 : 1));
                                 addch(ch);
                                 getyx(stdscr, ny, nx);
-                                if ((nx % COLS) != ((x + wcw) % COLS))
+                                if ((nx % COLS) != (((x / (OPTCURSES__HBITMAP ? 2 : 1)) + wcw) % COLS))
                                 {
                                     int i;
 
                                     for (i = 0; i < wcw; i ++)
                                     {
-                                        move(y / (OPTCURSES__BITMAP ? 2 : 1), x + i);
+                                        move(y / (OPTCURSES__BITMAP ? 2 : 1), (x / (OPTCURSES__HBITMAP ? 2 : 1)) + i);
                                         addch(' ');
                                     }
-                                    move(y / (OPTCURSES__BITMAP ? 2 : 1), x);
+                                    move(y / (OPTCURSES__BITMAP ? 2 : 1), x / (OPTCURSES__HBITMAP ? 2 : 1));
                                     addch(ch);
                                     getyx(stdscr, ny, nx);
                                 }
                                 ox = x + wcw;
                                 oy = y;
-                                if ((nx % COLS) != (ox % COLS))
+                                if ((nx % COLS) != ((ox / (OPTCURSES__HBITMAP ? 2 : 1)) % COLS))
                                 {
                                     ox = -1;
                                 }
@@ -1631,6 +1831,15 @@ static int optcurses_init_color(short i, short r, short g, short b)
 
 #undef initscrWithHints
 #define initscrWithHints optcurses_initscrWithHints
+
+#undef initscrWithHintsAndArgs
+#define initscrWithHintsAndArgs optcurses_initscrWithHintsAndArgs
+
+#undef initscrUsage
+#define initscrUsage optcurses_initscrUsage
+
+#undef initscrHelp
+#define initscrHelp optcurses_initscrHelp
 
 #undef initscr
 #define initscr optcurses_initscr

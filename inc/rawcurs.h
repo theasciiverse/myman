@@ -161,14 +161,44 @@
 #define RAWCURSES__HASFLAG(s1,s2) (RAWCURSES__CONTAINS((s1), ("-"s2"-")) || RAWCURSES__ENDSWITH((s1), ("-"s2)))
 #define RAWCURSES__HASBASE(s1,s2) (RAWCURSES__EQ((s1), (s2)) || RAWCURSES__STARTSWITH((s1), (s2"-")))
 
+#ifndef HAVE_FTIME
+#define HAVE_FTIME HAVE_SYS_TIMEB_H
+#endif
+
+#ifdef __RSXNT__
+#ifndef USE_GETSYSTEMTIMEASFILETIME
+#define USE_GETSYSTEMTIMEASFILETIME 0
+#endif
+#ifndef USE_WINCONSOLE_REGISTRY
+#define USE_WINCONSOLE_REGISTRY 0
+#endif
+#endif
+
 #if defined(WIN32)
 #ifndef USE_WINCONSOLE
 #define USE_WINCONSOLE 1
+#endif
+#ifndef USE_GETSYSTEMTIMEASFILETIME
+#define USE_GETSYSTEMTIMEASFILETIME 1
 #endif
 #endif
 
 #ifndef USE_WINCONSOLE
 #define USE_WINCONSOLE 0
+#endif
+
+#ifndef USE_GETSYSTEMTIMEASFILETIME
+#define USE_GETSYSTEMTIMEASFILETIME 0
+#endif
+
+#if USE_WINCONSOLE
+#ifndef USE_WINCONSOLE_REGISTRY
+#define USE_WINCONSOLE_REGISTRY 1
+#endif
+#endif
+
+#ifndef USE_WINCONSOLE_REGISTRY
+#define USE_WINCONSOLE_REGISTRY 0
 #endif
 
 #if defined(__WATCOMC__) && defined(__SW_BW)
@@ -185,23 +215,157 @@
 #ifndef USE_CONIO_INPUT
 #define USE_CONIO_INPUT 1
 #endif
+#ifndef USE__GETKEYBOARD
+#define USE__GETKEYBOARD 1
+#endif
 #include <wdefwin.h>
 #endif
 
+#ifndef USE__GETKEYBOARD
+#define USE__GETKEYBOARD 0
+#endif
+
+#ifdef __EMX__
+
+#ifndef USE_CONIO_INPUT
+#define USE_CONIO_INPUT 1
+#endif
+
+#if USE_CONIO_INPUT
+#ifndef USE__READ_KBD
+#define USE__READ_KBD 1
+#endif
+#endif
+
+#endif /* defined(__EMX__) */
+
+#ifndef USE__READ_KBD
+#define USE__READ_KBD 0
+#endif
+
 #ifdef macintosh
-#ifdef TARGET_API_MAC_CARBON
+
+#if defined(TARGET_API_MAC_CARBON) && TARGET_API_MAC_CARBON
+
+/* Case 1: flat Carbon headers */
 #include <Carbon.h>
+
+#else /* ! (defined(TARGET_API_MAC_CARBON) && TARGET_API_MAC_CARBON) */
+
+/* Case 2: Toolbox */
+#ifndef ANCIENT_HEADERS
+#include <ConditionalMacros.h>
+#endif
+
+/* we work around some overly aggressive deprecation in newer
+ * <ConditionalMacros.h> so that we can also build with the older
+ * Universal Interfaces 2.1.5 */
+
+#ifdef __CARBON__
+#ifdef TARGET_CPU_PPC
+#undef GENERATINGPOWERPC
+#define GENERATINGPOWERPC TARGET_CPU_PPC
+#endif /* defined(TARGET_CPU_PPC) */
+#ifdef TARGET_CPU_68K
+#undef GENERATING68K
+#define GENERATING68K TARGET_CPU_68K
+#endif /* defined(TARGET_CPU_68K) */
+#ifdef TARGET_RT_MAC_68881
+#undef GENERATING68881
+#define GENERATING68881 TARGET_RT_MAC_68881
+#endif /* defined(TARGET_RT_MAC_68881) */
+#ifdef TARGET_RT_MAC_CFM
+#undef GENERATINGCFM
+#define GENERATINGCFM TARGET_RT_MAC_CFM
+#endif /* defined(TARGET_RT_MAC_CFM) */
+#ifdef TARGET_RT_MAC_CFM
+#undef CFMSYSTEMCALLS
+#define CFMSYSTEMCALLS TARGET_RT_MAC_CFM
+#endif /* defined(TARGET_RT_MAC_CFM) */
+#endif /* defined(__CARBON__) */
+
+/* when USE_OLD_TOOLBOX is non-zero we directly access Toolbox
+ * internals which were deprecated or removed in Carbon, and avoid
+ * routines which are available only in Carbon and MacOS PowerPC
+ * runtime environments */
+#ifndef USE_OLD_TOOLBOX
+#if defined(__CARBON__) || (defined(GENERATINGPOWERPC) && GENERATINGPOWERPC)
+#define USE_OLD_TOOLBOX 0
 #else
+#define USE_OLD_TOOLBOX 1
+#endif
+#endif /* ! defined(USE_OLD_TOOLBOX) */
+
 #include <Errors.h>
 #include <Files.h>
-#include <MacTypes.h>
-#include <Timer.h>
+#ifndef ANCIENT_HEADERS
+#include <Gestalt.h>
+#else
+#include <GestaltEqu.h>
 #endif
+#include <Timer.h>
+
+#if defined(UNIVERSAL_INTERFACES_VERSION) && (UNIVERSAL_INTERFACES_VERSION >= 0x0300)
+
+#include <MacTypes.h>
+
+#else /* ! (defined(UNIVERSAL_INTERFACES_VERSION) && (UNIVERSAL_INTERFACES_VERSION >= 0x0300)) */
+
+#include <Types.h>
+
+#ifndef TRUE
+#define TRUE true
+#endif
+
+#ifndef FALSE
+#define FALSE false
+#endif
+
+#ifndef kLeftArrowCharCode
+#define kLeftArrowCharCode 0x1c
+#endif
+
+#ifndef kRightArrowCharCode
+#define kRightArrowCharCode 0x1d
+#endif
+
+#ifndef kUpArrowCharCode
+#define kUpArrowCharCode 0x1e
+#endif
+
+#ifndef kDownArrowCharCode
+#define kDownArrowCharCode 0x1f
+#endif
+
+#ifndef kDeleteCharCode
+#define kDeleteCharCode 0x7f
+#endif
+
+#endif
+
+#endif /* ! (defined(TARGET_API_MAC_CARBON) && TARGET_API_MAC_CARBON) */
+
 #include <ioctl.h>
+
+#endif /* defined(macintosh) */
+
+#ifndef USE_OLD_TOOLBOX
+#define USE_OLD_TOOLBOX 0
 #endif
 
 #if defined(WIN16)
+#ifdef __WATCOMC__
+#ifdef __WINDOWS_386__
+#pragma library("win386")
+#else
+#pragma library("toolhelp")
+#endif
+#include <win16.h>
+#include <float.h>
+#endif
 #include <windows.h>
+#include <winsock.h>
+#include <toolhelp.h>
 #endif
 
 #if defined(WIN32)
@@ -212,6 +376,9 @@
 #endif
 #if HAVE_SHLWAPI_H
 #include <shlwapi.h>
+#endif
+#if HAVE_SYS_TYPES_H
+#include <sys/types.h>
 #endif
 #include <sys/stat.h>
 #if HAVE_TLHELP32_H
@@ -250,16 +417,6 @@
 
 #endif /* defined(__BORLANDC__) */
 
-#ifdef __WINE__
-#ifndef HAVE_WCWIDTH
-#define HAVE_WCWIDTH 1
-#endif
-#endif /* defined(__WINE__) */
-
-#ifndef HAVE_WCWIDTH
-#define HAVE_WCWIDTH 0
-#endif
-
 #else /* ! defined(WIN32) */
 
 #if HAVE_SYS_H
@@ -275,6 +432,12 @@
 
 #if HAVE_SYS_SELECT_H
 #include <sys/select.h>
+#else
+#ifdef __EMX__
+#if HAVE_IO_H
+#include <io.h>
+#endif
+#endif
 #endif
 
 #ifndef FD_SETSIZE
@@ -282,6 +445,10 @@
 #include <sys/socket.h>
 #endif
 #endif /* ! defined(FD_SETSIZE) */
+
+#ifdef __PUREC__
+#include <ext.h>
+#endif
 
 #if defined(__MSDOS__) || defined(CPM)
 
@@ -411,15 +578,6 @@
 
 #endif /* defined(__AROS__) */
 
-#ifndef HAVE_WCWIDTH
-#if defined(__MSDOS__) || defined(__atarist__) || defined(__AROS__)
-#define HAVE_WCWIDTH 0
-#else
-#define HAVE_WCWIDTH 1
-#endif
-
-#endif /* defined(__MSDOS__) || defined(__atarist__) || defined(__AROS__) */
-
 #ifndef USE_TERMIOS
 #ifdef VMS
 #define USE_TERMIOS 0
@@ -427,7 +585,7 @@
 #endif
 
 #ifndef USE_TERMIOS
-#if defined(macintosh) || defined(WIN16) || defined(__AROS__)
+#if defined(macintosh) || defined(WIN16) || defined(__AROS__) || defined(__PUREC__) || defined(__VBCC__)
 #define USE_TERMIOS 0
 #else
 #define USE_TERMIOS 1
@@ -436,21 +594,19 @@
 
 #endif /* ! defined(WIN32) */
 
-#ifndef HAVE_WCWIDTH
-#define HAVE_WCWIDTH 1
-#endif
-
 /* FIXME: this is a horrible hack! */
+#ifndef wcwidth
 #if ! HAVE_WCWIDTH
 #ifdef UNICODE
 #define wcwidth(wc) (((((long) (wc)) >= 0x0020L) && (((long) (wc)) < 0x3000L)) ? 1 : ((((long) (wc)) >= 0x3000L) && (((long) (wc)) <= 0x10fffdL)) ? 2 : -1)
-#else
+#else /* ! defined(UNICODE) */
 #define wcwidth(wc) (((((long) (wc)) >= 0x20L) && (((long) (wc)) < 0xffL)) ? 1 : -1)
-#endif
-#endif
+#endif /* ! defined(UNICODE) */
+#endif /* ! HAVE_WCWIDTH */
+#endif /* ! defined(wcwidth) */
 
 #ifndef HAVE_STRUCT_TIMEVAL
-#if defined(macintosh) || defined(WIN16)
+#if defined(macintosh) || (defined(WIN16) && ! defined(__WATCOMC__)) || defined(__VBCC__)
 #define HAVE_STRUCT_TIMEVAL 0
 #else
 #define HAVE_STRUCT_TIMEVAL 1
@@ -496,11 +652,11 @@ struct timeval
 #endif
 
 #ifndef HAVE_GETTIMEOFDAY
-#if defined(macintosh) || defined(WIN16)
+#if defined(macintosh) || defined(WIN16) || defined(__VBCC__)
 #define HAVE_GETTIMEOFDAY 0
-#else /* ! (defined(macintosh) || defined(WIN16)) */
+#else /* ! (defined(macintosh) || defined(WIN16) || defined(__VBCC__)) */
 #define HAVE_GETTIMEOFDAY 1
-#endif /* ! (defined(macintosh) || defined(WIN16)) */
+#endif /* ! (defined(macintosh) || defined(WIN16) || defined(__VBCC__)) */
 #endif /* ! defined(HAVE_GETTIMEOFDAY) */
 
 #ifndef HAVE_TIME
@@ -509,6 +665,10 @@ struct timeval
 
 #if ! HAVE_GETTIMEOFDAY
 
+#if HAVE_FTIME && HAVE_SYS_TIMEB_H
+#include <sys/timeb.h>
+#endif
+
 #ifdef gettimeofday
 #undef gettimeofday
 #endif
@@ -516,9 +676,25 @@ struct timeval
 
 static int rawcurses_gettimeofday(struct timeval *tv, void *tz)
 {
-
+    if (tz != NULL)
+    {
+        /* TODO: implement timezones, maybe? MyMan does not care, though. */
+        errno = EINVAL;
+        return -1;
+    }
     if (tv)
     {
+
+#if HAVE_FTIME
+        struct timeb tb;
+
+        memset((void *) &tb, 0, sizeof(tb));
+        ftime(&tb);
+        tv->tv_sec = (long) tb.time;
+        tv->tv_usec = 1000L * (long) tb.millitm;
+
+#else /* ! HAVE_FTIME */
+
 #if defined(WIN32) || defined(WIN16)
 
 #ifdef WIN32
@@ -528,18 +704,42 @@ static int rawcurses_gettimeofday(struct timeval *tv, void *tz)
             __int64 ns100;
             FILETIME ft;
         } now;
+
+#if USE_GETSYSTEMTIMEASFILETIME
         GetSystemTimeAsFileTime(&now.ft);
+#else /* ! USE_GETSYSTEMTIMEASFILETIME */
+        {
+            SYSTEMTIME st;
+
+            GetSystemTime(&st);
+            SystemTimeToFileTime(&st, &now.ft);
+        }
+#endif /* ! USE_GETSYSTEMTIMEASFILETIME */
         tv->tv_usec = (long) ((now.ns100 / LIT64(10)) % LIT64(1000000));
         tv->tv_sec = (long) ((now.ns100 - LIT64(116444736000000000)) / LIT64(10000000));
 
 #else /* ! defined(WIN32) */
 
-        /* horrible hack for win16 */
+#if ! defined(__WATCOMC__)
+        /* hack for win16 (crashes in Win386, doesn't require TOOLHELP.DLL) */
         DWORD tickCount;
 
         tickCount = GetTickCount();
         tv->tv_sec = tickCount / 1000;
         tv->tv_usec = (tickCount % 1000) * 1000;
+#else
+        /* hack for win16 (works in Win386, requires TOOLHELP.DLL) */
+        TIMERINFO timer_info;
+
+        memset((void *) &timer_info, 0, sizeof(timer_info));
+        timer_info.dwSize = sizeof(timer_info);
+        TimerCount(&timer_info);
+        if (timer_info.dwSize >= sizeof(timer_info))
+        {
+            tv->tv_sec = timer_info.dwmsSinceStart / 1000;
+            tv->tv_usec = (timer_info.dwmsSinceStart % 1000) * 1000;
+        }
+#endif
 
 #endif /* ! defined(WIN32) */
 
@@ -599,6 +799,11 @@ static int rawcurses_gettimeofday(struct timeval *tv, void *tz)
         {
             return 1;
         }
+#ifndef CLOCKS_PER_SEC
+#ifdef CLK_TCK
+#define CLOCKS_PER_SEC CLK_TCK
+#endif
+#endif
         secs = (1.0L * ticks) / CLOCKS_PER_SEC;
         elapsed = (time_t) -1;
 #if HAVE_TIME
@@ -623,6 +828,8 @@ static int rawcurses_gettimeofday(struct timeval *tv, void *tz)
 
 #endif /* ! (defined(WIN32) || defined(WIN16)) */
 
+#endif /* ! HAVE_FTIME */
+
     }
     return 0;
 }
@@ -630,7 +837,7 @@ static int rawcurses_gettimeofday(struct timeval *tv, void *tz)
 #endif /* ! HAVE_GETTIMEOFDAY */
 
 #ifndef HAVE_ACCESS
-#if defined(macintosh) && ! defined(access)
+#if (defined(macintosh) && ! defined(access)) || defined(__VBCC__)
 #define HAVE_ACCESS 0
 #else
 #define HAVE_ACCESS 1
@@ -660,7 +867,7 @@ static int rawcurses_access(const char *fn)
 #endif /* ! HAVE_ACCESS */
 
 #ifndef HAVE_ISATTY
-#ifdef macintosh
+#if defined(macintosh) || defined(__VBCC__)
 #define HAVE_ISATTY 0
 #else
 #define HAVE_ISATTY 1
@@ -679,27 +886,48 @@ int rawcurses_isatty(int fd)
 
 #ifdef macintosh
 
-    char namebuf[512];
+    long systemVersion = 0;
 
-    memset((void *) namebuf, 0, sizeof(namebuf));
-#ifdef FIOFNAME
-    if (ioctl(fd, FIOFNAME, (long *) (void *) namebuf) == -1)
+    if (fd == -1)
     {
         return 0;
     }
-#endif
-    if (RAWCURSES__EQ(namebuf, "dev:console")
-        ||
-        RAWCURSES__STARTSWITH(namebuf, "dev:tty")
-        ||
-        RAWCURSES__STARTSWITH(namebuf, "dev:pty"))
+    if ((noErr == Gestalt(gestaltSystemVersion, &systemVersion))
+        &&
+        ((systemVersion & 0xffff) >= 0x0700))
     {
-        return 1;
+        char namebuf[512];
+
+#ifdef FIOINTERACTIVE
+        if (ioctl(fd, FIOINTERACTIVE, NULL) == 0)
+        {
+            return 1;
+        }
+#endif
+        memset((void *) namebuf, 0, sizeof(namebuf));
+#ifdef FIOFNAME
+        if (ioctl(fd, FIOFNAME, (long *) (void *) namebuf) == -1)
+        {
+            return 0;
+        }
+#endif
+        if (RAWCURSES__EQ(namebuf, "dev:console")
+            ||
+            RAWCURSES__STARTSWITH(namebuf, "dev:tty")
+            ||
+            RAWCURSES__STARTSWITH(namebuf, "dev:pty"))
+        {
+            return 1;
+        }
     }
 
 #else /* ! defined(macintosh) */
 
+#ifdef __VBCC__
+    return __isatty(fd);
+#else
 #error no isatty(3) implementation for your platform, sorry
+#endif
 
 #endif /* ! defined(macintosh) */
 
@@ -709,7 +937,7 @@ int rawcurses_isatty(int fd)
 #endif
 
 #ifndef HAVE_USLEEP
-#if defined(macintosh) || defined(WIN16)
+#if defined(macintosh) || defined(WIN16) || defined(__EMX__) || defined(__VBCC__)
 #define HAVE_USLEEP 0
 #else
 #define HAVE_USLEEP 1
@@ -717,10 +945,18 @@ int rawcurses_isatty(int fd)
 #endif
 
 #ifndef HAVE_SLEEP
-#ifdef LSI_C
+#if defined(LSI_C) || defined(__VBCC__)
 #define HAVE_SLEEP 0
 #else
 #define HAVE_SLEEP 1
+#endif
+#endif
+
+#ifndef HAVE_DELAY
+#ifdef __TURBOC__
+#define HAVE_DELAY 1
+#else
+#define HAVE_DELAY 0
 #endif
 #endif
 
@@ -747,6 +983,24 @@ rawcurses_usleep(unsigned long usecs)
 #endif /* ! HAVE_USLEEP */
 
 #if ! HAVE_USLEEP
+#if defined(__EMX__)
+
+#undef usleep
+#define usleep rawcurses_usleep
+
+static int rawcurses_usleep(unsigned long usecs)
+{
+    _sleep2((usecs + 500) / 1000);
+    return 0;
+}
+
+#undef HAVE_USLEEP
+#define HAVE_USLEEP 1
+
+#endif /* defined(__EMX__) */
+#endif /* ! HAVE_USLEEP */
+
+#if ! HAVE_USLEEP
 
 #if defined(WIN32)
 
@@ -756,7 +1010,7 @@ rawcurses_usleep(unsigned long usecs)
 
 /* originally from http://wyw.dcweb.cn/sleep.h.txt by Wu Yongwei */
 
-#define usleep(t) Sleep((t) / 1000)
+#define usleep(t) Sleep(((t) + 500) / 1000)
 
 #else /* ! defined(WIN32) */
 
@@ -781,7 +1035,7 @@ rawcurses_usleep(my_ulong usecs)
     while (1)
     {
         SpinCursor(32);
-        if (WaitNextEvent(highLevelEventMask, &er, usecs / 60000, NULL))
+        if (WaitNextEvent(highLevelEventMask, &er, (usecs + 30000) / 60000, NULL))
         {
             if (er.what == kHighLevelEvent)
             {
@@ -810,11 +1064,28 @@ rawcurses_usleep(my_ulong usecs)
         _dwYield();
 #endif
 #if HAVE_SLEEP
+        if (usecs > 1000000L)
+        {
+            sleep(usecs / 1000000L);
+            usecs %= 1000000L;
+        }
+#endif
+#if HAVE_DELAY
+        if (usecs >= 1000L)
+        {
+            delay(usecs / 1000L);
+            usecs %= 1000L;
+        }
+#endif
+        if (usecs > 0)
+        {
+#if HAVE_SLEEP
 #if ! (defined(__DMC__) || defined(__TURBOC__))
         ret =
 #endif
             sleep(0);
 #endif
+        }
         if (ret) break;
         if (myman_gettimeofday(&tv1, NULL)) break;
         if (tv1.tv_sec < tv0.tv_sec) break;
@@ -848,14 +1119,18 @@ rawcurses_usleep(my_ulong usecs)
 #endif /* ! HAVE_USLEEP */
 
 #ifndef HAVE_TTYNAME
+#ifdef __VBCC__
+#define HAVE_TTYNAME 0
+#else
 #define HAVE_TTYNAME 1
+#endif
 #endif
 
 #if ! HAVE_TTYNAME
 #ifdef ttyname
 #undef ttyname
 #endif
-#define ttyname(fd) (isatty(fileno(stdin)) ? "con" : "stdin")
+#define ttyname(fd) (isatty(fd) ? "con" : "stdin")
 #endif
 
 #if USE_TERMIO
@@ -960,48 +1235,163 @@ typedef struct
 
 #if USE_TOSCONSOLE
 
+/* Workarounds for TOS */
+
+#ifdef __PUREC__
+#ifndef HAVE_AES_H
+#define HAVE_AES_H 1
+#endif
+#endif
+
+#if defined(__VBCC__) || defined(__PUREC__)
+#ifndef HAVE_GEM_H
+#define HAVE_GEM_H 0
+#endif
+#ifndef HAVE_TOS_H
+#define HAVE_TOS_H 1
+#endif
+#ifndef HAVE_OSBIND_H
+#define HAVE_OSBIND_H 0
+#endif
+#endif
+
 #if defined(__GNUC__) && (__GNUC__ <= 2)
+#ifndef HAVE_AESBIND_H
+#define HAVE_AESBIND_H 1
+#endif
+#ifndef HAVE_GEM_H
+#define HAVE_GEM_H 0
+#endif
+#ifndef HAVE_KEYCODES_H
+#define HAVE_KEYCODES_H 1
+#endif
+#endif
 
-/* Workarounds for TOS; old interfaces */
+#ifndef HAVE_AES_H
+#define HAVE_AES_H 0
+#endif
+
+#ifndef HAVE_AESBIND_H
+#define HAVE_AESBIND_H 0
+#endif
+
+#ifndef HAVE_KEYCODES_H
+#define HAVE_KEYCODES_H 0
+#endif
+
+#ifndef HAVE_GEM_H
+#define HAVE_GEM_H 1
+#endif
+
+#ifndef HAVE_TOS_H
+#define HAVE_TOS_H 0
+#endif
+
+#ifndef HAVE_OSBIND_H
+#define HAVE_OSBIND_H 1
+#endif
+
+#if HAVE_AES_H
+#include <aes.h>
+#endif
+
+#if HAVE_AESBIND_H
 #include <aesbind.h>
+#endif
+
+#if HAVE_KEYCODES_H
 #include <keycodes.h>
-#include <osbind.h>
+#endif
 
-#else /* ! defined(__GNUC__) && (__GNUC__ <= 2) */
-
-/* Workarounds for TOS; new interfaces */
+#if HAVE_GEM_H
 #include <gem.h>
+#endif
+
+#if HAVE_TOS_H
+#include <tos.h>
+#endif
+
+#if HAVE_OSBIND_H
 #include <osbind.h>
+#endif
 
 /* once upon a time these were in <keycodes.h>; these days they seem
  * to be AWOL */
+#ifndef CURS_DN
 #define CURS_DN  0x50
+#endif
+#ifndef CURS_LF
 #define CURS_LF  0x4b
+#endif
+#ifndef CURS_RT
 #define CURS_RT  0x4d
+#endif
+#ifndef CURS_UP
 #define CURS_UP  0x48
+#endif
+#ifndef K_ESC
 #define K_ESC    0x01
+#endif
+#ifndef K_DEL
 #define K_DEL    0x53
+#endif
+#ifndef K_RET
 #define K_RET    0x1c
+#endif
+#ifndef KP_0
 #define KP_0     0x70
+#endif
+#ifndef KP_1
 #define KP_1     0x6d
+#endif
+#ifndef KP_2
 #define KP_2     0x6e
+#endif
+#ifndef KP_3
 #define KP_3     0x6f
+#endif
+#ifndef KP_4
 #define KP_4     0x6a
+#endif
+#ifndef KP_5
 #define KP_5     0x6b
+#endif
+#ifndef KP_6
 #define KP_6     0x6c
+#endif
+#ifndef KP_7
 #define KP_7     0x67
+#endif
+#ifndef KP_8
 #define KP_8     0x68
+#endif
+#ifndef KP_9
 #define KP_9     0x69
+#endif
+#ifndef KP_DOT
 #define KP_DOT   0x71
+#endif
+#ifndef KP_ENTER
 #define KP_ENTER 0x72
+#endif
+#ifndef KP_LP
 #define KP_LP    0x63
+#endif
+#ifndef KP_MINUS
 #define KP_MINUS 0x4a
+#endif
+#ifndef KP_PLUS
 #define KP_PLUS  0x4e
+#endif
+#ifndef KP_RP
 #define KP_RP    0x64
+#endif
+#ifndef KP_SLASH
 #define KP_SLASH 0x65
+#endif
+#ifndef KP_STAR
 #define KP_STAR  0x66
-
-#endif /* ! defined(__GNUC__) && (__GNUC__ <= 2) */
+#endif
 
 #endif /* USE_TOSCONSOLE */
 
@@ -1033,7 +1423,9 @@ typedef int rawcurses_wchar_t;
 #ifdef RAWCURSES_CONIO_H
 #include RAWCURSES_CONIO_H
 #else
+#ifndef __PUREC__
 #include <conio.h>
+#endif
 #endif
 
 #ifdef _INCLUDED_TURBOC_H
@@ -1051,6 +1443,97 @@ typedef int rawcurses_wchar_t;
 #undef long
 #endif
 #endif /* defined(_INCLUDED_TURBOC_H) */
+
+#if USE__READ_KBD
+
+/* patch over getch() and implement kbhit() in terms of _read_kbd */
+static int rawcurses__emx_keybuf = -1;
+
+static int rawcurses__emx_kbhit(void)
+{
+    if (rawcurses__emx_keybuf == -1)
+    {
+        rawcurses__emx_keybuf = _read_kbd(/* echo: */ 0, /* wait: */ 0, /* signal: */ 0);
+    }
+    return rawcurses__emx_keybuf != -1;
+}
+#undef kbhit
+#define kbhit rawcurses__emx_kbhit
+
+static int rawcurses__emx_getch(void)
+{
+    int ret;
+
+    if (rawcurses__emx_keybuf == -1)
+    {
+        rawcurses__emx_keybuf = getch();
+    }
+    ret = rawcurses__emx_keybuf;
+    rawcurses__emx_keybuf = -1;
+    return ret;
+}
+#undef getch
+#define getch rawcurses__emx_getch
+
+#else /* ! USE__READ_KBD */
+
+#if USE__GETKEYBOARD
+/* Implement getch() in terms of _GetKeyboard */
+
+static int rawcurses__wdefwin_keybuf = -1;
+
+static int rawcurses__wdefwin_getch(void)
+{
+    int ret;
+
+    if (rawcurses__wdefwin_keybuf != -1)
+    {
+        ret = rawcurses__wdefwin_keybuf;
+        rawcurses__wdefwin_keybuf = -1;
+    }
+    else
+    {
+        int scan;
+
+        scan = 0;
+        ret = _GetKeyboard(&scan);
+        if ((ret >= 0x80) && (ret <= 0xff) && (scan == 0xff))
+        {
+            ret -= 0x80;
+            if (ret == 37) /* VK_LEFT */
+            {
+                rawcurses__wdefwin_keybuf = 0x4b;
+                ret = 0;
+            }
+            else if (ret == 38) /* VK_UP, not implemented in wdefwin */
+            {
+                rawcurses__wdefwin_keybuf = 0x48;
+                ret = 0;
+            }
+            else if (ret == 39) /* VK_RIGHT */
+            {
+                rawcurses__wdefwin_keybuf = 0x4d;
+                ret = 0;
+            }
+            else if (ret == 40) /* VK_DOWN, not implemented in wdefwin */
+            {
+                rawcurses__wdefwin_keybuf = 0x50;
+                ret = 0;
+            }
+            else if (ret == 46) /* VK_DELETE */
+            {
+                ret = 0x7f;
+            }
+        }
+    }
+    return ret;
+}
+#undef getch
+#define getch rawcurses__wdefwin_getch
+
+#endif /* USE__GETKEYBOARD */
+
+#endif /* ! USE__READ_KBD */
 
 #endif /* USE_CONIO || USE_CONIO_INPUT */
 
@@ -1152,6 +1635,43 @@ typedef int rawcurses_wchar_t;
 #endif
 #endif
 
+/* Classic MacOS on the PowerPC (at least with MPW) seems to crash
+ * when fileno(std{in,out,err}) is called. */
+#ifndef HAVE_SAFE_FILENO
+#if defined(macintosh) && ! USE_OLD_TOOLBOX
+#define HAVE_SAFE_FILENO 0
+#else
+#define HAVE_SAFE_FILENO 1
+#endif
+#endif
+
+static int rawcurses_fileno(FILE *stream)
+{
+    int ret;
+
+#if ! HAVE_SAFE_FILENO
+    if (stream == stdin)
+    {
+        return 0;
+    }
+    else if (stream == stdout)
+    {
+        return 1;
+    }
+    else if (stream == stderr)
+    {
+        return 2;
+    }
+#endif
+    ret = fileno(stream);
+    return ret;
+}
+
+#ifdef fileno
+#undef fileno
+#endif
+#define fileno(stream) rawcurses_fileno(stream)
+
 /* Win32 and AROS do not have select() in any meaningful sense for regular,
  * non-socket fds */
 #ifndef HAVE_SELECT
@@ -1170,7 +1690,11 @@ typedef int rawcurses_wchar_t;
 
 /* do we have read(2) ? */
 #ifndef HAVE_READ
+#ifdef __VBCC__
+#define HAVE_READ 0
+#else
 #define HAVE_READ 1
+#endif
 #endif
 
 #ifndef USE_LONG_CHTYPE
@@ -1259,6 +1783,12 @@ typedef chtype attr_t;
 #endif
 #define beep() rawcurses_addch('\7')
 
+#ifdef addch
+#undef addch
+#endif
+#define addch rawcurses_addch
+static int addch(chtype ch);
+
 #ifdef echo
 #undef echo
 #endif
@@ -1299,6 +1829,11 @@ typedef chtype attr_t;
 #undef RAWCURSES__A_COLOR
 #endif
 #define RAWCURSES__A_COLOR 0x0fe00000L
+
+#ifdef RAWCURSES__A_ALTCHARSET_DIRTY
+#undef RAWCURSES__A_ALTCHARSET_DIRTY
+#endif
+#define RAWCURSES__A_ALTCHARSET_DIRTY 0x00000001L
 
 #ifdef A_DIM
 #undef A_DIM
@@ -1396,6 +1931,246 @@ typedef chtype attr_t;
 #ifdef ACS_BLOCK
 #undef ACS_BLOCK
 #endif
+#ifdef ACS_BBBS
+#undef ACS_BBBS
+#endif
+#ifdef ACS_BBBD
+#undef ACS_BBBD
+#endif
+#ifdef ACS_BBSB
+#undef ACS_BBSB
+#endif
+#ifdef ACS_BBSS
+#undef ACS_BBSS
+#endif
+#ifdef ACS_BBSD
+#undef ACS_BBSD
+#endif
+#ifdef ACS_BBDB
+#undef ACS_BBDB
+#endif
+#ifdef ACS_BBDS
+#undef ACS_BBDS
+#endif
+#ifdef ACS_BBDD
+#undef ACS_BBDD
+#endif
+#ifdef ACS_BSBB
+#undef ACS_BSBB
+#endif
+#ifdef ACS_BSBS
+#undef ACS_BSBS
+#endif
+#ifdef ACS_BSBD
+#undef ACS_BSBD
+#endif
+#ifdef ACS_BSSB
+#undef ACS_BSSB
+#endif
+#ifdef ACS_BSSS
+#undef ACS_BSSS
+#endif
+#ifdef ACS_BSSD
+#undef ACS_BSSD
+#endif
+#ifdef ACS_BSDB
+#undef ACS_BSDB
+#endif
+#ifdef ACS_BSDS
+#undef ACS_BSDS
+#endif
+#ifdef ACS_BSDD
+#undef ACS_BSDD
+#endif
+#ifdef ACS_BDBB
+#undef ACS_BDBB
+#endif
+#ifdef ACS_BDBS
+#undef ACS_BDBS
+#endif
+#ifdef ACS_BDBD
+#undef ACS_BDBD
+#endif
+#ifdef ACS_BDSB
+#undef ACS_BDSB
+#endif
+#ifdef ACS_BDSS
+#undef ACS_BDSS
+#endif
+#ifdef ACS_BDSD
+#undef ACS_BDSD
+#endif
+#ifdef ACS_BDDB
+#undef ACS_BDDB
+#endif
+#ifdef ACS_BDDS
+#undef ACS_BDDS
+#endif
+#ifdef ACS_BDDD
+#undef ACS_BDDD
+#endif
+#ifdef ACS_SBBB
+#undef ACS_SBBB
+#endif
+#ifdef ACS_SBBS
+#undef ACS_SBBS
+#endif
+#ifdef ACS_SBBD
+#undef ACS_SBBD
+#endif
+#ifdef ACS_SBSB
+#undef ACS_SBSB
+#endif
+#ifdef ACS_SBSS
+#undef ACS_SBSS
+#endif
+#ifdef ACS_SBSD
+#undef ACS_SBSD
+#endif
+#ifdef ACS_SBDB
+#undef ACS_SBDB
+#endif
+#ifdef ACS_SBDS
+#undef ACS_SBDS
+#endif
+#ifdef ACS_SBDD
+#undef ACS_SBDD
+#endif
+#ifdef ACS_SSBB
+#undef ACS_SSBB
+#endif
+#ifdef ACS_SSBS
+#undef ACS_SSBS
+#endif
+#ifdef ACS_SSBD
+#undef ACS_SSBD
+#endif
+#ifdef ACS_SSSB
+#undef ACS_SSSB
+#endif
+#ifdef ACS_SSSS
+#undef ACS_SSSS
+#endif
+#ifdef ACS_SSSD
+#undef ACS_SSSD
+#endif
+#ifdef ACS_SSDB
+#undef ACS_SSDB
+#endif
+#ifdef ACS_SSDS
+#undef ACS_SSDS
+#endif
+#ifdef ACS_SSDD
+#undef ACS_SSDD
+#endif
+#ifdef ACS_SDBB
+#undef ACS_SDBB
+#endif
+#ifdef ACS_SDBS
+#undef ACS_SDBS
+#endif
+#ifdef ACS_SDBD
+#undef ACS_SDBD
+#endif
+#ifdef ACS_SDSB
+#undef ACS_SDSB
+#endif
+#ifdef ACS_SDSS
+#undef ACS_SDSS
+#endif
+#ifdef ACS_SDSD
+#undef ACS_SDSD
+#endif
+#ifdef ACS_SDDB
+#undef ACS_SDDB
+#endif
+#ifdef ACS_SDDS
+#undef ACS_SDDS
+#endif
+#ifdef ACS_SDDD
+#undef ACS_SDDD
+#endif
+#ifdef ACS_DBBB
+#undef ACS_DBBB
+#endif
+#ifdef ACS_DBBS
+#undef ACS_DBBS
+#endif
+#ifdef ACS_DBBD
+#undef ACS_DBBD
+#endif
+#ifdef ACS_DBSB
+#undef ACS_DBSB
+#endif
+#ifdef ACS_DBSS
+#undef ACS_DBSS
+#endif
+#ifdef ACS_DBSD
+#undef ACS_DBSD
+#endif
+#ifdef ACS_DBDB
+#undef ACS_DBDB
+#endif
+#ifdef ACS_DBDS
+#undef ACS_DBDS
+#endif
+#ifdef ACS_DBDD
+#undef ACS_DBDD
+#endif
+#ifdef ACS_DSBB
+#undef ACS_DSBB
+#endif
+#ifdef ACS_DSBS
+#undef ACS_DSBS
+#endif
+#ifdef ACS_DSBD
+#undef ACS_DSBD
+#endif
+#ifdef ACS_DSSB
+#undef ACS_DSSB
+#endif
+#ifdef ACS_DSSS
+#undef ACS_DSSS
+#endif
+#ifdef ACS_DSSD
+#undef ACS_DSSD
+#endif
+#ifdef ACS_DSDB
+#undef ACS_DSDB
+#endif
+#ifdef ACS_DSDS
+#undef ACS_DSDS
+#endif
+#ifdef ACS_DSDD
+#undef ACS_DSDD
+#endif
+#ifdef ACS_DDBB
+#undef ACS_DDBB
+#endif
+#ifdef ACS_DDBS
+#undef ACS_DDBS
+#endif
+#ifdef ACS_DDBD
+#undef ACS_DDBD
+#endif
+#ifdef ACS_DDSB
+#undef ACS_DDSB
+#endif
+#ifdef ACS_DDSS
+#undef ACS_DDSS
+#endif
+#ifdef ACS_DDSD
+#undef ACS_DDSD
+#endif
+#ifdef ACS_DDDB
+#undef ACS_DDDB
+#endif
+#ifdef ACS_DDDS
+#undef ACS_DDDS
+#endif
+#ifdef ACS_DDDD
+#undef ACS_DDDD
+#endif
 
 #ifdef UNICODE
 
@@ -1425,6 +2200,8 @@ typedef chtype attr_t;
 
 #define ACS_BLOCK 0x2588U
 
+#define ACS_CKBOARD 0x2592U
+
 #define RAWCURSES__ACS_THALF 0x2580U
 
 #define RAWCURSES__ACS_BHALF 0x2584U
@@ -1432,6 +2209,36 @@ typedef chtype attr_t;
 #define RAWCURSES__ACS_LHALF 0x258CU
 
 #define RAWCURSES__ACS_RHALF 0x2590U
+
+#define ACS_BBDD 0x2557U
+#define ACS_BBDS 0x2556U
+#define ACS_BBSD 0x2555U
+#define ACS_BDBD 0x2550U
+#define ACS_BDDB 0x2554U
+#define ACS_BDDD 0x2566U
+#define ACS_BDSB 0x2552U
+#define ACS_BDSD 0x2564U
+#define ACS_BSDB 0x2553U
+#define ACS_BSDS 0x2565U
+#define ACS_DBBD 0x255dU
+#define ACS_DBBS 0x255cU
+#define ACS_DBDB 0x2551U
+#define ACS_DBDD 0x2563U
+#define ACS_DBDS 0x2562U
+#define ACS_DDBB 0x255aU
+#define ACS_DDBD 0x2569U
+#define ACS_DDDB 0x2560U
+#define ACS_DDDD 0x256cU
+#define ACS_DSBB 0x2559U
+#define ACS_DSBS 0x2568U
+#define ACS_DSDB 0x255fU
+#define ACS_DSDS 0x256bU
+#define ACS_SBBD 0x255bU
+#define ACS_SBSD 0x2561U
+#define ACS_SDBB 0x2558U
+#define ACS_SDBD 0x2567U
+#define ACS_SDSB 0x255eU
+#define ACS_SDSD 0x256aU
 
 #else
 
@@ -1461,6 +2268,8 @@ typedef chtype attr_t;
 
 #define ACS_BLOCK 0xdbU
 
+#define ACS_CKBOARD 0xb1U
+
 #define RAWCURSES__ACS_THALF 0xdfU
 
 #define RAWCURSES__ACS_BHALF 0xdcU
@@ -1469,7 +2278,49 @@ typedef chtype attr_t;
 
 #define RAWCURSES__ACS_RHALF 0xdeU
 
+#define ACS_BBDD 0xbbU
+#define ACS_BBDS 0xb7U
+#define ACS_BBSD 0xb8U
+#define ACS_BDBD 0xcdU
+#define ACS_BDDB 0xc9U
+#define ACS_BDDD 0xcbU
+#define ACS_BDSB 0xd5U
+#define ACS_BDSD 0xd1U
+#define ACS_BSDB 0xd6U
+#define ACS_BSDS 0xd2U
+#define ACS_DBBD 0xbcU
+#define ACS_DBBS 0xbdU
+#define ACS_DBDB 0xbaU
+#define ACS_DBDD 0xb9U
+#define ACS_DBDS 0xb6U
+#define ACS_DDBB 0xc8U
+#define ACS_DDBD 0xcaU
+#define ACS_DDDB 0xccU
+#define ACS_DDDD 0xceU
+#define ACS_DSBB 0xd3U
+#define ACS_DSBS 0xd0U
+#define ACS_DSDB 0xc7U
+#define ACS_DSDS 0xd7U
+#define ACS_SBBD 0xbeU
+#define ACS_SBSD 0xb5U
+#define ACS_SDBB 0xd4U
+#define ACS_SDBD 0xcfU
+#define ACS_SDSB 0xc6U
+#define ACS_SDSD 0xd8U
+
 #endif
+
+#define ACS_BBSS ACS_URCORNER
+#define ACS_BSBS ACS_HLINE
+#define ACS_BSSB ACS_ULCORNER
+#define ACS_BSSS ACS_TTEE
+#define ACS_SBBS ACS_LRCORNER
+#define ACS_SBSB ACS_VLINE
+#define ACS_SBSS ACS_RTEE
+#define ACS_SSBB ACS_LLCORNER
+#define ACS_SSBS ACS_BTEE
+#define ACS_SSSB ACS_LTEE
+#define ACS_SSSS ACS_PLUS
 
 #ifdef KEY_RESIZE
 #undef KEY_RESIZE
@@ -1479,7 +2330,7 @@ typedef chtype attr_t;
 #ifdef KEY_UP
 #undef KEY_UP
 #endif
-#define KEY_UP 0x0f01
+#define KEY_UP 0xef01
 
 #ifdef KEY_DOWN
 #undef KEY_DOWN
@@ -1499,7 +2350,7 @@ typedef chtype attr_t;
 #ifdef COLORS
 #undef COLORS
 #endif
-#define COLORS ((rawcurses_16color || (rawcurses_stdio && (rawcurses_stdio_88color || rawcurses_stdio_256color))) ? 16 : 8)
+#define COLORS ((rawcurses_16color || (rawcurses_stdio && (rawcurses_stdio_88color || rawcurses_stdio_256color || rawcurses_stdio_truecolor))) ? 16 : 8)
 
 #ifdef COLOR_PAIRS
 #undef COLOR_PAIRS
@@ -1584,6 +2435,9 @@ RAWCURSES_GLOBAL(int rawcurses_x, = 0);
 RAWCURSES_GLOBAL(int rawcurses_y, = 0);
 RAWCURSES_GLOBAL(attr_t rawcurses_attr, = 0);
 RAWCURSES_GLOBAL(int rawcurses_stdio, = -1);
+#if USE_WINCONSOLE
+RAWCURSES_GLOBAL(int rawcurses_win32, = 1);
+#endif
 RAWCURSES_GLOBAL(int rawcurses_raw, = 0);
 RAWCURSES_GLOBAL(int rawcurses_builtin_wcwidth, = 0);
 RAWCURSES_GLOBAL(int rawcurses_stdio_utf8, = 0);
@@ -1594,12 +2448,19 @@ RAWCURSES_GLOBAL(chtype rawcurses_stdio_utf8_state, = 0UL);
 RAWCURSES_GLOBAL(int rawcurses_stdio_utf8_remaining, = 0);
 RAWCURSES_GLOBAL(int rawcurses_stdio_acs, = 0);
 RAWCURSES_GLOBAL(int rawcurses_stdio_acs_h19, = 0);
+RAWCURSES_GLOBAL(int rawcurses_stdio_acs_so, = 0);
+RAWCURSES_GLOBAL(int rawcurses_stdio_acs_sgr0si, = 0);
 RAWCURSES_GLOBAL(int rawcurses_stdio_acs_wy60, = 0);
 RAWCURSES_GLOBAL(int rawcurses_stdio_acs_kaypro2x, = 0);
+RAWCURSES_GLOBAL(int rawcurses_stdio_acs_active, = 0);
 RAWCURSES_GLOBAL(int rawcurses_stdio_m100, = 0);
 RAWCURSES_GLOBAL(int rawcurses_stdio_acs_m100, = 0);
 RAWCURSES_GLOBAL(int rawcurses_stdio_acs_c128, = 0);
 RAWCURSES_GLOBAL(int rawcurses_stdio_wy60, = 0);
+RAWCURSES_GLOBAL(int rawcurses_stdio_tekansi, = 0);
+RAWCURSES_GLOBAL(int rawcurses_stdio_ansicolor, = 0);
+RAWCURSES_GLOBAL(int rawcurses_stdio_scocolor, = 0);
+RAWCURSES_GLOBAL(int rawcurses_stdio_scocolor_bright, = 0);
 RAWCURSES_GLOBAL(int rawcurses_stdio_kaypro2x, = 0);
 RAWCURSES_GLOBAL(int rawcurses_stdio_noswapdots, = 0);
 RAWCURSES_GLOBAL(int rawcurses_stdio_cp437, = 0);
@@ -1610,18 +2471,36 @@ RAWCURSES_GLOBAL(int rawcurses_stdio_acs_nobullet, = 0);
 RAWCURSES_GLOBAL(int rawcurses_stdio_acs_revblock, = 0);
 RAWCURSES_GLOBAL(int rawcurses_stdio_vwmterm, = 0);
 RAWCURSES_GLOBAL(int rawcurses_stdio_nocolorbold, = 0);
+RAWCURSES_GLOBAL(int rawcurses_stdio_norevbold, = 0);
+RAWCURSES_GLOBAL(int rawcurses_stdio_norev, = 0);
+RAWCURSES_GLOBAL(int rawcurses_stdio_bs, = 0);
+RAWCURSES_GLOBAL(int rawcurses_stdio_bsul, = 0);
+RAWCURSES_GLOBAL(int rawcurses_stdio_revbg, = 0);
 RAWCURSES_GLOBAL(int rawcurses_stdio_bterm, = 0);
 RAWCURSES_GLOBAL(int rawcurses_stdio_vt52, = 0);
 RAWCURSES_GLOBAL(int rawcurses_stdio_st52, = 0);
+RAWCURSES_GLOBAL(int rawcurses_stdio_hp, = 0);
 RAWCURSES_GLOBAL(int rawcurses_stdio_tall, = 0);
 RAWCURSES_GLOBAL(int rawcurses_stdio_dwl, = 0);
 RAWCURSES_GLOBAL(int rawcurses_stdio_wide, = 0);
 RAWCURSES_GLOBAL(int rawcurses_stdio_amiga, = 0);
+RAWCURSES_GLOBAL(int rawcurses_stdio_ewan, = 0);
+RAWCURSES_GLOBAL(int rawcurses_stdio_rsxwin, = 0);
 RAWCURSES_GLOBAL(int rawcurses_stdio_tw52, = 0);
+RAWCURSES_GLOBAL(int rawcurses_stdio_z100, = 0);
+RAWCURSES_GLOBAL(int rawcurses_stdio_z100_rgb, = 0);
 RAWCURSES_GLOBAL(int rawcurses_stdio_adm3a, = 0);
 RAWCURSES_GLOBAL(int rawcurses_stdio_emacs, = 0);
 RAWCURSES_GLOBAL(int rawcurses_stdio_dumb, = 0);
 RAWCURSES_GLOBAL(int rawcurses_stdio_tek, = 0);
+RAWCURSES_GLOBAL(int rawcurses_stdio_tekco, = 1);
+RAWCURSES_GLOBAL(int rawcurses_stdio_invis, = 0);
+RAWCURSES_GLOBAL(rawcurses_chtype *rawcurses_backing, = NULL);
+RAWCURSES_GLOBAL(int rawcurses_backing_w, = 0);
+RAWCURSES_GLOBAL(int rawcurses_backing_h, = 0);
+RAWCURSES_GLOBAL(int rawcurses_stdio_wrap, = -1);
+RAWCURSES_GLOBAL(int rawcurses_stdio_noclear, = 0);
+RAWCURSES_GLOBAL(int rawcurses_stdio_notab, = 0);
 RAWCURSES_GLOBAL(int rawcurses_stdio_nocud, = 0);
 RAWCURSES_GLOBAL(int rawcurses_stdio_nocuu, = 0);
 RAWCURSES_GLOBAL(int rawcurses_stdio_nocuf, = 0);
@@ -1629,16 +2508,23 @@ RAWCURSES_GLOBAL(int rawcurses_stdio_atascii, = 0);
 RAWCURSES_GLOBAL(int rawcurses_stdio_petscii, = 0);
 RAWCURSES_GLOBAL(int rawcurses_stdio_petscii_shifted, = 1);
 RAWCURSES_GLOBAL(int rawcurses_stdio_petscii_shift_toggled, = 0);
-RAWCURSES_GLOBAL(int rawcurses_stdio_petscii_palette, = 0);
+RAWCURSES_GLOBAL(int rawcurses_stdio_petscii_palette, = -1);
+RAWCURSES_GLOBAL(int rawcurses_stdio_gempal, = 0);
 RAWCURSES_GLOBAL(int rawcurses_stdio_idchok, = 1);
 RAWCURSES_GLOBAL(int rawcurses_stdio_decterm, = 0);
 RAWCURSES_GLOBAL(int rawcurses_stdio_relcup, = 0);
+RAWCURSES_GLOBAL(int rawcurses_stdio_truecolor, = 0);
+RAWCURSES_GLOBAL(int rawcurses_stdio_fbterm, = 0);
+RAWCURSES_GLOBAL(int rawcurses_stdio_switchcs, = 1);
 RAWCURSES_GLOBAL(int rawcurses_stdio_256color, = 0);
 RAWCURSES_GLOBAL(int rawcurses_stdio_88color, = 0);
 RAWCURSES_GLOBAL(int rawcurses_16color, = 1);
-RAWCURSES_GLOBAL(int rawcurses_color, = 1);
+RAWCURSES_GLOBAL(int rawcurses_reverse, = 0);
+RAWCURSES_GLOBAL(int rawcurses_color, = 0);
 RAWCURSES_GLOBAL(int rawcurses_fixedpal, = 0);
 RAWCURSES_GLOBAL(int rawcurses_stdio_ccc, = 0);
+RAWCURSES_GLOBAL(int rawcurses_stdio_nccc, = -1);
+RAWCURSES_GLOBAL(int rawcurses_stdio_xccc, = 0);
 RAWCURSES_GLOBAL(int rawcurses_stdio_ccc_linux, = 0);
 RAWCURSES_GLOBAL(int rawcurses_stdio_blink, = 0);
 #if USE_VMSCONSOLE
@@ -1686,10 +2572,11 @@ RAWCURSES_GLOBAL(int rawcurses_stdio_old_flags, = -1);
 
 RAWCURSES_GLOBAL(int rawcurses_input_state, = RAWCURSES_INPUT_STATE_DEFAULT);
 
-/* should be big enough for even a batched full-palette response to OSC [ 4 ; 0 ; ? ; ... ; 15 ; ? BEL */
+/* should be big enough for even a batched full-palette response to OSC 4 ; 0 ; ? ; ... ; 15 ; ? BEL */
 #define INPUT_PARAM_SIZE 4096
 
 RAWCURSES_GLOBAL0(char rawcurses_input_param[INPUT_PARAM_SIZE]);
+RAWCURSES_GLOBAL0(char rawcurses_input_tmp_param[INPUT_PARAM_SIZE]);
 RAWCURSES_GLOBAL0(char rawcurses_input_intermed[INPUT_PARAM_SIZE]);
 RAWCURSES_GLOBAL(attr_t rawcurses_old_attr_rgb, = FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE);
 RAWCURSES_GLOBAL0(char rawcurses_stdio_old_shortname_buf[INPUT_PARAM_SIZE]);
@@ -1751,14 +2638,109 @@ RAWCURSES_GLOBAL(int rawcurses_palette_ever_changed, = 0);
 static const char *RAWCURSES_ST52LIKE =
     "atari" "\0"
     "et52" "\0"
+    "putty-vt52" "\0"
     "st52" "\0"
     "stv52" "\0"
     "tw52" "\0"
     "wterm" "\0"
     "\0\0";
 
+/* list of terminals for which we send HP-type escape sequences */
+static const char *RAWCURSES_HPLIKE =
+    "2621" "\0"
+    "2621-wl" "\0"
+    "2621A" "\0"
+    "2621a" "\0"
+    "hp" "\0"
+    "hp110" "\0"
+    "hp150" "\0"
+    "hp2" "\0"
+    "hp2382" "\0"
+    "hp2382a" "\0"
+    "hp2392" "\0"
+    "hp2397" "\0"
+    "hp2397a" "\0"
+    "hp2621" "\0"
+    "hp2621-48" "\0"
+    "hp2621-a" "\0"
+    "hp2621-ba" "\0"
+    "hp2621-fl" "\0"
+    "hp2621-k45" "\0"
+    "hp2621-nl" "\0"
+    "hp2621-nt" "\0"
+    "hp2621-wl" "\0"
+    "hp2621A" "\0"
+    "hp2621a" "\0"
+    "hp2621a-a" "\0"
+    "hp2621b" "\0"
+    "hp2621b-kx" "\0"
+    "hp2621b-kx-p" "\0"
+    "hp2621b-p" "\0"
+    "hp2621k45" "\0"
+    "hp2621p" "\0"
+    "hp2621p-a" "\0"
+    "hp2622" "\0"
+    "hp2622a" "\0"
+    "hp2623" "\0"
+    "hp2623a" "\0"
+    "hp2624" "\0"
+    "hp2624-10p" "\0"
+    "hp2624a" "\0"
+    "hp2624a-10p" "\0"
+    "hp2624b" "\0"
+    "hp2624b-10p" "\0"
+    "hp2624b-10p-p" "\0"
+    "hp2624b-4p" "\0"
+    "hp2624b-4p-p" "\0"
+    "hp2624b-p" "\0"
+    "hp2626" "\0"
+    "hp2626-12" "\0"
+    "hp2626-12-s" "\0"
+    "hp2626-12x40" "\0"
+    "hp2626-ns" "\0"
+    "hp2626-s" "\0"
+    "hp2626-x40" "\0"
+    "hp2626a" "\0"
+    "hp2626p" "\0"
+    "hp2627a" "\0"
+    "hp2627a-rev" "\0"
+    "hp2627c" "\0"
+    "hp2640b" "\0"
+    "hp2641a" "\0"
+    "hp2644a" "\0"
+    "hp2645" "\0"
+    "hp2645a" "\0"
+    "hp2647a" "\0"
+    "hp2648" "\0"
+    "hp2648a" "\0"
+    "hp300h" "\0"
+    "hp45" "\0"
+    "hp70092" "\0"
+    "hp70092A" "\0"
+    "hp70092a" "\0"
+    "hp9837" "\0"
+    "hp9845" "\0"
+    "hp98550" "\0"
+    "hp98550a" "\0"
+    "hp98720" "\0"
+    "hp98721" "\0"
+    "hpex" "\0"
+    "hpex2" "\0"
+    "hpgeneric" "\0"
+    "hpterm" "\0"
+    "hpterm-color" "\0"
+    "k45" "\0"
+    "memhp" "\0"
+    "scrhp" "\0"
+    "X-hpterm" "\0"
+    "\0\0";
+
 /* list of terminals for which we send VT52-type escape sequences */
 static const char *RAWCURSES_VT52LIKE =
+    "2621" "\0"
+    "2621-wl" "\0"
+    "2621A" "\0"
+    "2621a" "\0"
     "8201" "\0"
     "addsviewpoint" "\0"
     "addsvp60" "\0"
@@ -1797,6 +2779,84 @@ static const char *RAWCURSES_VT52LIKE =
     "h19kermit" "\0"
     "heath" "\0"
     "heathkit" "\0"
+    "hp" "\0"
+    "hp110" "\0"
+    "hp150" "\0"
+    "hp2" "\0"
+    "hp2382" "\0"
+    "hp2382a" "\0"
+    "hp2392" "\0"
+    "hp2397" "\0"
+    "hp2397a" "\0"
+    "hp2621" "\0"
+    "hp2621-48" "\0"
+    "hp2621-a" "\0"
+    "hp2621-ba" "\0"
+    "hp2621-fl" "\0"
+    "hp2621-k45" "\0"
+    "hp2621-nl" "\0"
+    "hp2621-nt" "\0"
+    "hp2621-wl" "\0"
+    "hp2621A" "\0"
+    "hp2621a" "\0"
+    "hp2621a-a" "\0"
+    "hp2621b" "\0"
+    "hp2621b-kx" "\0"
+    "hp2621b-kx-p" "\0"
+    "hp2621b-p" "\0"
+    "hp2621k45" "\0"
+    "hp2621p" "\0"
+    "hp2621p-a" "\0"
+    "hp2622" "\0"
+    "hp2622a" "\0"
+    "hp2623" "\0"
+    "hp2623a" "\0"
+    "hp2624" "\0"
+    "hp2624-10p" "\0"
+    "hp2624a" "\0"
+    "hp2624a-10p" "\0"
+    "hp2624b" "\0"
+    "hp2624b-10p" "\0"
+    "hp2624b-10p-p" "\0"
+    "hp2624b-4p" "\0"
+    "hp2624b-4p-p" "\0"
+    "hp2624b-p" "\0"
+    "hp2626" "\0"
+    "hp2626-12" "\0"
+    "hp2626-12-s" "\0"
+    "hp2626-12x40" "\0"
+    "hp2626-ns" "\0"
+    "hp2626-s" "\0"
+    "hp2626-x40" "\0"
+    "hp2626a" "\0"
+    "hp2626p" "\0"
+    "hp2627a" "\0"
+    "hp2627a-rev" "\0"
+    "hp2627c" "\0"
+    "hp2640b" "\0"
+    "hp2641a" "\0"
+    "hp2644a" "\0"
+    "hp2645" "\0"
+    "hp2645a" "\0"
+    "hp2647a" "\0"
+    "hp2648" "\0"
+    "hp2648a" "\0"
+    "hp300h" "\0"
+    "hp45" "\0"
+    "hp70092" "\0"
+    "hp70092A" "\0"
+    "hp70092a" "\0"
+    "hp9837" "\0"
+    "hp9845" "\0"
+    "hp98550" "\0"
+    "hp98550a" "\0"
+    "hp98720" "\0"
+    "hp98721" "\0"
+    "hpex" "\0"
+    "hpex2" "\0"
+    "hpgeneric" "\0"
+    "hpterm" "\0"
+    "hpterm-color" "\0"
     "htx11" "\0"
     "hz1552" "\0"
     "hz1552-rv" "\0"
@@ -1809,17 +2869,20 @@ static const char *RAWCURSES_VT52LIKE =
     "ibmaed" "\0"
     "intertube" "\0"
     "iris40" "\0"
+    "k45" "\0"
     "kermit" "\0"
     "kermit-am" "\0"
     "m100" "\0"
     "m100-40x24" "\0"
+    "m100-40x25" "\0"
     "m100-60x10" "\0"
     "m100-60x10-acs" "\0"
-    "m100-80x24" "\0"
-    "m100-80x24-acs" "\0"
+    "m100-80x25" "\0"
+    "m100-80x25-acs" "\0"
     "m100-acs" "\0"
+    "m100-acs-40x25" "\0"
     "m100-acs-60x10" "\0"
-    "m100-acs-80x24" "\0"
+    "m100-acs-80x25" "\0"
     "m100-acs-s" "\0"
     "m100-s" "\0"
     "m100-s-acs" "\0"
@@ -1829,6 +2892,7 @@ static const char *RAWCURSES_VT52LIKE =
     "m200-acs-s" "\0"
     "m200-s" "\0"
     "m200-s-acs" "\0"
+    "memhp" "\0"
     "mime2a" "\0"
     "mime2a-v" "\0"
     "mod100" "\0"
@@ -1852,6 +2916,7 @@ static const char *RAWCURSES_VT52LIKE =
     "pckermit120" "\0"
     "pcz19" "\0"
     "pro350" "\0"
+    "putty-vt52" "\0"
     "qnx" "\0"
     "qnx4" "\0"
     "rca" "\0"
@@ -1863,7 +2928,8 @@ static const char *RAWCURSES_VT52LIKE =
     "sc410" "\0"
     "sc415" "\0"
     "scanset" "\0"
-    "scr" /* hmm... */ "ewpoint" "\0"
+    "screwpoint" "\0"
+    "scrhp" "\0"
     "sibo" "\0"
     "st52" "\0"
     "stv52" "\0"
@@ -1883,18 +2949,19 @@ static const char *RAWCURSES_VT52LIKE =
     "TRS100" "\0"
     "trs100" "\0"
     "trs16" "\0"
+    "trs2" "\0"
     "TRS200" "\0"
     "trs200" "\0"
-    "trs2" "\0"
+    "trs80-100" "\0"
     "trs80II" "\0"
     "trs80ii" "\0"
-    "trs80-100" "\0"
     "trsII" "\0"
     "trsii" "\0"
     "tty4420" "\0"
     "tw52" "\0"
     "tw52-color" "\0"
     "tw52-m" "\0"
+    "tw52-s" "\0"
     "vapple" "\0"
     "venix" "\0"
     "vi200" "\0"
@@ -1915,10 +2982,12 @@ static const char *RAWCURSES_VT52LIKE =
     "wy60-316X" "\0"
     "wyse-vp" "\0"
     "wyse60-316X" "\0"
+    "X-hpterm" "\0"
     "xterm-vt52" "\0"
     "z-100" "\0"
     "z-100bw" "\0"
     "z100" "\0"
+    "z100-rgb" "\0"
     "z100bw" "\0"
     "z110" "\0"
     "z110bw" "\0"
@@ -1984,6 +3053,7 @@ static const char *RAWCURSES_WY60LIKE =
  * character set */
 static const char *RAWCURSES_ACS_KAYPRO2XLIKE =
     "kaypro2x" "\0"
+    "vt100-kaypro2x" "\0"
     "\0\0";
 
 /* list of terminals for which we assume Kaypro 2x-style escape
@@ -2038,6 +3108,7 @@ static const char *RAWCURSES_ACS_M100LIKE =
  * attribute change per sequence, and which need explicit off
  * sequences for basic attributes (i.e. SGR0 is broken) */
 static const char *RAWCURSES_BTERMLIKE =
+    "blurt" "\0"
     "bterm" "\0"
     "\0\0";
 
@@ -2076,6 +3147,7 @@ static const char *RAWCURSES_H19LIKE =
     "z-100" "\0"
     "z-100bw" "\0"
     "z100" "\0"
+    "z100-rgb" "\0"
     "z100bw" "\0"
     "z110" "\0"
     "z110bw" "\0"
@@ -2254,7 +3326,28 @@ static const char *RAWCURSES_CP437LIKE =
     "rxvt-cygwin" "\0"
     "rxvt-cygwin-native" "\0"
     "screen.teraterm" "\0"
+    "syncterm" "\0"
+    "syncterm-25" "\0"
+    "syncterm-27" "\0"
+    "syncterm-28" "\0"
+    "syncterm-42" "\0"
+    "syncterm-43" "\0"
+    "syncterm-49" "\0"
+    "syncterm-50" "\0"
+    "syncterm-59" "\0"
+    "syncterm-60" "\0"
+    "syncterm-w" "\0"
+    "syncterm-25-w" "\0"
+    "syncterm-27-w" "\0"
+    "syncterm-28-w" "\0"
+    "syncterm-42-w" "\0"
+    "syncterm-43-w" "\0"
+    "syncterm-49-w" "\0"
+    "syncterm-50-w" "\0"
+    "syncterm-59-w" "\0"
+    "syncterm-60-w" "\0"
     "teraterm" "\0"
+    "ttyemul-ansi" "\0"
     "uwin" "\0"
     "vt100+" "\0"
     "vtnt" "\0"
@@ -2400,6 +3493,15 @@ static const char *RAWCURSES_ADM3ALIKE =
     "ncr260wy50+wpp" "\0"
     "ncr260wy60pp" "\0"
     "ncr260wy60wpp" "\0"
+    "nd9500" "\0"
+    "ndr9500" "\0"
+    "ndr9500-25" "\0"
+    "ndr9500-25-mc" "\0"
+    "ndr9500-25-mc-nl" "\0"
+    "ndr9500-25-nl" "\0"
+    "ndr9500-mc" "\0"
+    "ndr9500-mc-nl" "\0"
+    "ndr9500-nl" "\0"
     "northstar" "\0"
     "o85h" "\0"
     "oabm85h" "\0"
@@ -2686,99 +3788,22 @@ static const char *RAWCURSES_TEKLIKE =
     "wy370-tek" "\0"
     "\0\0";
 
-/* list of ANSI/XTerm-like terminals for which we do not trust the
- * cursor-hiding capability */
+/* list of ANSI/XTerm-like terminal prefices for which we do not trust
+ * the cursor-hiding capability */
 static const char *RAWCURSES_NOCIVIS =
+    "GNUstep_Terminal" "\0"
     "cxterm" "\0"
     "cygwin" "\0"
     "cygwinB19" "\0"
     "cygwinDBG" "\0"
     "darwin" "\0"
-    "darwin-100x37" "\0"
-    "darwin-100x37-m" "\0"
-    "darwin-112x37" "\0"
-    "darwin-112x37-m" "\0"
-    "darwin-128x40" "\0"
-    "darwin-128x40-m" "\0"
-    "darwin-128x48" "\0"
-    "darwin-128x48-m" "\0"
-    "darwin-144x48" "\0"
-    "darwin-144x48-m" "\0"
-    "darwin-160x64" "\0"
-    "darwin-160x64-m" "\0"
-    "darwin-200x64" "\0"
-    "darwin-200x64-m" "\0"
-    "darwin-200x75" "\0"
-    "darwin-200x75-m" "\0"
-    "darwin-256x96" "\0"
-    "darwin-256x96-m" "\0"
-    "darwin-80x25" "\0"
-    "darwin-80x25-m" "\0"
-    "darwin-80x30" "\0"
-    "darwin-80x30-m" "\0"
-    "darwin-90x30" "\0"
-    "darwin-90x30-m" "\0"
-    "darwin-acs" "\0"
-    "darwin-b" "\0"
-    "darwin-b-acs" "\0"
-    "darwin-f" "\0"
-    "darwin-f-acs" "\0"
-    "darwin-f2" "\0"
-    "darwin-f2-acs" "\0"
-    "darwin-m" "\0"
-    "darwin-m-acs" "\0"
-    "darwin-m-b" "\0"
-    "darwin-m-b-acs" "\0"
-    "darwin-m-f" "\0"
-    "darwin-m-f-acs" "\0"
-    "darwin-m-f2" "\0"
-    "darwin-m-f2-acs" "\0"
     "eterm" "\0"
-    "eterm-color" "\0"
     "kterm" "\0"
+    "ncsa" "\0"
     "rxvt-cygwin" "\0"
-    "rxvt-cygwin-native" "\0"
+    "ttyemul" "\0"
     "uuterm" "\0"
     "xnuppc" "\0"
-    "xnuppc-100x37" "\0"
-    "xnuppc-100x37-m" "\0"
-    "xnuppc-112x37" "\0"
-    "xnuppc-112x37-m" "\0"
-    "xnuppc-128x40" "\0"
-    "xnuppc-128x40-m" "\0"
-    "xnuppc-128x48" "\0"
-    "xnuppc-128x48-m" "\0"
-    "xnuppc-144x48" "\0"
-    "xnuppc-144x48-m" "\0"
-    "xnuppc-160x64" "\0"
-    "xnuppc-160x64-m" "\0"
-    "xnuppc-200x64" "\0"
-    "xnuppc-200x64-m" "\0"
-    "xnuppc-200x75" "\0"
-    "xnuppc-200x75-m" "\0"
-    "xnuppc-256x96" "\0"
-    "xnuppc-256x96-m" "\0"
-    "xnuppc-80x25" "\0"
-    "xnuppc-80x25-m" "\0"
-    "xnuppc-80x30" "\0"
-    "xnuppc-80x30-m" "\0"
-    "xnuppc-90x30" "\0"
-    "xnuppc-90x30-m" "\0"
-    "xnuppc-acs" "\0"
-    "xnuppc-b" "\0"
-    "xnuppc-b-acs" "\0"
-    "xnuppc-f" "\0"
-    "xnuppc-f-acs" "\0"
-    "xnuppc-f2" "\0"
-    "xnuppc-f2-acs" "\0"
-    "xnuppc-m" "\0"
-    "xnuppc-m-acs" "\0"
-    "xnuppc-m-b" "\0"
-    "xnuppc-m-b-acs" "\0"
-    "xnuppc-m-f" "\0"
-    "xnuppc-m-f-acs" "\0"
-    "xnuppc-m-f2" "\0"
-    "xnuppc-m-f2-acs" "\0"
     "\0\0";
 
 #if USE_SGTTY
@@ -2820,7 +3845,7 @@ static const char *RAWCURSES_NOCIVIS =
 #endif
 
 #ifndef RAWCURSES_STTY_MODE
-#define RAWCURSES_STTY_MODE "cbreak -echo -icanon"
+#define RAWCURSES_STTY_MODE "cbreak -echo -icanon tabs tab0"
 #endif
 
 char *rawcurses_gtty_system(const char *default_old_mode)
@@ -3163,7 +4188,8 @@ static int rawcurses_fput_request_palette(FILE *fh)
     if (fputs(OSC("4"), fh) == EOF) ret = 0;
     for (i = 0; i < COLORS; i ++)
     {
-        if (fprintf(fh, ";%d;?", i) <= 0) ret = 0;
+        if (fprintf(fh, ";%d;?",
+                    i ^ ((rawcurses_stdio_xccc && (i & 7) && (i < 16)) ? 8 : 0)) <= 0) ret = 0;
     }
     if (fputs("\7", fh) == EOF) ret = 0;
     return ret;
@@ -3181,7 +4207,7 @@ static int rawcurses_fput_palette(FILE *fh, rawcurses_rgb_t *palette)
     }
 #endif
     if (rawcurses_stdio_adm3a || rawcurses_stdio_emacs || rawcurses_stdio_dumb || rawcurses_stdio_tek || rawcurses_stdio_vt52 || rawcurses_stdio_atascii || rawcurses_stdio_petscii) return 0;
-    if (! (rawcurses_stdio_ccc || rawcurses_stdio_ccc_linux)) return (rawcurses_stdio_256color || rawcurses_stdio_88color);
+    if (! (rawcurses_stdio_ccc || rawcurses_stdio_ccc_linux)) return (rawcurses_stdio_truecolor || rawcurses_stdio_256color || rawcurses_stdio_88color);
     if ((! rawcurses_stdio_ccc_linux) && (fputs(OSC("4"), fh) == EOF)) ret = 0;
     for (i = 0; i < COLORS; i ++)
     {
@@ -3189,7 +4215,7 @@ static int rawcurses_fput_palette(FILE *fh, rawcurses_rgb_t *palette)
         {
             if (fprintf(fh,
                         OSC("P%x%2.2x%2.2x%2.2x%s"),
-                        i,
+                        i ^ ((rawcurses_stdio_xccc && (i & 7) && (i < 16)) ? 8 : 0),
                         255 * palette[i].r / 1000,
                         255 * palette[i].g / 1000,
                         255 * palette[i].b / 1000,
@@ -3198,11 +4224,26 @@ static int rawcurses_fput_palette(FILE *fh, rawcurses_rgb_t *palette)
                 ret = 0;
             }
         }
+        else if (rawcurses_stdio_nccc)
+        {
+            if (fprintf(fh,
+                        ";%d;rgb:%2.2x%2.2x/%2.2x%2.2x/%2.2x%2.2x",
+                        i ^ ((rawcurses_stdio_xccc && (i & 7) && (i < 16)) ? 8 : 0),
+                        255 * palette[i].r / 1000,
+                        255 * palette[i].r / 1000,
+                        255 * palette[i].g / 1000,
+                        255 * palette[i].g / 1000,
+                        255 * palette[i].b / 1000,
+                        255 * palette[i].b / 1000) <= 0)
+            {
+                ret = 0;
+            }
+        }
         else
         {
             if (fprintf(fh,
                         ";%d;#%2.2x%2.2x%2.2x",
-                        i,
+                        i ^ ((rawcurses_stdio_xccc && (i & 7) && (i < 16)) ? 8 : 0),
                         255 * palette[i].r / 1000,
                         255 * palette[i].g / 1000,
                         255 * palette[i].b / 1000) <= 0)
@@ -3211,30 +4252,46 @@ static int rawcurses_fput_palette(FILE *fh, rawcurses_rgb_t *palette)
             }
         }
     }
-    if ((! rawcurses_stdio_ccc_linux) && (fputs("\7", fh) == EOF)) ret = 0;
+    if ((! rawcurses_stdio_ccc_linux) && (fputs("\7" ST, fh) == EOF)) ret = 0;
     return ret;
 }
 
 static void rawcurses_fput_linewidth(FILE *fh, int y)
 {
+    if ((rawcurses_stdio_adm3a && ! rawcurses_stdio_wy60) || rawcurses_stdio_dumb || rawcurses_stdio_tek || rawcurses_stdio_atascii || rawcurses_stdio_petscii || rawcurses_stdio_emacs || rawcurses_stdio_vt52 || rawcurses_stdio_amiga) return;
+    if (rawcurses_stdio_wy60)
+    {
+        fprintf(fh, ESCAPE("e3"));
+    }
     if (rawcurses_after_endwin || ! (rawcurses_stdio_wide || rawcurses_stdio_tall))
     {
-        fprintf(fh, (rawcurses_stdio_dwl && rawcurses_after_endwin) ? ESCAPE("#6") : ESCAPE("#5"));
+        if (rawcurses_stdio_wy60)
+        {
+            fprintf(fh, (rawcurses_stdio_dwl && rawcurses_after_endwin) ? ESCAPE("GA") : ESCAPE("G@"));
+        }
+        else
+        {
+            fprintf(fh, (rawcurses_stdio_dwl && rawcurses_after_endwin) ? ESCAPE("#6") : ESCAPE("#5"));
+        }
     }
     else if (rawcurses_stdio_tall)
     {
         if (y % 2)
         {
-            fprintf(fh, ESCAPE("#4"));
+            fprintf(fh, rawcurses_stdio_wy60 ? ESCAPE("GE") : ESCAPE("#4"));
         }
         else
         {
-            fprintf(fh, ESCAPE("#3"));
+            fprintf(fh, rawcurses_stdio_wy60 ? ESCAPE("GD") : ESCAPE("#3"));
         }
     }
     else
     {
-        fprintf(fh, ESCAPE("#6"));
+        fprintf(fh, rawcurses_stdio_wy60 ? ESCAPE("GA") : ESCAPE("#6"));
+    }
+    if (rawcurses_stdio_wy60)
+    {
+        fprintf(fh, ESCAPE("e1"));
     }
 }
 
@@ -3247,13 +4304,15 @@ static int rawcurses_fput_palette_reset(FILE *fh)
     }
 #endif
     if (rawcurses_stdio_adm3a || rawcurses_stdio_emacs || rawcurses_stdio_dumb || rawcurses_stdio_tek || rawcurses_stdio_vt52 || rawcurses_stdio_atascii || rawcurses_stdio_petscii) return 0;
-    if (! rawcurses_stdio_ccc_linux) return (rawcurses_stdio_256color || rawcurses_stdio_88color);
+    if (! rawcurses_stdio_ccc_linux) return (rawcurses_stdio_truecolor || rawcurses_stdio_256color || rawcurses_stdio_88color);
     return fputs(OSC("R") ST, fh) != EOF;
 }
 
 static int rawcurses_fput_cup(FILE *fh, int y, int x);
 
 static int rawcurses_fput_relcup(FILE *fh, int dy, int dx, int y, int x);
+
+static void rawcurses_write_backing(int y, int x, rawcurses_chtype ch, int wcw);
 
 static int rawcurses_fput_clear(FILE *fh)
 {
@@ -3267,9 +4326,61 @@ static int rawcurses_fput_clear(FILE *fh)
         return 1;
     }
 #endif
+    rawcurses_stdio_scocolor_bright = 0;
     if (rawcurses_stdio_petscii) return fputs("\223", fh) != EOF;
     if (rawcurses_stdio_atascii) return fputs("\175", fh) != EOF;
-    if (rawcurses_stdio_dumb) return fputs("\f", fh) != EOF;
+    if (rawcurses_stdio_dumb)
+    {
+        if (rawcurses_stdio_noclear)
+        {
+            int y, x;
+
+            for (y = 0; y < rawcurses_h; y ++)
+            {
+                for (x = 0; x < rawcurses_w; x ++)
+                {
+                    rawcurses_write_backing(y, x, ' ', 1);
+                }
+            }
+            ret = fputs("\r", fh) != EOF;
+            if (rawcurses_stdio_nocuu)
+            {
+                for (y = 0; y < rawcurses_w * rawcurses_h; y ++)
+                {
+                    ret = ret && fputs("\b", fh) != EOF;
+                }
+            }
+            else
+            {
+                for (y = 0; y < rawcurses_h; y ++)
+                {
+                    ret = ret && fputs("\v", fh) != EOF;
+                }
+            }
+            for (y = 1; y < rawcurses_w * rawcurses_h; y ++)
+            {
+                ret = ret && fputs(" ", fh) != EOF;
+            }
+            ret = ret && fputs("\r", fh) != EOF;
+            if (rawcurses_stdio_nocuu)
+            {
+                for (y = 0; y < rawcurses_w * (rawcurses_h - 1); y ++)
+                {
+                    ret = ret && fputs("\b", fh) != EOF;
+                }
+                ret = ret && fputs("\r", fh) != EOF;
+            }
+            else
+            {
+                for (y = 1; y < rawcurses_h; y ++)
+                {
+                    ret = ret && fputs("\v", fh) != EOF;
+                }
+            }
+            return ret;
+        }
+        return fputs("\f", fh) != EOF;
+    }
     if (rawcurses_stdio_tek)
     {
         ret = (fputs("\r" ESCAPE("\f"), fh) != EOF);
@@ -3288,10 +4399,10 @@ static int rawcurses_fput_clear(FILE *fh)
         }
         return ret;
     }
-    if (rawcurses_stdio_adm3a) return fputs(ESCAPE(";") ESCAPE("*") ESCAPE("+") "\x1a", fh) != EOF;
-    if (rawcurses_stdio_emacs) return fputs("\020\f", fh) != EOF;
-    if (rawcurses_stdio_vt52) return fputs("\f" ESCAPE("H") ESCAPE("J"), fh) != EOF;
-    if (rawcurses_stdio_amiga) ret = fputs(CSI("H") CSI("J"), fh) != EOF;
+    if (rawcurses_stdio_adm3a) ret = fputs(ESCAPE(";") ESCAPE("*") ESCAPE("+") "\x1a", fh) != EOF;
+    else if (rawcurses_stdio_emacs) ret = fputs("\020\f", fh) != EOF;
+    else if (rawcurses_stdio_vt52) ret = fputs("\f" ESCAPE("H") ESCAPE("J"), fh) != EOF;
+    else if (rawcurses_stdio_amiga) ret = fputs(CSI("H") CSI("J"), fh) != EOF;
     else ret = fputs(CSI("1;1H") CSI("2J"), fh) != EOF;
     if (rawcurses_stdio_wide || rawcurses_stdio_tall || rawcurses_stdio_dwl)
     {
@@ -3404,8 +4515,10 @@ static int rawcurses_fput_smcup(FILE *fh)
         }
     }
     if (rawcurses_stdio_vt52 || rawcurses_stdio_adm3a || rawcurses_stdio_emacs || rawcurses_stdio_dumb || rawcurses_stdio_tek || rawcurses_stdio_amiga || rawcurses_stdio_atascii) return rawcurses_fput_clear(fh);
-    return (fprintf(fh, ESCAPE("7") CSI("s") "%s" CSI("\?7l") CSI("r"),
-                    rawcurses_stdio_amiga ? "" : (CSI("\?47h"))) > 0);
+    return (fprintf(fh, "%s" CSI("s") "%s%s" CSI("r"),
+                    rawcurses_stdio_rsxwin ? "" : ESCAPE("7"),
+                    (rawcurses_stdio_rsxwin || rawcurses_stdio_amiga) ? "" : (CSI("\?47h")),
+                    rawcurses_stdio_rsxwin ? "" : CSI("\?7l")) > 0);
 }
 
 static int rawcurses_fput_rmcup(FILE *fh, int lines)
@@ -3435,9 +4548,11 @@ static int rawcurses_fput_rmcup(FILE *fh, int lines)
         return 1;
     }
     if (rawcurses_stdio_vt52 || rawcurses_stdio_adm3a || rawcurses_stdio_emacs || rawcurses_stdio_dumb || rawcurses_stdio_tek || rawcurses_stdio_atascii) return 1;
-    return (fprintf(fh, CSI("%d;1H") CSI("39;49m") CSI("0m") CSI("\?7h") "%s" CSI("u") ESCAPE("8"),
+    return (fprintf(fh, CSI("%d;1H") CSI("39;49m") CSI("m") CSI("0m") "%s%s" CSI("u") "%s",
                     lines,
-                    rawcurses_stdio_amiga ? "" : (CSI("\?47l"))) > 0);
+                    rawcurses_stdio_rsxwin ? "" : CSI("\?7h"),
+                    (rawcurses_stdio_rsxwin || rawcurses_stdio_amiga) ? "" : (CSI("\?47l")),
+                    rawcurses_stdio_rsxwin ? "" : ESCAPE("8")) > 0);
 }
 
 static int rawcurses_fput_enacs(FILE *fh)
@@ -3448,6 +4563,8 @@ static int rawcurses_fput_enacs(FILE *fh)
         return 1;
     }
 #endif
+    if (rawcurses_stdio_acs_so) return 1;
+    if (rawcurses_stdio_acs_active) return 1;
     if (rawcurses_stdio_adm3a || rawcurses_stdio_emacs || rawcurses_stdio_dumb || rawcurses_stdio_tek) return 0;
     if (rawcurses_stdio_vt52 || rawcurses_stdio_acs_h19 || rawcurses_stdio_atascii || rawcurses_stdio_acs_wy60 || rawcurses_stdio_acs_kaypro2x || rawcurses_stdio_acs_m100 || rawcurses_stdio_cp437 || rawcurses_stdio_cp850 || rawcurses_stdio_koi8r || rawcurses_stdio_koi8u || rawcurses_stdio_petscii) return 1;
     if (! rawcurses_stdio_iso2022) return 1;
@@ -3462,8 +4579,11 @@ static int rawcurses_fput_smacs(FILE *fh)
         return 1;
     }
 #endif
+    if (rawcurses_stdio_acs_so) return fputc('\x0e', fh) != EOF;
+    if (rawcurses_stdio_acs_active) return 1;
     if (rawcurses_stdio_m100) return 1;
     if (rawcurses_stdio_vt52) return fputs(ESCAPE("F"), fh) != EOF;
+    if (rawcurses_stdio_acs_h19) return fputs("\x0e" CSI("10m"), fh) != EOF;
     if (rawcurses_stdio_wy60 && rawcurses_stdio_acs_wy60) return fputs(ESCAPE("H"), fh) != EOF;
     if (rawcurses_stdio_petscii
         &&
@@ -3484,6 +4604,7 @@ static int rawcurses_fput_smacs(FILE *fh)
     {
         if (rawcurses_stdio_utf8) return 1;
         if (rawcurses_stdio_iso2022) fputs("\x0e" ESCAPE("(0"), fh);
+        if (! rawcurses_stdio_switchcs) return 1;
         return (fputs(CSI("12m") CSI("11m"), fh) != EOF);
     }
     if (rawcurses_stdio_vwmterm) return fputs(CSI("11m"), fh) != EOF;
@@ -3498,8 +4619,11 @@ static int rawcurses_fput_rmacs(FILE *fh)
         return 1;
     }
 #endif
+    if (rawcurses_stdio_acs_so) return fputc('\x0f', fh) != EOF;
+    if (rawcurses_stdio_acs_active) return 1;
     if (rawcurses_stdio_m100) return 1;
     if (rawcurses_stdio_vt52) return fputs(ESCAPE("G"), fh) != EOF;
+    if (rawcurses_stdio_acs_h19) return fputs(CSI("11m\x0f"), fh) != EOF;
     if (rawcurses_stdio_wy60 && rawcurses_stdio_acs_wy60) return 1;
     if (rawcurses_stdio_petscii
         &&
@@ -3519,7 +4643,7 @@ static int rawcurses_fput_rmacs(FILE *fh)
         ! (rawcurses_stdio_adm3a || rawcurses_stdio_emacs || rawcurses_stdio_dumb || rawcurses_stdio_tek))
     {
         if (rawcurses_stdio_utf8) return 1;
-        if (fputs(CSI("10m"), fh) != EOF)
+        if ((! rawcurses_stdio_switchcs) || (fputs(CSI("10m"), fh) != EOF))
         {
             if (rawcurses_stdio_iso2022) return fputs("\x0f" ESCAPE("(B"), fh) != EOF;
             return 1;
@@ -3650,10 +4774,10 @@ static int rawcurses_fput_clrtobot(FILE *fh)
         return 0;
     }
 #endif
-    if (rawcurses_stdio_adm3a || rawcurses_stdio_dumb || rawcurses_stdio_tek || rawcurses_stdio_atascii || rawcurses_stdio_petscii) return 0;
-    if (rawcurses_stdio_emacs) return fputs("\020C", fh) != EOF;
-    if (rawcurses_stdio_vt52) return fputs(ESCAPE("J"), fh) != EOF;
-    if (rawcurses_stdio_amiga) ret = (fputs(CSI("J"), fh) != EOF);
+    if (rawcurses_stdio_adm3a || rawcurses_stdio_dumb || rawcurses_stdio_tek || rawcurses_stdio_atascii || rawcurses_stdio_petscii) ret = 0;
+    else if (rawcurses_stdio_emacs) ret = fputs("\020C", fh) != EOF;
+    else if (rawcurses_stdio_vt52) ret = fputs(ESCAPE("J"), fh) != EOF;
+    else if (rawcurses_stdio_amiga) ret = (fputs(CSI("J"), fh) != EOF);
     else ret = (fputs(CSI("0J"), fh) != EOF);
     if (rawcurses_stdio_wide || rawcurses_stdio_tall || rawcurses_stdio_dwl)
     {
@@ -3687,10 +4811,10 @@ static int rawcurses_fput_clrtoeol(FILE *fh)
         return 1;
     }
 #endif
-    if (rawcurses_stdio_adm3a || rawcurses_stdio_dumb || rawcurses_stdio_tek || rawcurses_stdio_atascii || rawcurses_stdio_petscii) return 0;
-    if (rawcurses_stdio_emacs) return fputs("\020c", fh) != EOF;
-    if (rawcurses_stdio_vt52) return fputs(ESCAPE("K"), fh) != EOF;
-    ret = (fputs(CSI("0K"), fh) != EOF);
+    if (rawcurses_stdio_adm3a || rawcurses_stdio_dumb || rawcurses_stdio_tek || rawcurses_stdio_atascii || rawcurses_stdio_petscii) ret = 0;
+    else if (rawcurses_stdio_emacs) ret = fputs("\020c", fh) != EOF;
+    else if (rawcurses_stdio_vt52) ret = fputs(ESCAPE("K"), fh) != EOF;
+    else ret = (fputs(CSI("0K"), fh) != EOF);
     if (rawcurses_stdio_wide || rawcurses_stdio_tall || rawcurses_stdio_dwl)
     {
         int x, y;
@@ -3700,6 +4824,93 @@ static int rawcurses_fput_clrtoeol(FILE *fh)
         if (! rawcurses_stdio_relcup) rawcurses_fput_cup(fh, y, x);
     }
     return ret;
+}
+
+static rawcurses_chtype rawcurses_read_backing(int y, int x);
+
+#ifdef attrset
+#undef attrset
+#endif
+#define attrset rawcurses_attrset
+static int attrset(attr_t a);
+
+static int wctoa(chtype ch);
+
+static int wctoascii(wchar_t wc);
+
+static chtype rawcurses_map_acs(chtype ch);
+
+static int rawcurses_fput_chtype(rawcurses_chtype och, FILE *fh)
+{
+    int wcw;
+    chtype mapped;
+
+    och &= A_CHARTEXT;
+    mapped = (chtype) ERR;
+    wcw = 0;
+    if (rawcurses_stdio_acs)
+    {
+        mapped = rawcurses_map_acs(och);
+        if (mapped != (chtype) ERR)
+        {
+            och = mapped;
+            wcw = 1;
+            rawcurses_fput_smacs(fh);
+        }
+    }
+    if ((rawcurses_raw && (rawcurses_stdio_cp437 || rawcurses_stdio_utf8))
+        &&
+        (wcw < 1)
+        &&
+        (och != (chtype) (0x7f & (int) (my_uchar) och)))
+    {
+        wcw = wcwidth((wchar_t) och);
+        if (wcw < 1)
+        {
+            wcw = 1;
+            if ((och < ' ')
+                ||
+                (och > '~'))
+            {
+                och = wctoa(och);
+                wcw = wcwidth((wchar_t) och);
+            }
+        }
+    }
+    if (wcw > 0)
+    {
+#ifdef UNICODE
+        if (rawcurses_stdio_utf8)
+        {
+            fputc_utf8(och, fh);
+        }
+        else
+#endif
+        {
+            if (rawcurses_stdio_utf8)
+            {
+                fputc_utf8_cp437(0x100 | (int) (my_uchar) och, fh);
+            }
+            else if (rawcurses_stdio_cp437)
+            {
+                fputc((int) (my_uchar) och, fh);
+            }
+            else
+            {
+                wcw = 0;
+            }
+        }
+    }
+    if (wcw <= 0)
+    {
+        wcw = 1;
+        fprintf(fh, "%c", wctoascii(och));
+    }
+    if (mapped != (chtype) ERR)
+    {
+        rawcurses_fput_rmacs(fh);
+    }
+    return wcw;
 }
 
 static int rawcurses_fput_relcup(FILE *fh, int dy, int dx, int y, int x)
@@ -3731,12 +4942,33 @@ static int rawcurses_fput_relcup(FILE *fh, int dy, int dx, int y, int x)
     }
     if (rawcurses_stdio_nocuf && (dx > 0))
     {
-        ret = rawcurses_fput_relcup(fh, dy, 0, y, x - dx);
-        dy = 0;
-        while ((dx > 0) && (8 * ((x - dx + 8) / 8) < (rawcurses_w - ((y + 1) == rawcurses_h))))
+        if (rawcurses_stdio_notab)
         {
-            fputs("\t", fh);
-            dx = x - 8 * ((x - dx + 8) / 8);
+            attr_t saved_attr;
+
+            saved_attr = rawcurses_attr;
+            while (dx > 0)
+            {
+                rawcurses_chtype och;
+                int wcw;
+
+                och = rawcurses_read_backing(y - dy, x - dx);
+                attrset(och & ~A_CHARTEXT);
+                och &= A_CHARTEXT;
+                wcw = rawcurses_fput_chtype(och, fh);
+                dx -= wcw;
+            }
+            attrset(saved_attr);
+        }
+        else
+        {
+            ret = rawcurses_fput_relcup(fh, dy, 0, y, x - dx);
+            dy = 0;
+            while ((dx > 0) && (8 * ((x - dx + 8) / 8) < (rawcurses_w - (((y + 1) == rawcurses_h) ? 1 : 0))))
+            {
+                fputs("\t", fh);
+                dx = x - 8 * ((x - dx + 8) / 8);
+            }
         }
     }
     if (rawcurses_stdio_vt52 || rawcurses_stdio_adm3a || rawcurses_stdio_emacs || rawcurses_stdio_dumb || rawcurses_stdio_tek || rawcurses_stdio_atascii || rawcurses_stdio_petscii)
@@ -3754,7 +4986,7 @@ static int rawcurses_fput_relcup(FILE *fh, int dy, int dx, int y, int x)
             if (rawcurses_stdio_atascii) ret = ret && (fputc('\036', fh) != EOF);
             else if (rawcurses_stdio_petscii) ret = ret && (fputc('\235', fh) != EOF);
             else if (rawcurses_stdio_emacs) ret = ret && (fputs("\020\002", fh) != EOF);
-            else if (rawcurses_stdio_adm3a || rawcurses_stdio_dumb || rawcurses_stdio_tek) ret = ret && (fputc('\b', fh) != EOF);
+            else if (rawcurses_stdio_hp || rawcurses_stdio_adm3a || rawcurses_stdio_dumb || rawcurses_stdio_tek) ret = ret && (fputc('\b', fh) != EOF);
             else ret = ret && (fputs(ESCAPE("D"), fh) != EOF);
             dx ++;
         }
@@ -3763,7 +4995,7 @@ static int rawcurses_fput_relcup(FILE *fh, int dy, int dx, int y, int x)
             if (rawcurses_stdio_atascii) ret = ret && (fputc('\035', fh) != EOF);
             else if (rawcurses_stdio_petscii) ret = ret && (fputc('\021', fh) != EOF);
             else if (rawcurses_stdio_emacs) ret = ret && (fputs("\020\n", fh) != EOF);
-            else if (rawcurses_stdio_adm3a || rawcurses_stdio_dumb || rawcurses_stdio_tek) ret = ret && (fputc('\n', fh) != EOF);
+            else if (rawcurses_stdio_hp || rawcurses_stdio_adm3a || rawcurses_stdio_dumb || rawcurses_stdio_tek) ret = ret && (fputc('\n', fh) != EOF);
             else ret = ret && (fputs(ESCAPE("B"), fh) != EOF);
             dy --;
         }
@@ -3816,14 +5048,21 @@ static int rawcurses_fput_cup(FILE *fh, int y, int x)
     if (rawcurses_stdio_tek)
     {
         int tekx, teky;
+#ifndef RAWCURSES__TEK_XRES
+#define RAWCURSES__TEK_XRES 4096
+#endif
+#ifndef RAWCURSES__TEK_YRES
+/* xterm might think this is 3072 */
+#define RAWCURSES__TEK_YRES 3120
+#endif
 
-        tekx = (int) ((4096 * (long) x) / rawcurses_w);
-        teky = (int) (3072 - (3072 * (long) (1 + y)) / rawcurses_h);
+        tekx = (int) ((RAWCURSES__TEK_XRES * (long) x) / rawcurses_w);
+        teky = (int) (RAWCURSES__TEK_YRES - (RAWCURSES__TEK_YRES * (long) (1 + y)) / rawcurses_h);
         if (tekx < 0) tekx = 0;
-        if (tekx >= 4096) tekx = 4096 - 1;
+        if (tekx >= RAWCURSES__TEK_XRES) tekx = RAWCURSES__TEK_XRES - 1;
         if (teky < 0) teky = 0;
-        if (teky >= 3072) teky = 3072 - 1;
-        // TODO: should optimize using [ Hi-Y ] [ [ LSBXY ] Lo-Y [ Hi-X ] ] Lo-X
+        if (teky >= RAWCURSES__TEK_YRES) teky = RAWCURSES__TEK_YRES - 1;
+        /* TODO: should optimize using [ Hi-Y ] [ [ LSBXY ] Lo-Y [ Hi-X ] ] Lo-X */
         return fprintf(
             fh,
             "\x1d%c%c%c%c%c\x1f%s",
@@ -3832,7 +5071,7 @@ static int rawcurses_fput_cup(FILE *fh, int y, int x)
             0x60 + ((teky / 4) % 32),
             0x20 + ((tekx / 4) / 32),
             0x40 + ((tekx / 4) % 32),
-            (tekx >= (4096 / 2)) ? "\b " : " \b") > 0;
+            (tekx >= (RAWCURSES__TEK_XRES / 2)) ? "\b " : " \b") > 0;
     }
     if (rawcurses_stdio_atascii || rawcurses_stdio_petscii || rawcurses_stdio_dumb || rawcurses_stdio_tek) return 0;
     if (rawcurses_stdio_vt52 || rawcurses_stdio_adm3a || rawcurses_stdio_emacs)
@@ -3841,20 +5080,38 @@ static int rawcurses_fput_cup(FILE *fh, int y, int x)
 
         yo = 0;
         xo = 0;
-        if (y > 0x5e)
+        /* DECterm's VT52 mode is hardcore about this -- otherwise the
+         * limit for direct addressing would be the more natural
+         * 0x5e. */
+        if (y > 23)
         {
-            yo = y - 0x5e;
-            y = 0x5e;
+            yo = y - 23;
+            y = 23;
         }
-        if (x > 0x5e)
+        if (x > 79)
         {
-            xo = x - 0x5e;
-            x = 0x5e;
+            xo = x - 79;
+            x = 79;
         }
-        ret = (fprintf(fh, rawcurses_stdio_adm3a ? (ESCAPE("=%c%c")) : rawcurses_stdio_emacs ? ("\020=%c%c") : (ESCAPE("Y%c%c")), y + 0x20, x + 0x20) > 0);
+        if (rawcurses_stdio_hp)
+        {
+            ret = fprintf(fh, ESCAPE("&a%dc%dY"), x + xo, y + yo);
+            xo = 0;
+            yo = 0;
+        }
+        else if (rawcurses_stdio_wy60 && (xo || yo))
+        {
+            ret = fprintf(fh, ESCAPE("a%dR%dC"), y + yo + 1, x + xo + 1);
+            xo = 0;
+            yo = 0;
+        }
+        else
+        {
+            ret = (fprintf(fh, rawcurses_stdio_adm3a ? (ESCAPE("=%c%c")) : rawcurses_stdio_emacs ? ("\020=%c%c") : (ESCAPE("Y%c%c")), y + 0x20, x + 0x20) > 0);
+        }
         while (yo --)
         {
-            if (rawcurses_stdio_adm3a) fputc('\n', fh);
+            if (rawcurses_stdio_adm3a || rawcurses_stdio_hp) fputc('\n', fh);
             else if (rawcurses_stdio_emacs) fputs("\020\n", fh);
             else fputs(ESCAPE("B"), fh);
         }
@@ -3878,6 +5135,7 @@ static int can_change_color(void);
 static int rawcurses_fput_sgr(FILE *fh, attr_t a, attr_t a_rgb)
 {
     const char *more_sgr;
+    int ret;
 
     more_sgr = ";";
     if (rawcurses_stdio_bterm) more_sgr = "m" CSI("");
@@ -3906,6 +5164,7 @@ static int rawcurses_fput_sgr(FILE *fh, attr_t a, attr_t a_rgb)
             if (a_rgb & BACKGROUND_BLUE) tmp |= FOREGROUND_BLUE;
             if ((a_rgb & BACKGROUND_INTENSITY) || ((a & A_REVERSE) && (a & A_BOLD))) tmp |= FOREGROUND_INTENSITY;
             a_rgb = tmp;
+            a &= ~A_BOLD;
         }
         else
         {
@@ -3929,38 +5188,38 @@ static int rawcurses_fput_sgr(FILE *fh, attr_t a, attr_t a_rgb)
              * \220 black       black           black           black           black
              * \037 blue        blue            blue            blue            brown
              * \036 green       green           green           green           dark magenta
-             * \227 -           dark grey       pink            dark cyan       cyan
+             * \227 -           dark gray       pink            dark cyan       cyan
              * \034 red         red             red             red             green
-             * \201 -           orange          orange          dark purple     dark grey
+             * \201 -           orange          orange          dark purple     dark gray
              * \225 -           brown           brown           dark yellow     light blue
-             * \233 -           light grey      light green     light grey      white
-             * \230 -           medium grey     blue-green      medium gray     light red
+             * \233 -           light gray      light green     light gray      white
+             * \230 -           medium gray     blue-green      medium gray     light red
              * \232 -           light blue      dark blue       light blue      yellow
              * \231 -           light green     light blue      light green     light magenta
              * \237 cyan        cyan            cyan            cyan            dark cyan
              * \226 -           light red       yellow-green    light red       light green
              * \234 purple      purple          purple          purple          red
-             * \236 yellow      yellow          yellow          yellow          light grey
+             * \236 yellow      yellow          yellow          yellow          light gray
              * \005 white       white           white           white           blue
              */
 
-            static const char *petscii_palette[16] = {
-                "\220\220\220\220\220", /* black */
-                "\037\037\232\037\005", /* blue */
-                "\036\036\036\036\034", /* green */
-                "\237\237\230\227\237", /* cyan */
-                "\034\034\034\034\234", /* red */
-                "\234\234\234\201\036", /* magenta */
-                "\236\225\225\225\037", /* brown */
-                "\005\233\005\233\236", /* light grey */
-                "\005\230\005\230\201", /* dark grey */
-                "\037\232\037\232\225", /* light blue */
-                "\036\231\233\231\226", /* light green */
-                "\237\237\237\237\227", /* light cyan */
-                "\034\226\201\226\230", /* light red */
-                "\234\234\227\234\231", /* light magenta */
-                "\236\236\236\236\232", /* yellow */
-                "\005\005\005\005\233"  /* white */
+            static const char petscii_palette[16][6] = {
+                { 0220, 0220, 0220, 0220, 0220, 0 }, /* black */
+                { 0037, 0037, 0232, 0037, 0005, 0 }, /* blue */
+                { 0036, 0036, 0036, 0036, 0034, 0 }, /* green */
+                { 0237, 0237, 0230, 0227, 0237, 0 }, /* cyan */
+                { 0034, 0034, 0034, 0034, 0234, 0 }, /* red */
+                { 0234, 0234, 0234, 0201, 0036, 0 }, /* magenta */
+                { 0236, 0225, 0225, 0225, 0037, 0 }, /* brown */
+                { 0005, 0233, 0005, 0233, 0236, 0 }, /* light gray */
+                { 0005, 0230, 0005, 0230, 0201, 0 }, /* dark gray */
+                { 0037, 0232, 0037, 0232, 0225, 0 }, /* light blue */
+                { 0036, 0231, 0233, 0231, 0226, 0 }, /* light green */
+                { 0237, 0237, 0237, 0237, 0227, 0 }, /* light cyan */
+                { 0034, 0226, 0201, 0226, 0230, 0 }, /* light red */
+                { 0234, 0234, 0227, 0234, 0231, 0 }, /* light magenta */
+                { 0236, 0236, 0236, 0236, 0232, 0 }, /* yellow */
+                { 0005, 0005, 0005, 0005, 0233, 0 }  /* white */
             };
 
 #define RAWCURSES__PETSCII_PALETTE_ENTRY(s) (*((s) + (((rawcurses_stdio_petscii_palette >= 0) && (rawcurses_stdio_petscii_palette < (int) strlen(s))) ? rawcurses_stdio_petscii_palette : 0)))
@@ -3996,8 +5255,87 @@ static int rawcurses_fput_sgr(FILE *fh, attr_t a, attr_t a_rgb)
         return 1;
     }
     if (rawcurses_stdio_atascii) return 1;
-    if (rawcurses_stdio_vt52)
+    if (rawcurses_stdio_vt52 && ! rawcurses_stdio_ansicolor)
     {
+        if (rawcurses_stdio_z100)
+        {
+            int z100fg, z100bg;
+
+            z100fg = (((a_rgb & FOREGROUND_GREEN) ? 4 : 0)
+                      |
+                      ((a_rgb & FOREGROUND_RED) ? 2 : 0)
+                      |
+                      ((a_rgb & FOREGROUND_BLUE) ? 1 : 0)
+                      |
+                      ((a_rgb & FOREGROUND_INTENSITY) ? 8 : 0));
+            z100bg = (((a_rgb & BACKGROUND_GREEN) ? 4 : 0)
+                      |
+                      ((a_rgb & BACKGROUND_RED) ? 2 : 0)
+                      |
+                      ((a_rgb & BACKGROUND_BLUE) ? 1 : 0)
+                      |
+                      ((a_rgb & BACKGROUND_INTENSITY) ? 8 : 0));
+            if (rawcurses_stdio_z100_rgb)
+            {
+                z100fg = (((a_rgb & FOREGROUND_RED) ? 4 : 0)
+                          |
+                          ((a_rgb & FOREGROUND_GREEN) ? 2 : 0)
+                          |
+                          ((a_rgb & FOREGROUND_BLUE) ? 1 : 0)
+                          |
+                          ((a_rgb & FOREGROUND_INTENSITY) ? 8 : 0));
+                z100bg = (((a_rgb & BACKGROUND_RED) ? 4 : 0)
+                          |
+                          ((a_rgb & BACKGROUND_GREEN) ? 2 : 0)
+                          |
+                          ((a_rgb & BACKGROUND_BLUE) ? 1 : 0)
+                          |
+                          ((a_rgb & BACKGROUND_INTENSITY) ? 8 : 0));
+            }
+            fputs(ESCAPE("q"), fh);
+            if (a & RAWCURSES__A_COLOR)
+            {
+                int z100rev;
+
+                z100rev = 0;
+                if (z100bg > 7)
+                {
+                    int tmp;
+
+                    z100rev = 1;
+                    tmp = z100bg;
+                    z100bg = z100fg;
+                    z100fg = tmp;
+                    fprintf(fh, ESCAPE("p"));
+                }
+                if ((z100fg != z100bg) &&
+                    (((z100fg == 8) ? 7 : (z100fg % 8)) ==
+                     ((z100bg == 8) ? 7 : (z100bg % 8))))
+                {
+                    if (z100rev)
+                    {
+                        z100bg = z100fg ? 0 : 15;
+                    }
+                    else
+                    {
+                        z100fg = z100bg ? 0 : 15;
+                    }
+                }
+                fprintf(fh,
+                        ESCAPE("m%c%c"),
+                        '0' + ((z100fg == 8) ? 7 : (z100fg % 8)),
+                        '0' + ((z100bg == 8) ? 7 : (z100bg % 8)));
+            }
+            else
+            {
+                fprintf(fh, ESCAPE("m70"));
+                if (a & (A_STANDOUT | A_REVERSE))
+                {
+                    fprintf(fh, ESCAPE("p"));
+                }
+            }
+            return 1;
+        }
         if (rawcurses_stdio_tw52)
         {
             int toswinfg, toswinbg;
@@ -4023,14 +5361,31 @@ static int rawcurses_fput_sgr(FILE *fh, attr_t a, attr_t a_rgb)
             }
             if (a & RAWCURSES__A_COLOR)
             {
+                int toswinrev;
+
+                toswinrev = 0;
                 if (toswinbg > 7)
                 {
                     int tmp;
 
+                    toswinrev = 1;
                     tmp = toswinbg;
                     toswinbg = toswinfg;
                     toswinfg = tmp;
                     fprintf(fh, ESCAPE("p"));
+                }
+                if ((toswinfg != toswinbg) &&
+                    (((toswinfg == 8) ? 7 : (toswinfg % 8)) ==
+                     ((toswinbg == 8) ? 7 : (toswinbg % 8))))
+                {
+                    if (toswinrev)
+                    {
+                        toswinbg = toswinfg ? 0 : 15;
+                    }
+                    else
+                    {
+                        toswinfg = toswinbg ? 0 : 15;
+                    }
                 }
                 fprintf(fh,
                         ESCAPE("3%c") ESCAPE("4%c"),
@@ -4058,16 +5413,22 @@ static int rawcurses_fput_sgr(FILE *fh, attr_t a, attr_t a_rgb)
             &&
             (! (a & RAWCURSES__A_COLOR)))
         {
-            a_rgb = ((BACKGROUND_INTENSITY | BACKGROUND_RED | BACKGROUND_GREEN | BACKGROUND_BLUE)
+            a_rgb = ((rawcurses_stdio_revbg
+                      ? 0
+                      : (BACKGROUND_INTENSITY | BACKGROUND_RED | BACKGROUND_GREEN | BACKGROUND_BLUE))
                      |
                      ((a & A_UNDERLINE)
                       ? ((a & A_BOLD)
                          ? FOREGROUND_RED
                          : (FOREGROUND_RED | FOREGROUND_BLUE))
                       : ((a & A_BOLD)
-                         ? (FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE)
-                         : 0)));
-            if (a & (A_STANDOUT | A_REVERSE))
+                         ? ((rawcurses_stdio_revbg ? FOREGROUND_INTENSITY : 0)
+                            |
+                            FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE)
+                         : (rawcurses_stdio_revbg
+                            ? (FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE)
+                            : 0))));
+            if ((a & (A_STANDOUT | A_REVERSE)) && (! rawcurses_stdio_norev))
             {
                 attr_t tmp;
 
@@ -4083,38 +5444,41 @@ static int rawcurses_fput_sgr(FILE *fh, attr_t a, attr_t a_rgb)
                 a_rgb = tmp;
             }
         }
-        /* FIXME: we should not assume that all VT52-like terminals
-         * necessarily accept these H-19 sequences for standout (or
-         * silently ignore them, which would be fine.) */
-        if ((a & (A_STANDOUT | A_REVERSE))
-            ||
-            ((a_rgb & ((rawcurses_stdio_st52
-                        ? 0
-                        : BACKGROUND_INTENSITY)
-                       |
-                       BACKGROUND_RED | BACKGROUND_GREEN | BACKGROUND_BLUE))
-             !=
-             (rawcurses_stdio_st52
-              ? (BACKGROUND_RED | BACKGROUND_GREEN | BACKGROUND_BLUE)
-              : 0)))
+        if (! rawcurses_stdio_norev)
         {
-            attr_t tmp;
+            /* FIXME: we should not assume that all VT52-like terminals
+             * necessarily accept these H-19 sequences for standout (or
+             * silently ignore them, which would be fine.) */
+            if ((a & (A_STANDOUT | A_REVERSE))
+                ||
+                ((a_rgb & (((rawcurses_stdio_st52 && ! rawcurses_stdio_revbg)
+                            ? 0
+                            : BACKGROUND_INTENSITY)
+                           |
+                           BACKGROUND_RED | BACKGROUND_GREEN | BACKGROUND_BLUE))
+                 !=
+                 ((rawcurses_stdio_st52 && ! rawcurses_stdio_revbg)
+                  ? (BACKGROUND_RED | BACKGROUND_GREEN | BACKGROUND_BLUE)
+                  : 0)))
+            {
+                attr_t tmp;
 
-            fputs(ESCAPE("p"), fh);
-            tmp = 0;
-            if (a_rgb & FOREGROUND_RED) tmp |= BACKGROUND_RED;
-            if (a_rgb & FOREGROUND_GREEN) tmp |= BACKGROUND_GREEN;
-            if (a_rgb & FOREGROUND_BLUE) tmp |= BACKGROUND_BLUE;
-            if (a_rgb & FOREGROUND_INTENSITY) tmp |= BACKGROUND_INTENSITY;
-            if (a_rgb & BACKGROUND_RED) tmp |= FOREGROUND_RED;
-            if (a_rgb & BACKGROUND_GREEN) tmp |= FOREGROUND_GREEN;
-            if (a_rgb & BACKGROUND_BLUE) tmp |= FOREGROUND_BLUE;
-            if (a_rgb & BACKGROUND_INTENSITY) tmp |= FOREGROUND_INTENSITY;
-            a_rgb = tmp;
-        }
-        else
-        {
-            fputs(ESCAPE("q"), fh);
+                fputs(ESCAPE("p"), fh);
+                tmp = 0;
+                if (a_rgb & FOREGROUND_RED) tmp |= BACKGROUND_RED;
+                if (a_rgb & FOREGROUND_GREEN) tmp |= BACKGROUND_GREEN;
+                if (a_rgb & FOREGROUND_BLUE) tmp |= BACKGROUND_BLUE;
+                if (a_rgb & FOREGROUND_INTENSITY) tmp |= BACKGROUND_INTENSITY;
+                if (a_rgb & BACKGROUND_RED) tmp |= FOREGROUND_RED;
+                if (a_rgb & BACKGROUND_GREEN) tmp |= FOREGROUND_GREEN;
+                if (a_rgb & BACKGROUND_BLUE) tmp |= FOREGROUND_BLUE;
+                if (a_rgb & BACKGROUND_INTENSITY) tmp |= FOREGROUND_INTENSITY;
+                a_rgb = tmp;
+            }
+            else
+            {
+                fputs(ESCAPE("q"), fh);
+            }
         }
         if (rawcurses_stdio_st52)
         {
@@ -4134,14 +5498,24 @@ static int rawcurses_fput_sgr(FILE *fh, attr_t a, attr_t a_rgb)
                       ((a_rgb & BACKGROUND_BLUE) ? 4 : 0)
                       |
                       ((a_rgb & BACKGROUND_INTENSITY) ? 8 : 0));
-            if (atarifg == 0) atarifg = 15;
-            else if (atarifg == 15) atarifg = 0;
-            if (ataribg == 0) ataribg = 15;
-            else if (ataribg == 15) ataribg = 0;
-            fprintf(fh,
-                    ESCAPE("b%c") ESCAPE("c%c"),
-                    '0' + atarifg,
-                    '0' + ataribg);
+            if (! rawcurses_stdio_revbg)
+            {
+                if (atarifg == 0) atarifg = 15;
+                else if (atarifg == 15) atarifg = 0;
+                if (ataribg == 0) ataribg = 15;
+                else if (ataribg == 15) ataribg = 0;
+            }
+            {
+                static const char* gempal = "023647589:;><?=1";
+                static const char* tospal = "0123456789:;<=>?";
+                const char* st52pal;
+
+                st52pal = rawcurses_stdio_gempal ? gempal : tospal;
+                fprintf(fh,
+                        ESCAPE("b%c") ESCAPE("c%c"),
+                        st52pal[atarifg],
+                        st52pal[ataribg]);
+            }
         }
         return 1;
     }
@@ -4149,7 +5523,7 @@ static int rawcurses_fput_sgr(FILE *fh, attr_t a, attr_t a_rgb)
     {
         fprintf(fh,
                 ESCAPE("%c0") ESCAPE("%c1") ESCAPE("%c3"),
-                (a & (A_REVERSE | A_STANDOUT)) ? 'B' : 'C',
+                ((a & (A_REVERSE | A_STANDOUT)) && (! rawcurses_stdio_norev)) ? 'B' : 'C',
                 (a & (A_DIM | A_STANDOUT)) ? 'B' : 'C',
                 (a & (A_UNDERLINE | A_STANDOUT)) ? 'B' : 'C');
         return 1;
@@ -4178,7 +5552,11 @@ static int rawcurses_fput_sgr(FILE *fh, attr_t a, attr_t a_rgb)
             ansifg = ansibg;
             ansibg = 0;
         }
-        switch (ansifg % 9) {
+        if (ansifg == 8)
+        {
+            ansifg = 7;
+        }
+        switch (ansifg % 8) {
         case 0: tekco = 0; break;
         case 1: tekco = 2; break;
         case 2: tekco = 3; break;
@@ -4188,10 +5566,78 @@ static int rawcurses_fput_sgr(FILE *fh, attr_t a, attr_t a_rgb)
         case 6: tekco = 5; break;
         default: tekco = 1;
         }
-        fprintf(fh, ESCAPE("ML%c"), '0' + tekco);
+        /* black is reserved for "invisible" corrective
+         * overstriking */
+        if (tekco == 0)
+        {
+            tekco = 1;
+            ansifg = 7;
+        }
+        if (rawcurses_stdio_tekansi)
+        {
+            fprintf(stdout, CSI("3%cm"), (ansifg % 8) + '0');
+            if (ansifg == 7)
+            {
+                fprintf(stdout, CSI("0m"));
+            }
+            rawcurses_stdio_tekco = ansifg % 8;
+        }
+        else
+        {
+            fprintf(fh, ESCAPE("ML%c"), '0' + tekco);
+            rawcurses_stdio_tekco = tekco;
+        }
         return 1;
     }
-    if (rawcurses_stdio_wy60)
+    else if (rawcurses_stdio_tek && (rawcurses_stdio_tekco != (rawcurses_stdio_tekansi ? 7 : 1)))
+    {
+        if (rawcurses_stdio_tekansi)
+        {
+            fprintf(stdout, CSI("37m") CSI("0m"));
+            rawcurses_stdio_tekco = 7;
+        }
+        else
+        {
+            fprintf(fh, ESCAPE("ML1"));
+            rawcurses_stdio_tekco = 1;
+        }
+        return 1;
+    }  
+    if (rawcurses_stdio_scocolor)
+    {
+        int vgafg, vgabg;
+            
+        vgafg = (((a_rgb & FOREGROUND_RED) ? 4 : 0)
+                  |
+                  ((a_rgb & FOREGROUND_GREEN) ? 2 : 0)
+                  |
+                  ((a_rgb & FOREGROUND_BLUE) ? 1 : 0)
+                  |
+                  ((a_rgb & FOREGROUND_INTENSITY) ? 8 : 0));
+        vgabg = (((a_rgb & BACKGROUND_RED) ? 4 : 0)
+                  |
+                  ((a_rgb & BACKGROUND_GREEN) ? 2 : 0)
+                  |
+                  ((a_rgb & BACKGROUND_BLUE) ? 1 : 0)
+                  |
+                  ((a_rgb & BACKGROUND_INTENSITY) ? 8 : 0));
+        if (! rawcurses_stdio_blink)
+        {
+            vgabg &= ~8;
+            if (vgafg == vgabg)
+            {
+                vgafg = vgabg ? 0 : 7;
+            }
+        }
+        if ((vgabg & 8) && rawcurses_stdio_scocolor && ! rawcurses_stdio_scocolor_bright)
+        {
+            fputs(CSI("=E"), fh);
+            rawcurses_stdio_scocolor_bright = 1;
+        }
+        fprintf(fh, CSI("=%dF") CSI("=%dG"), vgafg, vgabg);
+        return 1;
+    }
+    if (rawcurses_stdio_wy60 && ! rawcurses_stdio_ansicolor)
     {
         int wyco = 0;
 
@@ -4257,20 +5703,27 @@ static int rawcurses_fput_sgr(FILE *fh, attr_t a, attr_t a_rgb)
             }
             if (a & A_DIM) wyco ^= 64;
             if (a & A_UNDERLINE) wyco ^= 8;
-            if (a & (A_REVERSE | A_STANDOUT)) wyco ^= 4;
+            if ((a & (A_REVERSE | A_STANDOUT)) && (! rawcurses_stdio_norev)) wyco ^= 4;
         }
         fprintf(fh, ESCAPE("G%c"), '0' + wyco);
         return 1;
     }
-    if (rawcurses_stdio_adm3a || rawcurses_stdio_emacs || rawcurses_stdio_dumb || rawcurses_stdio_tek) return 0;
+    if ((rawcurses_stdio_adm3a || rawcurses_stdio_emacs || rawcurses_stdio_dumb || rawcurses_stdio_tek) && ! rawcurses_stdio_ansicolor) return 0;
+    if (rawcurses_stdio_bterm) fputs(CSI("m"), fh);
     fputs(CSI("0"), fh);
-    if ((a_rgb & BACKGROUND_INTENSITY)
-        &&
-        (! (a & (A_REVERSE | A_STANDOUT)))
-        &&
-        (COLORS == 8)
-        &&
-        (! rawcurses_stdio_nocolorbold))
+    if (((a_rgb & BACKGROUND_INTENSITY)
+         &&
+         (! ((a & (A_REVERSE | A_STANDOUT)) && (! rawcurses_stdio_norev)))
+         &&
+         (COLORS == 8)
+         &&
+         (! rawcurses_stdio_nocolorbold))
+        ||
+        ((rawcurses_stdio_revbg || (rawcurses_stdio_ewan && ! (a_rgb & BACKGROUND_INTENSITY)))
+         &&
+         (a & RAWCURSES__A_COLOR)
+         &&
+         (a_rgb & (BACKGROUND_RED | BACKGROUND_GREEN | BACKGROUND_BLUE | BACKGROUND_INTENSITY))))
     {
         attr_t tmp;
 
@@ -4285,8 +5738,9 @@ static int rawcurses_fput_sgr(FILE *fh, attr_t a, attr_t a_rgb)
         if (a_rgb & BACKGROUND_INTENSITY) tmp |= FOREGROUND_INTENSITY;
         a_rgb = tmp;
         fprintf(fh, "%s7", more_sgr);
+        a &= ~(A_BOLD | A_DIM);
     }
-    if ((a & A_BOLD) || ((a_rgb & FOREGROUND_INTENSITY) && ! rawcurses_stdio_nocolorbold)) fprintf(fh, "%s1", more_sgr);
+    if (((a & A_BOLD) || ((a_rgb & FOREGROUND_INTENSITY) && ! rawcurses_stdio_nocolorbold)) && !((a & (A_REVERSE | A_STANDOUT)) && (! rawcurses_stdio_norev))) fprintf(fh, "%s1", more_sgr);
     else if ((rawcurses_stdio_bterm) && ! rawcurses_stdio_nocolorbold) fprintf(fh, "%s21", more_sgr);
     if ((a_rgb & BACKGROUND_INTENSITY) && rawcurses_stdio_blink) fprintf(fh, "%s5", more_sgr);
     else if ((rawcurses_stdio_bterm) && rawcurses_stdio_blink) fprintf(fh, "%s25", more_sgr);
@@ -4312,64 +5766,90 @@ static int rawcurses_fput_sgr(FILE *fh, attr_t a, attr_t a_rgb)
                   ((a_rgb & BACKGROUND_BLUE) ? 4 : 0)
                   |
                   ((a_rgb & BACKGROUND_INTENSITY) ? 8 : 0));
-        if ((rawcurses_stdio_256color || rawcurses_stdio_88color)
+        if ((rawcurses_stdio_truecolor || rawcurses_stdio_256color || rawcurses_stdio_88color)
             &&
             (! (rawcurses_stdio_ccc || rawcurses_stdio_ccc_linux)))
         {
-            int fg, bg;
-            int rgbscale;
-            int grayscale;
             rawcurses_rgb_t fg_rgb, bg_rgb;
 
-            rgbscale = rawcurses_stdio_256color ? 6 : 4;
-            grayscale = rawcurses_stdio_256color ? 26 : 10;
-            fg_rgb.r = mille_to_scale(rawcurses_palette[ansifg].r, rgbscale);
-            fg_rgb.g = mille_to_scale(rawcurses_palette[ansifg].g, rgbscale);
-            fg_rgb.b = mille_to_scale(rawcurses_palette[ansifg].b, rgbscale);
-            if (fg_rgb.r
-                &&
-                (fg_rgb.r < (rgbscale - 1))
-                &&
-                (fg_rgb.r
-                 ==
-                 fg_rgb.g)
-                &&
-                (fg_rgb.r
-                 ==
-                 fg_rgb.b)
-                &&
-                ((((long) fg_rgb.r) * (grayscale - 1) / (rgbscale - 1)) != (long) mille_to_scale(rawcurses_palette[ansifg].r, grayscale)))
+            if (rawcurses_stdio_truecolor)
             {
-                fg = 16 + rgbscale * rgbscale * rgbscale + mille_to_scale(299L * rawcurses_palette[ansifg].r / 1000 + 587L * rawcurses_palette[ansifg].g / 1000 + 114L * rawcurses_palette[ansifg].b / 1000, grayscale) - 1;
+                fg_rgb.r = 255 * rawcurses_palette[ansifg].r / 1000;
+                fg_rgb.g = 255 * rawcurses_palette[ansifg].g / 1000;
+                fg_rgb.b = 255 * rawcurses_palette[ansifg].b / 1000;
+                bg_rgb.r = 255 * rawcurses_palette[ansibg].r / 1000;
+                bg_rgb.g = 255 * rawcurses_palette[ansibg].g / 1000;
+                bg_rgb.b = 255 * rawcurses_palette[ansibg].b / 1000;
+                fprintf(
+                    fh,
+                    "m" CSI("38;2;%d;%d;%dm") CSI("48;2;%d;%d;%d"),
+                    fg_rgb.r, fg_rgb.g, fg_rgb.b,
+                    bg_rgb.r, bg_rgb.g, bg_rgb.b);
             }
             else
             {
-                fg = 16 + rgbscale * (rgbscale * fg_rgb.r + fg_rgb.g) + fg_rgb.b;
+                int fg, bg;
+                int rgbscale;
+                int grayscale;
+
+                rgbscale = rawcurses_stdio_256color ? 6 : 4;
+                grayscale = rawcurses_stdio_256color ? 26 : 10;
+                fg_rgb.r = mille_to_scale(rawcurses_palette[ansifg].r, rgbscale);
+                fg_rgb.g = mille_to_scale(rawcurses_palette[ansifg].g, rgbscale);
+                fg_rgb.b = mille_to_scale(rawcurses_palette[ansifg].b, rgbscale);
+                if (fg_rgb.r
+                    &&
+                    (fg_rgb.r < (rgbscale - 1))
+                    &&
+                    (fg_rgb.r
+                     ==
+                     fg_rgb.g)
+                    &&
+                    (fg_rgb.r
+                     ==
+                     fg_rgb.b)
+                    &&
+                    ((((long) fg_rgb.r) * (grayscale - 1) / (rgbscale - 1)) != (long) mille_to_scale(rawcurses_palette[ansifg].r, grayscale)))
+                {
+                    fg = 16 + rgbscale * rgbscale * rgbscale + mille_to_scale(299L * rawcurses_palette[ansifg].r / 1000 + 587L * rawcurses_palette[ansifg].g / 1000 + 114L * rawcurses_palette[ansifg].b / 1000, grayscale) - 1;
+                }
+                else
+                {
+                    fg = 16 + rgbscale * (rgbscale * fg_rgb.r + fg_rgb.g) + fg_rgb.b;
+                }
+                bg_rgb.r = mille_to_scale(rawcurses_palette[ansibg].r, rgbscale);
+                bg_rgb.g = mille_to_scale(rawcurses_palette[ansibg].g, rgbscale);
+                bg_rgb.b = mille_to_scale(rawcurses_palette[ansibg].b, rgbscale);
+                if (bg_rgb.r
+                    &&
+                    (bg_rgb.r < (rgbscale - 1))
+                    &&
+                    (bg_rgb.r
+                     ==
+                     bg_rgb.g)
+                    &&
+                    (bg_rgb.r
+                     ==
+                     bg_rgb.b)
+                    &&
+                    ((((long) bg_rgb.r) * (grayscale - 1) / (rgbscale - 1)) != (long) mille_to_scale(rawcurses_palette[ansibg].r, grayscale)))
+                {
+                    bg = 16 + rgbscale * rgbscale * rgbscale + mille_to_scale(299L * rawcurses_palette[ansibg].r / 1000 + 587L * rawcurses_palette[ansibg].g / 1000 + 114L * rawcurses_palette[ansibg].b / 1000, grayscale) - 1;
+                }
+                else
+                {
+                    bg = 16 + rgbscale * (rgbscale * bg_rgb.r + bg_rgb.g) + bg_rgb.b;
+                }
+                if (rawcurses_stdio_fbterm)
+                {
+                    fprintf(fh, "m" CSI("1;%d}") CSI("2;%d}"), fg, bg);
+                    return 1;
+                }
+                else
+                {
+                    fprintf(fh, "m" CSI("38;5;%dm") CSI("48;5;%d"), fg, bg);
+                }
             }
-            bg_rgb.r = mille_to_scale(rawcurses_palette[ansibg].r, rgbscale);
-            bg_rgb.g = mille_to_scale(rawcurses_palette[ansibg].g, rgbscale);
-            bg_rgb.b = mille_to_scale(rawcurses_palette[ansibg].b, rgbscale);
-            if (bg_rgb.r
-                &&
-                (bg_rgb.r < (rgbscale - 1))
-                &&
-                (bg_rgb.r
-                 ==
-                 bg_rgb.g)
-                &&
-                (bg_rgb.r
-                 ==
-                 bg_rgb.b)
-                &&
-                ((((long) bg_rgb.r) * (grayscale - 1) / (rgbscale - 1)) != (long) mille_to_scale(rawcurses_palette[ansibg].r, grayscale)))
-            {
-                bg = 16 + rgbscale * rgbscale * rgbscale + mille_to_scale(299L * rawcurses_palette[ansibg].r / 1000 + 587L * rawcurses_palette[ansibg].g / 1000 + 114L * rawcurses_palette[ansibg].b / 1000, grayscale) - 1;
-            }
-            else
-            {
-                bg = 16 + rgbscale * (rgbscale * bg_rgb.r + bg_rgb.g) + bg_rgb.b;
-            }
-            fprintf(fh, "m" CSI("38;5;%dm") CSI("48;5;%d"), fg, bg);
         }
         else
         {
@@ -4398,9 +5878,17 @@ static int rawcurses_fput_sgr(FILE *fh, attr_t a, attr_t a_rgb)
     else
     {
         /*if (a & (A_REVERSE | A_STANDOUT)) fprintf(fh, "%s3", more_sgr);*/
-        if (a & (A_REVERSE | A_STANDOUT)) fprintf(fh, "%s7", more_sgr);
+        if ((a & (A_REVERSE | A_STANDOUT)) && (! rawcurses_stdio_norev))
+        {
+            if ((a_rgb & BACKGROUND_INTENSITY) && ! (rawcurses_stdio_norevbold || rawcurses_stdio_blink))
+            {
+                fprintf(fh, "%s1", more_sgr);
+            }
+            fprintf(fh, "%s7", more_sgr);
+        }
     }
-    return fputc('m', fh) != EOF;
+    ret = fputc('m', fh) != EOF;
+    return ret;
 }
 
 /* only one attribute is allowed here for now: A_REVERSE, which is
@@ -4424,21 +5912,25 @@ static chtype rawcurses_map_acs(chtype ch)
             return RAWCURSES__ACS_BHALF ^ A_REVERSE;
         case ACS_BLOCK:
             return ' ' ^ A_REVERSE;
+        case ACS_CKBOARD:
         case ACS_BTEE:
         case ACS_HLINE:
-        case ACS_LLCORNER:
-        case ACS_LRCORNER:
         case ACS_LTEE:
         case ACS_PLUS:
         case ACS_RTEE:
         case ACS_TTEE:
-        case ACS_ULCORNER:
-        case ACS_URCORNER:
         case ACS_VLINE:
         case RAWCURSES__ACS_BHALF:
         case RAWCURSES__ACS_LHALF:
             return ch;
         default:
+            if ((ch == (chtype) ACS_ULCORNER) ||
+                (ch == (chtype) ACS_URCORNER) ||
+                (ch == (chtype) ACS_LLCORNER) ||
+                (ch == (chtype) ACS_LRCORNER))
+            {
+                return ch;
+            }
             if (((rawcurses_stdio_acs_c128
                   &&
                   (rawcurses_w == 80)
@@ -4463,14 +5955,10 @@ static chtype rawcurses_map_acs(chtype ch)
         case ACS_BLOCK:
         case ACS_BTEE:
         case ACS_HLINE:
-        case ACS_LLCORNER:
-        case ACS_LRCORNER:
         case ACS_LTEE:
         case ACS_PLUS:
         case ACS_RTEE:
         case ACS_TTEE:
-        case ACS_ULCORNER:
-        case ACS_URCORNER:
         case ACS_VLINE:
         case RAWCURSES__ACS_BHALF:
         case RAWCURSES__ACS_LHALF:
@@ -4478,6 +5966,13 @@ static chtype rawcurses_map_acs(chtype ch)
         case RAWCURSES__ACS_THALF:
             return ch;
         default:
+            if ((ch == (chtype) ACS_ULCORNER) ||
+                (ch == (chtype) ACS_URCORNER) ||
+                (ch == (chtype) ACS_LLCORNER) ||
+                (ch == (chtype) ACS_LRCORNER))
+            {
+                return ch;
+            }
             if (ch == (chtype) ACS_BULLET) return ch;
             return ERR;
         }
@@ -4488,6 +5983,9 @@ static chtype rawcurses_map_acs(chtype ch)
         {
         case ACS_BLOCK:
             ch = 0xdb;
+            break;
+        case ACS_CKBOARD:
+            ch = 0xb1;
             break;
         case RAWCURSES__ACS_THALF:
             ch = 0xdf;
@@ -4500,18 +5998,6 @@ static chtype rawcurses_map_acs(chtype ch)
             break;
         case RAWCURSES__ACS_RHALF:
             ch = 0xde;
-            break;
-        case ACS_LRCORNER:
-            ch = 217;
-            break;
-        case ACS_URCORNER:
-            ch = 191;
-            break;
-        case ACS_ULCORNER:
-            ch = 218;
-            break;
-        case ACS_LLCORNER:
-            ch = 192;
             break;
         case ACS_PLUS:
             ch = 197;
@@ -4534,10 +6020,117 @@ static chtype rawcurses_map_acs(chtype ch)
         case ACS_VLINE:
             ch = 179;
             break;
+        case ACS_BBDD:
+            ch = 187;
+            break;
+        case ACS_BBDS:
+            ch = 183;
+            break;
+        case ACS_BBSD:
+            ch = 184;
+            break;
+        case ACS_BDBD:
+            ch = 205;
+            break;
+        case ACS_BDDB:
+            ch = 201;
+            break;
+        case ACS_BDDD:
+            ch = 203;
+            break;
+        case ACS_BDSB:
+            ch = 213;
+            break;
+        case ACS_BDSD:
+            ch = 209;
+            break;
+        case ACS_BSDB:
+            ch = 214;
+            break;
+        case ACS_BSDS:
+            ch = 210;
+            break;
+        case ACS_DBBD:
+            ch = 188;
+            break;
+        case ACS_DBBS:
+            ch = 189;
+            break;
+        case ACS_DBDB:
+            ch = 186;
+            break;
+        case ACS_DBDD:
+            ch = 185;
+            break;
+        case ACS_DBDS:
+            ch = 182;
+            break;
+        case ACS_DDBB:
+            ch = 200;
+            break;
+        case ACS_DDBD:
+            ch = 202;
+            break;
+        case ACS_DDDB:
+            ch = 204;
+            break;
+        case ACS_DDDD:
+            ch = 206;
+            break;
+        case ACS_DSBB:
+            ch = 211;
+            break;
+        case ACS_DSBS:
+            ch = 208;
+            break;
+        case ACS_DSDB:
+            ch = 199;
+            break;
+        case ACS_DSDS:
+            ch = 215;
+            break;
+        case ACS_SBBD:
+            ch = 190;
+            break;
+        case ACS_SBSD:
+            ch = 181;
+            break;
+        case ACS_SDBB:
+            ch = 212;
+            break;
+        case ACS_SDBD:
+            ch = 207;
+            break;
+        case ACS_SDSB:
+            ch = 198;
+            break;
+        case ACS_SDSD:
+            ch = 216;
+            break;
         default:
+            if (ch == (chtype) ACS_LRCORNER)
+            {
+                ch = 217;
+                break;
+            }
+            if (ch == (chtype) ACS_URCORNER)
+            {
+                ch = 191;
+                break;
+            }
+            if (ch == (chtype) ACS_ULCORNER)
+            {
+                ch = 218;
+                break;
+            }
+            if (ch == (chtype) ACS_LLCORNER)
+            {
+                ch = 192;
+                break;
+            }
             if (ch == (chtype) ACS_BULLET)
             {
-                ch = 254;
+                ch = SWAPDOTS ? 0xf9U : 0xfeU;
                 break;
             }
             ch = (chtype) ERR;
@@ -4551,17 +6144,8 @@ static chtype rawcurses_map_acs(chtype ch)
         case ACS_BLOCK:
             ch = '7';
             break;
-        case ACS_LRCORNER:
-            ch = '5';
-            break;
-        case ACS_URCORNER:
-            ch = '3';
-            break;
-        case ACS_ULCORNER:
-            ch = '2';
-            break;
-        case ACS_LLCORNER:
-            ch = '1';
+        case ACS_CKBOARD:
+            ch = '?';
             break;
         case ACS_PLUS:
             ch = '8';
@@ -4585,6 +6169,26 @@ static chtype rawcurses_map_acs(chtype ch)
             ch = '6';
             break;
         default:
+            if (ch == (chtype) ACS_LRCORNER)
+            {
+                ch = '5';
+                break;
+            }
+            if (ch == (chtype) ACS_URCORNER)
+            {
+                ch = '3';
+                break;
+            }
+            if (ch == (chtype) ACS_ULCORNER)
+            {
+                ch = '2';
+                break;
+            }
+            if (ch == (chtype) ACS_LLCORNER)
+            {
+                ch = '1';
+                break;
+            }
             ch = (chtype) ERR;
         }
         return ch;
@@ -4595,6 +6199,9 @@ static chtype rawcurses_map_acs(chtype ch)
         {
         case ACS_BLOCK:
             ch = 0x80 | A_REVERSE;
+            break;
+        case ACS_CKBOARD:
+            ch = 0xe6;
             break;
         case RAWCURSES__ACS_THALF:
             ch = 0x8f;
@@ -4645,6 +6252,9 @@ static chtype rawcurses_map_acs(chtype ch)
         case ACS_BLOCK:
             ch = 0xef;
             break;
+        case ACS_CKBOARD:
+            ch = 0xff;
+            break;
         case RAWCURSES__ACS_THALF:
             ch = 0xe7;
             break;
@@ -4656,18 +6266,6 @@ static chtype rawcurses_map_acs(chtype ch)
             break;
         case RAWCURSES__ACS_RHALF:
             ch = 0xea;
-            break;
-        case ACS_LRCORNER:
-            ch = 0xf7;
-            break;
-        case ACS_URCORNER:
-            ch = 0xf2;
-            break;
-        case ACS_ULCORNER:
-            ch = 0xf0;
-            break;
-        case ACS_LLCORNER:
-            ch = 0xf6;
             break;
         case ACS_PLUS:
             ch = 0xfa;
@@ -4691,6 +6289,26 @@ static chtype rawcurses_map_acs(chtype ch)
             ch = 0xf5;
             break;
         default:
+            if (ch == (chtype) ACS_LRCORNER)
+            {
+                ch = 0xf7;
+                break;
+            }
+            if (ch == (chtype) ACS_URCORNER)
+            {
+                ch = 0xf2;
+                break;
+            }
+            if (ch == (chtype) ACS_ULCORNER)
+            {
+                ch = 0xf0;
+                break;
+            }
+            if (ch == (chtype) ACS_LLCORNER)
+            {
+                ch = 0xf6;
+                break;
+            }
             if ((ch == (chtype) ACS_BULLET) && ! (SWAPDOTS))
             {
                 ch = 0x9d;
@@ -4707,29 +6325,20 @@ static chtype rawcurses_map_acs(chtype ch)
         case ACS_BLOCK:
             ch = ' ' | A_REVERSE;
             break;
+        case ACS_CKBOARD:
+            ch = 'i';
+            break;
         case RAWCURSES__ACS_THALF:
-            ch = 'o';
-            break;
-        case RAWCURSES__ACS_BHALF:
-            ch = 'o' | A_REVERSE;
-            break;
-        case RAWCURSES__ACS_LHALF:
-            ch = 'p' | A_REVERSE;
-            break;
-        case RAWCURSES__ACS_RHALF:
             ch = 'p';
             break;
-        case ACS_LRCORNER:
-            ch = 'd';
+        case RAWCURSES__ACS_BHALF:
+            ch = 'p' | A_REVERSE;
             break;
-        case ACS_URCORNER:
-            ch = 'c';
+        case RAWCURSES__ACS_LHALF:
+            ch = 'q' | A_REVERSE;
             break;
-        case ACS_ULCORNER:
-            ch = 'f';
-            break;
-        case ACS_LLCORNER:
-            ch = 'e';
+        case RAWCURSES__ACS_RHALF:
+            ch = 'q';
             break;
         case ACS_PLUS:
             ch = 'b';
@@ -4753,6 +6362,26 @@ static chtype rawcurses_map_acs(chtype ch)
             ch = '`';
             break;
         default:
+            if (ch == (chtype) ACS_LRCORNER)
+            {
+                ch = 'd';
+                break;
+            }
+            if (ch == (chtype) ACS_URCORNER)
+            {
+                ch = 'c';
+                break;
+            }
+            if (ch == (chtype) ACS_ULCORNER)
+            {
+                ch = 'f';
+                break;
+            }
+            if (ch == (chtype) ACS_LLCORNER)
+            {
+                ch = 'e';
+                break;
+            }
             if ((ch == (chtype) ACS_BULLET) && ! (SWAPDOTS))
             {
                 ch = '^';
@@ -4764,17 +6393,8 @@ static chtype rawcurses_map_acs(chtype ch)
     }
     switch (ch)
     {
-    case ACS_LRCORNER:
-        ch = 'j';
-        break;
-    case ACS_URCORNER:
-        ch = 'k';
-        break;
-    case ACS_ULCORNER:
-        ch = 'l';
-        break;
-    case ACS_LLCORNER:
-        ch = 'm';
+    case ACS_CKBOARD:
+        ch = 'a';
         break;
     case ACS_PLUS:
         ch = 'n';
@@ -4798,6 +6418,26 @@ static chtype rawcurses_map_acs(chtype ch)
         ch = 'x';
         break;
     default:
+        if (ch == (chtype) ACS_LRCORNER)
+        {
+            ch = 'j';
+            break;
+        }
+        if (ch == (chtype) ACS_URCORNER)
+        {
+            ch = 'k';
+            break;
+        }
+        if (ch == (chtype) ACS_ULCORNER)
+        {
+            ch = 'l';
+            break;
+        }
+        if (ch == (chtype) ACS_LLCORNER)
+        {
+            ch = 'm';
+            break;
+        }
         if (ch == (chtype) ACS_BULLET)
         {
             ch = '~';
@@ -4823,7 +6463,11 @@ static chtype rawcurses_map_acs(chtype ch)
 #endif
 #endif
 
+#ifndef __GNUC__
 #pragma pack(push, 1)
+#else
+#pragma pack(1)
+#endif
 
 /* UNDOCUMENTED: this is called struct _CONSOLE_INFO in the
  * catch22.net code */
@@ -4858,10 +6502,6 @@ typedef struct
 #endif
  rawcurses_win32_console_info_t;
 
-#pragma pack(pop)
-
-#pragma pack(push, 1)
-
 /* this is called CONSOLE_SCREEN_BUFFER_INFOEX in official docs */
 typedef struct
 {
@@ -4880,7 +6520,11 @@ typedef struct
 #endif
  rawcurses_win32_console_screen_buffer_info_ex_t;
 
+#ifndef __GNUC__
 #pragma pack(pop)
+#else
+#pragma pack()
+#endif
 
 /* typedefs for dynamically resolved functions */
 
@@ -4890,23 +6534,27 @@ typedef HWND WINAPI (*rawcurses_kernel32_GetConsoleWindow_t)(void);
 typedef BOOL WINAPI (*rawcurses_kernel32_GetConsoleScreenBufferInfoEx_t)(HANDLE, rawcurses_win32_console_screen_buffer_info_ex_t *);
 typedef COORD WINAPI (*rawcurses_kernel32_GetConsoleFontSize_t)(HANDLE, DWORD);
 
-#if ! (defined(__WINE__) || defined(__DMC__) || defined(__TINYC__) || defined(__BORLANDC__))
+#if ! (defined(__WINE__) || defined(__DMC__) || defined(__TINYC__) || defined(__BORLANDC__) || defined(__RSXNT__))
 /* these do not exist at all in Wine */
 typedef BOOL WINAPI (*rawcurses_kernel32_GetCurrentConsoleFont_t)(HANDLE, BOOL, PCONSOLE_FONT_INFO);
 /* UNDOCUMENTED: this allows setting the console font index for a
  * given console window */
 typedef BOOL WINAPI (*rawcurses_kernel32_SetConsoleFont_t)(HANDLE, DWORD);
-#endif /* ! (defined(__WINE__) || defined(__DMC__) || defined(__TINYC__) || defined(__BORLANDC__)) */
+#endif /* ! (defined(__WINE__) || defined(__DMC__) || defined(__TINYC__) || defined(__BORLANDC__) || defined(__RSXNT__)) */
 
 typedef BOOL WINAPI (*rawcurses_kernel32_SetConsoleScreenBufferInfoEx_t)(HANDLE, rawcurses_win32_console_screen_buffer_info_ex_t *);
 typedef BOOL WINAPI (*rawcurses_kernel32_QueryFullProcessImageNameW_t)(HANDLE, DWORD, LPWSTR, PDWORD);
 typedef BOOL WINAPI (*rawcurses_kernel32_QueryFullProcessImageNameA_t)(HANDLE, DWORD, LPSTR, PDWORD);
+
+#if USE_WINCONSOLE_REGISTRY
 
 /* from advapi */
 typedef LONG WINAPI (*rawcurses_advapi32_RegOpenKeyExW_t)(HKEY, LPCWSTR, DWORD, REGSAM, PHKEY);
 typedef LONG WINAPI (*rawcurses_advapi32_RegOpenKeyExA_t)(HKEY, LPCSTR, DWORD, REGSAM, PHKEY);
 typedef LONG WINAPI (*rawcurses_advapi32_RegQueryValueExW_t)(HKEY, LPCWSTR, LPDWORD, LPDWORD, LPBYTE, LPDWORD);
 typedef LONG WINAPI (*rawcurses_advapi32_RegCloseKey_t)(HKEY);
+
+#endif /* USE_WINCONSOLE_REGISTRY */
 
 /* from psapi */
 typedef DWORD WINAPI (*rawcurses_psapi_GetModuleFileNameExW_t)(HANDLE, HMODULE, LPWSTR, DWORD);
@@ -4918,6 +6566,8 @@ typedef DWORD WINAPI (*rawcurses_psapi_GetModuleFileNameExA_t)(HANDLE, HMODULE, 
 #endif
 typedef WINSHLWAPI BOOL WINAPI (*rawcurses_shlwapi_PathUnExpandEnvStringsW_t)(LPCWSTR, LPWSTR, UINT);
 typedef WINSHLWAPI BOOL WINAPI (*rawcurses_shlwapi_PathUnExpandEnvStringsA_t)(LPCSTR, LPSTR, UINT);
+
+#if USE_WINCONSOLE_REGISTRY
 
 /* weak-binding wrapper for RegOpenKeyExA */
 static LONG rawcurses_win32_RegOpenKeyExA(HKEY key, LPCSTR sub_key, DWORD options, REGSAM desired, PHKEY result)
@@ -5550,8 +7200,8 @@ static int rawcurses_win32_get_palette(rawcurses_rgb_t *palette)
 
 static int rawcurses_win32_set_palette(rawcurses_rgb_t *palette)
 {
-    HMODULE kernel32;
     int ret = 0;
+    HMODULE kernel32;
 
     kernel32 = LoadLibraryA("kernel32");
     if (kernel32)
@@ -5595,13 +7245,13 @@ static int rawcurses_win32_set_palette(rawcurses_rgb_t *palette)
     if (! ret)
     {
         rawcurses_win32_console_info_t cc;
-#if ! (defined(__WINE__) || defined(__DMC__) || defined(__TINYC__) || defined(__BORLANDC__))
+#if ! (defined(__WINE__) || defined(__DMC__) || defined(__TINYC__) || defined(__BORLANDC__) || defined(__RSXNT__))
         CONSOLE_FONT_INFO cfi;
 
         cfi.nFont = (DWORD) -1;
         cfi.dwFontSize.X = 0;
         cfi.dwFontSize.Y = 0;
-#endif /* ! (defined(__WINE__) || defined(__DMC__) || defined(__TINYC__) || defined(__BORLANDC__)) */
+#endif /* ! (defined(__WINE__) || defined(__DMC__) || defined(__TINYC__) || defined(__BORLANDC__) || defined(__RSXNT__)) */
         if (GetConsoleScreenBufferInfo(rawcurses_stdout, &rawcurses_csbi))
         {
             int i;
@@ -5638,7 +7288,7 @@ static int rawcurses_win32_set_palette(rawcurses_rgb_t *palette)
                         /* who'd have thought it? fullscreen console
                          * apps have very strange geometries
                          * apparently far offscreen and the window
-                         * dimensions are small and nonsensical (thay
+                         * dimensions are small and nonsensical (they
                          * match neither pixel nor text dimensions
                          * known to other calls.) */
                         ((geometry.top == -32000L)
@@ -5700,7 +7350,7 @@ static int rawcurses_win32_set_palette(rawcurses_rgb_t *palette)
                         */
                         RegCloseKey(hkWine);
                     }
-#if ! (defined(__WINE__) || defined(__DMC__) || defined(__TINYC__) || defined(__BORLANDC__))
+#if ! (defined(__WINE__) || defined(__DMC__) || defined(__TINYC__) || defined(__BORLANDC__) || defined(__RSXNT__))
                     else if (kernel32)
                     {
                         rawcurses_kernel32_GetCurrentConsoleFont_t rawcurses_GetCurrentConsoleFont;
@@ -5725,7 +7375,7 @@ static int rawcurses_win32_set_palette(rawcurses_rgb_t *palette)
                             cc.dwFontSize.X = 0;
                         }
                     }
-#endif /* ! (defined(__WINE__) || defined(__DMC__) || defined(__TINYC__) || defined(__BORLANDC__)) */
+#endif /* ! (defined(__WINE__) || defined(__DMC__) || defined(__TINYC__) || defined(__BORLANDC__) || defined(__RSXNT__)) */
                     hConsoleProcess = OpenProcess(PROCESS_ALL_ACCESS, FALSE, tty_pid);
                     if ((hConsoleProcess != INVALID_HANDLE_VALUE)
                         &&
@@ -5764,7 +7414,7 @@ static int rawcurses_win32_set_palette(rawcurses_rgb_t *palette)
                                     {
                                         SendMessage(cc.hConsoleWindow, RAWCURSES_WM_SETCONSOLEINFO, (WPARAM) remote_mapping, 0);
                                     }
-#if ! (defined(__WINE__) || defined(__DMC__) || defined(__TINYC__) || defined(__BORLANDC__))
+#if ! (defined(__WINE__) || defined(__DMC__) || defined(__TINYC__) || defined(__BORLANDC__) || defined(__RSXNT__))
                                     if (kernel32)
                                     {
                                         rawcurses_kernel32_SetConsoleFont_t rawcurses_SetConsoleFont;
@@ -5775,7 +7425,7 @@ static int rawcurses_win32_set_palette(rawcurses_rgb_t *palette)
                                             rawcurses_SetConsoleFont(rawcurses_stdout, cfi.nFont);
                                         }
                                     }
-#endif /* ! (defined(__WINE__) || defined(__DMC__) || defined(__TINYC__) || defined(__BORLANDC__)) */
+#endif /* ! (defined(__WINE__) || defined(__DMC__) || defined(__TINYC__) || defined(__BORLANDC__) || defined(__RSXNT__)) */
                                     if (DuplicateHandle(hConsoleProcess, remote_mapping,
                                                         GetCurrentProcess(), &local_mapping,
                                                         0,
@@ -5803,25 +7453,15 @@ static int rawcurses_win32_set_palette(rawcurses_rgb_t *palette)
     return ret;
 }
 
-#endif
+#endif /* USE_WINCONSOLE_REGISTRY */
 
-#ifdef attrset
-#undef attrset
-#endif
-#define attrset rawcurses_attrset
-static int attrset(attr_t a);
+#endif /* USE_WINCONSOLE */
 
 #ifdef move
 #undef move
 #endif
 #define move rawcurses_move
 static int move(int y, int x);
-
-#ifdef addch
-#undef addch
-#endif
-#define addch rawcurses_addch
-static int addch(chtype ch);
 
 #ifdef addstr
 #undef addstr
@@ -5846,7 +7486,7 @@ static int erase(void);
 #define can_change_color rawcurses_can_change_color
 static int can_change_color(void)
 {
-    return has_colors() && (! rawcurses_fixedpal) && (rawcurses_stdio ? ((rawcurses_stdio_ccc || rawcurses_stdio_ccc_linux) || rawcurses_stdio_256color || rawcurses_stdio_88color) : 1);
+    return has_colors() && (! rawcurses_fixedpal) && (rawcurses_stdio ? ((rawcurses_stdio_ccc || rawcurses_stdio_ccc_linux) || rawcurses_stdio_truecolor || rawcurses_stdio_256color || rawcurses_stdio_88color) : 1);
 }
 
 #ifdef start_color
@@ -6024,16 +7664,22 @@ static const char *rawcurses_term_type(void)
     const char *colorTermType;
     const char *x11display;
     const char *mlterm;
-    const char *konsoleDcop;
+    const char *konsoleDcop, *konsoleDbusSession;
     const char *termProgram;
     const char *termProgramVersion;
     const char *xEnvironment;
 
+    termType = myman_getenv("RAWCURSES_TERM");
+    if (termType)
+    {
+        return termType;
+    }
     termType = myman_getenv("TERM");
     x11display = myman_getenv("DISPLAY");
     colorTermType = myman_getenv("COLORTERM");
     mlterm = myman_getenv("MLTERM");
     konsoleDcop = myman_getenv("KONSOLE_DCOP");
+    konsoleDbusSession = myman_getenv("KONSOLE_DBUS_SESSION");
     termProgram = myman_getenv("TERM_PROGRAM");
     termProgramVersion = myman_getenv("TERM_PROGRAM_VERSION");
     xEnvironment = myman_getenv("XENVIRONMENT");
@@ -6066,7 +7712,7 @@ static const char *rawcurses_term_type(void)
              &&
              RAWCURSES__EQ(colorTermType, "")
              &&
-             konsoleDcop)
+             (konsoleDcop || konsoleDbusSession))
     {
         termType = "konsole";
     }
@@ -6086,7 +7732,15 @@ static const char *rawcurses_term_type(void)
     }
     else if (termType
              &&
-             RAWCURSES__EQ(termType, "xterm-color")
+             (RAWCURSES__EQ(termType, "vt100")
+              ||
+              RAWCURSES__EQ(termType, "xterm")
+              ||
+              RAWCURSES__EQ(termType, "linux")
+              ||
+              RAWCURSES__EQ(termType, "xterm-color")
+              ||
+              RAWCURSES__EQ(termType, "xterm-256color"))
              &&
              termProgram
              &&
@@ -6128,11 +7782,19 @@ static const char *rawcurses_term_type(void)
     }
     else if (termType
              &&
-             RAWCURSES__EQ(termType, "vt102")
+             (RAWCURSES__EQ(termType, "xterm-256color")
+              ||
+              RAWCURSES__EQ(termType, "vt100")
+              ||
+              RAWCURSES__EQ(termType, "vt102")
+              ||
+              RAWCURSES__EQ(termType, "vt220"))
              &&
              termProgram
              &&
-             RAWCURSES__EQ(termProgram, "MacTelnet"))
+             (RAWCURSES__EQ(termProgram, "MacTelnet")
+              ||
+              RAWCURSES__EQ(termProgram, "MacTerm")))
     {
         if (termProgramVersion
             &&
@@ -6144,6 +7806,15 @@ static const char *rawcurses_term_type(void)
         {
             termType = "ncsa";
         }
+    }
+    else if (termType
+             &&
+             RAWCURSES__EQ(termType, "linux")
+             &&
+             termProgram
+             &&
+             RAWCURSES__EQ(termProgram, "GNUstep_Terminal")) {
+        termType = "GNUstep_Terminal";
     }
     else if (termType
              &&
@@ -6199,6 +7870,7 @@ static const char *rawcurses_term_type(void)
 #ifndef NEED_LOCALE_IS_UTF8
 #define NEED_LOCALE_IS_UTF8 1
 #endif
+static int locale_charset_is(const char* charset);
 static int locale_is_utf8(void);
 
 #ifndef NEED_CP437_TO_ASCII
@@ -6235,7 +7907,171 @@ static const my_uchar rawcurses_cp437_koi8[128] = {
     0x9c, 0x95, 0x9e, 0x96,    0, 0x9d, 0x94, 0x9a
 };
 
-static void initscrWithHints(int h, int w, const char *title, const char *shortname)
+static void rawcurses_free_backing(void)
+{
+    if (! rawcurses_stdio_invis)
+    {
+        return;
+    }
+    if (rawcurses_backing)
+    {
+        free((void *) rawcurses_backing);
+        rawcurses_backing = NULL;
+    }
+}
+
+static void rawcurses_clear_backing(void)
+{
+    if (! rawcurses_stdio_invis)
+    {
+        return;
+    }
+    if (rawcurses_backing)
+    {
+        memset(
+            (void *) rawcurses_backing,
+            0,
+            rawcurses_backing_w
+            *
+            rawcurses_backing_h
+            *
+            sizeof(*rawcurses_backing));
+    }
+}
+
+static void rawcurses_resize_backing(void)
+{
+    if (! rawcurses_stdio_invis)
+    {
+        return;
+    }
+    rawcurses_free_backing();
+    if (rawcurses_stdio_invis && (rawcurses_w > 0) && (rawcurses_h > 0))
+    {
+        rawcurses_backing = (rawcurses_chtype *) malloc(rawcurses_w * rawcurses_h * sizeof(*rawcurses_backing));
+        if (rawcurses_backing != NULL)
+        {
+            rawcurses_backing_w = rawcurses_w;
+            rawcurses_backing_h = rawcurses_h;
+        }
+    }
+    rawcurses_clear_backing();
+}
+
+static rawcurses_chtype rawcurses_read_backing(int y, int x)
+{
+    if (! rawcurses_stdio_invis)
+    {
+        return 0;
+    }
+    if (rawcurses_backing
+        &&
+        (y >= 0)
+        &&
+        (y < rawcurses_backing_h)
+        &&
+        (x >= 0)
+        &&
+        (x < rawcurses_backing_w))
+    {
+        return rawcurses_backing[y * rawcurses_backing_w + x];
+    }
+    return 0;
+}
+
+static void rawcurses_write_backing(int y, int x, rawcurses_chtype ch, int wcw)
+{
+    int i;
+    int nbs;
+
+    if (! (rawcurses_stdio && rawcurses_stdio_invis))
+    {
+        return;
+    }
+    nbs = 0;
+    for (i = 0; i < wcw; ++i)
+    {
+        if (rawcurses_backing
+            &&
+            (y >= 0)
+            &&
+            (y < rawcurses_backing_h)
+            &&
+            ((x + i) >= 0)
+            &&
+            ((x + i) < rawcurses_backing_w))
+        {
+            rawcurses_chtype nch;
+
+            nch = i ? 0 : ch;
+            if (rawcurses_stdio_tek)
+            {
+                rawcurses_chtype och;
+
+                och = rawcurses_read_backing(y, x + i);
+                if (och && (och != nch) && (och != ' '))
+                {
+                    if (! nbs)
+                    {
+                        if (rawcurses_stdio_tekansi)
+                        {
+                            fprintf(stdout, CSI("30m"));
+                        }
+                        else
+                        {
+                            fprintf(stdout, ESCAPE("ML0"));
+                        }
+
+                    }
+                    rawcurses_fput_cup(stdout, y, x + i);
+                    rawcurses_fput_chtype(och, stdout);
+                    ++ nbs;
+                }
+            }
+            rawcurses_backing[y * rawcurses_backing_w + x + i] = nch;
+        }
+    }
+    if (nbs)
+    {
+        for (i = 0; i < nbs; ++i)
+        {
+            fprintf(stdout, "\b");
+        }
+        if (rawcurses_stdio_tek)
+        {
+            if (rawcurses_stdio_tekansi)
+            {
+                fprintf(stdout, CSI("3%cm"), rawcurses_stdio_tekco + '0');
+                if (rawcurses_stdio_tekco == 7)
+                {
+                    fprintf(stdout, CSI("0m"));
+                }
+            }
+            else
+            {
+                fprintf(stdout, ESCAPE("ML%c"), rawcurses_stdio_tekco + '0');
+            }
+        }
+    }
+    if (rawcurses_stdio_tek)
+    {
+        rawcurses_fput_cup(stdout, y, x);
+    }
+}
+
+#if USE_WINCONSOLE
+
+#ifndef PIPE_READMODE_BYTE
+#define PIPE_READMODE_BYTE 0
+#endif
+
+#ifndef PIPE_NOWAIT
+#define PIPE_NOWAIT 1
+#endif
+
+#endif
+
+static int initscrWithHints(int h, int w, const char *title, const char *shortname)
 {
     const char *termType;
     const char *lines;
@@ -6255,11 +8091,51 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
 #endif /* USE_VMSCONSOLE */
 
 #if USE_WDEFWIN
-    _dwSetAppTitle(shortname);
-    _dwSetConTitle(fileno(stdout), title);
-    _dwSetAboutDlg(shortname, title);
+    {
+        static int rawcurses_wdefwin_ready = 0;
+
+        if (! rawcurses_wdefwin_ready)
+        {
+            _dwSetAppTitle(shortname);
+            _dwSetConTitle(fileno(stdout), title);
+            _dwSetAboutDlg(shortname, title);
+            rawcurses_wdefwin_ready = 1;
+        }
+        _dwYield();
+    }
 #endif
     termType = rawcurses_term_type();
+    rawcurses_stdio_z100 = 0;
+    rawcurses_stdio_z100_rgb = 0;
+    if (termType
+        &&
+        (RAWCURSES__EQ(termType, "h100")
+         ||
+         RAWCURSES__EQ(termType, "h-100")
+         ||
+         RAWCURSES__EQ(termType, "z100")
+         ||
+         RAWCURSES__EQ(termType, "z100-rgb")
+         ||
+         RAWCURSES__EQ(termType, "z110")
+         ||
+         RAWCURSES__EQ(termType, "z-100")))
+    {
+        /* internal flag for handling the Heath/Zenith Z-100 in VT52
+         * mode */
+        rawcurses_stdio_z100 = 1;
+        if (RAWCURSES__EQ(termType, "z100-rgb")) {
+            rawcurses_stdio_z100_rgb = 1;
+        }
+    }
+    if (rawcurses_getenv_boolean("RAWCURSES_Z100"))
+    {
+        rawcurses_stdio_z100 = *(rawcurses_getenv_boolean("RAWCURSES_Z100")) ? 1 : 0;
+    }
+    if (rawcurses_getenv_boolean("RAWCURSES_Z100_RGB"))
+    {
+        rawcurses_stdio_z100_rgb = *(rawcurses_getenv_boolean("RAWCURSES_Z100_RGB")) ? 1 : 0;
+    }
     rawcurses_stdio_tw52 = 0;
     if (termType
         &&
@@ -6280,6 +8156,14 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
     if (rawcurses_getenv_boolean("RAWCURSES_COLUMNS"))
     {
         columns = rawcurses_getenv_boolean("RAWCURSES_COLUMNS");
+    }
+    if (rawcurses_getenv_boolean("RAWCURSES_REVERSE"))
+    {
+        rawcurses_reverse = *(rawcurses_getenv_boolean("RAWCURSES_REVERSE")) ? 1 : 0;
+    }
+    else
+    {
+        rawcurses_reverse = 0;
     }
     if (rawcurses_getenv_boolean("RAWCURSES_16COLOR"))
     {
@@ -6337,14 +8221,46 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
         rawcurses_debug_utf8 = 0;
     }
     rawcurses_debug_utf8_y = 0;
+    if (rawcurses_getenv_boolean("RAWCURSES_TRUECOLOR"))
+    {
+        rawcurses_stdio_truecolor = *(rawcurses_getenv_boolean("RAWCURSES_TRUECOLOR")) ? 1 : 0;
+    }
+    else
+    {
+        rawcurses_stdio_truecolor = 0;
+        if (RAWCURSES__HASFLAG(termType, "truecolor"))
+        {
+            rawcurses_stdio_truecolor = 1;
+        }
+    }
+    if (rawcurses_getenv_boolean("RAWCURSES_FBTERM"))
+    {
+        rawcurses_stdio_fbterm = *(rawcurses_getenv_boolean("RAWCURSES_FBTERM")) ? 1 : 0;
+    }
+    else
+    {
+        rawcurses_stdio_fbterm = 0;
+        if (RAWCURSES__STARTSWITH(termType, "fbterm"))
+        {
+            rawcurses_stdio_fbterm = 1;
+        }
+    }
+    if (rawcurses_getenv_boolean("RAWCURSES_SWITCHCS"))
+    {
+        rawcurses_stdio_switchcs = *(rawcurses_getenv_boolean("RAWCURSES_SWITCHCS")) ? 1 : 0;
+    }
+    else
+    {
+        rawcurses_stdio_switchcs = ! rawcurses_stdio_fbterm;
+    }
     if (rawcurses_getenv_boolean("RAWCURSES_256COLOR"))
     {
         rawcurses_stdio_256color = *(rawcurses_getenv_boolean("RAWCURSES_256COLOR")) ? 1 : 0;
     }
     else
     {
-        rawcurses_stdio_256color = 0;
-        if (RAWCURSES__EQ(termType, "konsole")
+        rawcurses_stdio_256color = rawcurses_stdio_fbterm;
+        if (RAWCURSES__STARTSWITH(termType, "konsole")
             ||
             RAWCURSES__EQ(termType, "Eterm")
             ||
@@ -6352,9 +8268,15 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
             ||
             RAWCURSES__EQ(termType, "iTerm.app")
             ||
+            RAWCURSES__EQ(termType, "iterm.app")
+            ||
             RAWCURSES__EQ(termType, "Terminal")
             ||
+            RAWCURSES__EQ(termType, "terminator")
+            ||
             RAWCURSES__EQ(termType, "putty")
+            ||
+            RAWCURSES__EQ(termType, "putty-u8")
             ||
             RAWCURSES__EQ(termType, "rxvt-cygwin")
             ||
@@ -6391,6 +8313,8 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
             RAWCURSES__EQ(termType, "Eterm-color")
             ||
             RAWCURSES__EQ(termType, "linux")
+            ||
+            RAWCURSES__EQ(termType, "linux-7")
             ||
             RAWCURSES__EQ(termType, "linux-c")
             ||
@@ -6430,7 +8354,7 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
             ||
             RAWCURSES__STARTSWITH(termType, "rxvt")
             ||
-            RAWCURSES__EQ(termType, "putty")
+            RAWCURSES__STARTSWITH(termType, "putty")
             ||
             RAWCURSES__STARTSWITH(termType, "linux")
             ||
@@ -6438,6 +8362,25 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
         {
             rawcurses_stdio_blink = 1;
         }
+    }
+    if (rawcurses_getenv_boolean("RAWCURSES_XCCC"))
+    {
+        /* Works around a TeraTerm Pro bug by interchanging palette
+         * indices 1-7 and 9-15 for palette operations */
+        rawcurses_stdio_xccc = *(rawcurses_getenv_boolean("RAWCURSES_XCCC")) ? 1 : 0;
+    }
+    else
+    {
+        rawcurses_stdio_xccc = 0;
+    }
+    /* Some terminals need the "rgb:" prefix and do not understand #RRGGBB. */
+    if (rawcurses_getenv_boolean("RAWCURSES_NCCC"))
+    {
+        rawcurses_stdio_nccc = *(rawcurses_getenv_boolean("RAWCURSES_NCCC")) ? 1 : 0;
+    }
+    else
+    {
+        rawcurses_stdio_nccc = -1;
     }
     if (rawcurses_getenv_boolean("RAWCURSES_CCC"))
     {
@@ -6464,11 +8407,13 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
             ||
             RAWCURSES__EQ(termType, "rxvt-cygwin-native")
             ||
-            RAWCURSES__EQ(termType, "rxvt-unicode")
+            RAWCURSES__STARTSWITH(termType, "rxvt-unicode")
             ||
             RAWCURSES__EQ(termType, "rxvt-xpm")
             ||
             RAWCURSES__EQ(termType, "xterm")
+            ||
+            RAWCURSES__EQ(termType, "xterm-16color")
             ||
             RAWCURSES__EQ(termType, "xterm-88color")
             ||
@@ -6490,7 +8435,11 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
 #ifdef __CYGWIN__
         rawcurses_builtin_wcwidth = -1;
 #else
+#ifdef __ANDROID__
+        rawcurses_builtin_wcwidth = -2;
+#else
         rawcurses_builtin_wcwidth = 0;
+#endif
 #endif
     }
     rawcurses_raw = 0;
@@ -6510,7 +8459,7 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
         ||
         (RAWCURSES__STARTSWITH(termType, "rxvt")
          &&
-         RAWCURSES__NE(termType, "rxvt-unicode")))
+         ! RAWCURSES__STARTSWITH(termType, "rxvt-unicode")))
     {
         /* (m)rxvt is still living in the pre-UTF-8 dark ages. it gets
          * ASCII for now. likewise the Emacs
@@ -6564,6 +8513,54 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
             amigalike += strlen(amigalike) + 1;
         }
     }
+    if (rawcurses_getenv_boolean("RAWCURSES_EWAN"))
+    {
+        rawcurses_stdio_ewan = *(rawcurses_getenv_boolean("RAWCURSES_EWAN")) ? 1 : 0;
+    }
+    else
+    {
+        rawcurses_stdio_ewan = 0;
+    }
+    if (rawcurses_getenv_boolean("RAWCURSES_RSXWIN"))
+    {
+        rawcurses_stdio_rsxwin = *(rawcurses_getenv_boolean("RAWCURSES_RSXWIN")) ? 1 : 0;
+    }
+    else
+    {
+        const char *rsxwinlike =
+            "rsxwin" "\0"
+            "\0\0";
+
+        rawcurses_stdio_rsxwin = 0;
+        while (strlen(rsxwinlike))
+        {
+            if (RAWCURSES__STARTSWITH(termType, rsxwinlike))
+            {
+                rawcurses_stdio_rsxwin = 1;
+                break;
+            }
+            rsxwinlike += strlen(rsxwinlike) + 1;
+        }
+    }
+    if (rawcurses_getenv_boolean("RAWCURSES_HP"))
+    {
+        rawcurses_stdio_hp = *(rawcurses_getenv_boolean("RAWCURSES_HP")) ? 1 : 0;
+    }
+    else
+    {
+        const char *hplike = RAWCURSES_HPLIKE;
+
+        rawcurses_stdio_hp = 0;
+        while (strlen(hplike))
+        {
+            if (RAWCURSES__EQ(termType, hplike))
+            {
+                rawcurses_stdio_hp = 1;
+                break;
+            }
+            hplike += strlen(hplike) + 1;
+        }
+    }
     if (rawcurses_getenv_boolean("RAWCURSES_ST52"))
     {
         rawcurses_stdio_st52 = *(rawcurses_getenv_boolean("RAWCURSES_ST52")) ? 1 : 0;
@@ -6582,6 +8579,14 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
             }
             st52like += strlen(st52like) + 1;
         }
+    }
+    if (rawcurses_getenv_boolean("RAWCURSES_GEMPAL"))
+    {
+        rawcurses_stdio_gempal = *(rawcurses_getenv_boolean("RAWCURSES_GEMPAL")) ? 1 : 0;
+    }
+    else
+    {
+        rawcurses_stdio_gempal = 0;
     }
     rawcurses_stdio_dwl = 0;
     if (RAWCURSES__HASFLAG(termType, "dwl"))
@@ -6683,6 +8688,22 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
             teklike += strlen(teklike) + 1;
         }
     }
+    if (rawcurses_getenv_boolean("RAWCURSES_NOCLEAR"))
+    {
+        rawcurses_stdio_noclear = *(rawcurses_getenv_boolean("RAWCURSES_NOCLEAR")) ? 1 : 0;
+    }
+    else
+    {
+        rawcurses_stdio_noclear = 0;
+    }
+    if (rawcurses_getenv_boolean("RAWCURSES_NOTAB"))
+    {
+        rawcurses_stdio_notab = *(rawcurses_getenv_boolean("RAWCURSES_NOTAB")) ? 1 : 0;
+    }
+    else
+    {
+        rawcurses_stdio_notab = 0;
+    }
     if (rawcurses_getenv_boolean("RAWCURSES_NOCUD"))
     {
         rawcurses_stdio_nocud = *(rawcurses_getenv_boolean("RAWCURSES_NOCUD")) ? 1 : 0;
@@ -6714,7 +8735,11 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
     else
     {
         rawcurses_stdio_atascii = 0;
-        if (RAWCURSES__STARTSWITH(termType, "atascii"))
+        if (RAWCURSES__STARTSWITH(termType, "atascii")
+            ||
+            RAWCURSES__STARTSWITH(termType, "bobterm")
+            ||
+            RAWCURSES__STARTSWITH(termType, "xep80"))
         {
             rawcurses_stdio_atascii = 1;
         }
@@ -6726,7 +8751,15 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
     else
     {
         rawcurses_stdio_petscii = 0;
-        if (RAWCURSES__STARTSWITH(termType, "petscii"))
+        if (RAWCURSES__HASBASE(termType, "petscii")
+            ||
+            RAWCURSES__HASBASE(termType, "c128")
+            ||
+            RAWCURSES__HASBASE(termType, "c64")
+            ||
+            RAWCURSES__HASBASE(termType, "vic")
+            ||
+            RAWCURSES__HASBASE(termType, "vic20"))
         {
             rawcurses_stdio_petscii = 1;
         }
@@ -6738,7 +8771,13 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
     else
     {
         rawcurses_stdio_petscii_shifted = 1;
-        if (RAWCURSES__STARTSWITH(termType, "petscii-unshifted"))
+        if (RAWCURSES__HASFLAG(termType, "unshifted")
+            ||
+            RAWCURSES__HASFLAG(termType, "uc")
+            ||
+            RAWCURSES__HASFLAG(termType, "rc")
+            ||
+            RAWCURSES__HASFLAG(termType, "ruc"))
         {
             rawcurses_stdio_petscii_shifted = 0;
         }
@@ -6754,11 +8793,37 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
     else
     {
         rawcurses_stdio_acs_c128 = 0;
-        if (rawcurses_stdio_petscii
+        if (((rawcurses_stdio_petscii
+              &&
+              rawcurses_stdio_petscii_shifted)
+             ||
+             (RAWCURSES__HASBASE(termType, "c128")))
             &&
-            rawcurses_stdio_petscii_shifted)
+            (! (RAWCURSES__HASBASE(termType, "vic")
+                ||
+                RAWCURSES__HASBASE(termType, "c64")
+                ||
+                RAWCURSES__HASFLAG(termType, "lc")
+                ||
+                RAWCURSES__HASFLAG(termType, "uc")
+                ||
+                RAWCURSES__HASFLAG(termType, "rgb")
+                ||
+                RAWCURSES__HASFLAG(termType, "ruc"))))
         {
             rawcurses_stdio_acs_c128 = 1;
+        }
+    }
+    if (myman_getenv("RAWCURSES_PETSCII_PALETTE") && *(myman_getenv("RAWCURSES_PETSCII_PALETTE")))
+    {
+        rawcurses_stdio_petscii_palette = atoi(myman_getenv("RAWCURSES_PETSCII_PALETTE"));
+    }
+    else
+    {
+        rawcurses_stdio_petscii_palette = -1;
+        if (RAWCURSES__HASFLAG(termType, "rgb"))
+        {
+            rawcurses_stdio_petscii_palette = 4;
         }
     }
     if (rawcurses_getenv_boolean("RAWCURSES_IDCHOK"))
@@ -6811,9 +8876,15 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
             ||
             rawcurses_stdio_vt52
             ||
+            (! rawcurses_stdio_switchcs)
+            ||
             RAWCURSES__STARTSWITH(termType, "ncsa")
             ||
             RAWCURSES__STARTSWITH(termType, "pcansi")
+            ||
+            RAWCURSES__STARTSWITH(termType, "syncterm")
+            ||
+            RAWCURSES__STARTSWITH(termType, "ttyemul-ansi")
             ||
             RAWCURSES__STARTSWITH(termType, "ansi")
             ||
@@ -6845,13 +8916,11 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
              ||
              RAWCURSES__STARTSWITH(termType, "tw100")
              ||
-#if 0
-             /* FIXME: this should be re-enabled once we find a way to
-              * leave altcharset mode in TosWin II's VT52 mode */
              RAWCURSES__STARTSWITH(termType, "tw52")
              ||
-#endif
              RAWCURSES__EQ(termType, "iTerm.app")
+             ||
+             RAWCURSES__EQ(termType, "iterm.app")
              ||
              RAWCURSES__EQ(termType, "aterm")
              ||
@@ -6867,9 +8936,9 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
              ||
              RAWCURSES__EQ(termType, "arm100-am")
              ||
-             RAWCURSES__EQ(termType, "konsole")
+             RAWCURSES__STARTSWITH(termType, "konsole")
              ||
-             RAWCURSES__EQ(termType, "gnome-terminal")
+             RAWCURSES__STARTSWITH(termType, "gnome-terminal")
              ||
              RAWCURSES__EQ(termType, "gnome")
              ||
@@ -6893,9 +8962,21 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
              ||
              RAWCURSES__STARTSWITH(termType, "xterm")
              ||
+             RAWCURSES__STARTSWITH(termType, "dxterm")
+             ||
+             (RAWCURSES__STARTSWITH(termType, "putty")
+              &&
+              ! rawcurses_stdio_utf8)
+             ||
              RAWCURSES__STARTSWITH(termType, "ncsa")
              ||
+             (RAWCURSES__STARTSWITH(termType, "ttyemul")
+              &&
+              ! RAWCURSES__EQ(termType, "ttyemul-ansi"))
+             ||
              RAWCURSES__STARTSWITH(termType, "teraterm")
+             ||
+             RAWCURSES__STARTSWITH(termType, "wsvt")
              ||
              RAWCURSES__HASFLAG(termType, "acs"))
             &&
@@ -6932,6 +9013,42 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
     {
         rawcurses_stdio_acs_revblock = 0;
     }
+    if (rawcurses_getenv_boolean("RAWCURSES_NOREV"))
+    {
+        rawcurses_stdio_norev = *(rawcurses_getenv_boolean("RAWCURSES_NOREV")) ? 1 : 0;
+    }
+    else
+    {
+        rawcurses_stdio_norev = 0;
+        if (RAWCURSES__STARTSWITH(termType, "linux"))
+        {
+            rawcurses_stdio_norev = 1;
+        }
+    }
+    if (rawcurses_getenv_boolean("RAWCURSES_BS"))
+    {
+        rawcurses_stdio_bs = *(rawcurses_getenv_boolean("RAWCURSES_BS")) ? 1 : 0;
+    }
+    else
+    {
+        rawcurses_stdio_bs = 0;
+    }
+    if (rawcurses_getenv_boolean("RAWCURSES_BSUL"))
+    {
+        rawcurses_stdio_bsul = *(rawcurses_getenv_boolean("RAWCURSES_BSUL")) ? 1 : 0;
+    }
+    else
+    {
+        rawcurses_stdio_bsul = 0;
+    }
+    if (rawcurses_getenv_boolean("RAWCURSES_NOREVBOLD"))
+    {
+        rawcurses_stdio_norevbold = *(rawcurses_getenv_boolean("RAWCURSES_NOREVBOLD")) ? 1 : 0;
+    }
+    else
+    {
+        rawcurses_stdio_norevbold = 0;
+    }
     if (rawcurses_getenv_boolean("RAWCURSES_NOCOLORBOLD"))
     {
         rawcurses_stdio_nocolorbold = *(rawcurses_getenv_boolean("RAWCURSES_NOCOLORBOLD")) ? 1 : 0;
@@ -6939,7 +9056,9 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
     else
     {
         rawcurses_stdio_nocolorbold = 0;
-        if (((rawcurses_stdio_256color
+        if (((rawcurses_stdio_truecolor
+              ||
+              rawcurses_stdio_256color
               ||
               rawcurses_stdio_88color)
              &&
@@ -6949,9 +9068,9 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
             ||
             (rawcurses_16color
              &&
-             (RAWCURSES__EQ(termType, "konsole")
+             (RAWCURSES__STARTSWITH(termType, "konsole")
               ||
-              RAWCURSES__EQ(termType, "gnome-terminal")
+              RAWCURSES__STARTSWITH(termType, "gnome-terminal")
               ||
               RAWCURSES__EQ(termType, "gnome")
               ||
@@ -6960,6 +9079,8 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
               RAWCURSES__EQ(termType, "Terminal")
               ||
               RAWCURSES__EQ(termType, "iTerm.app")
+              ||
+              RAWCURSES__EQ(termType, "iterm.app")
               ||
               RAWCURSES__STARTSWITH(termType, "nsterm")
               ||
@@ -6972,6 +9093,18 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
             RAWCURSES__STARTSWITH(termType, "xnuppc"))
         {
             rawcurses_stdio_nocolorbold = 1;
+        }
+    }
+    if (rawcurses_getenv_boolean("RAWCURSES_REVBG"))
+    {
+        rawcurses_stdio_revbg = *(rawcurses_getenv_boolean("RAWCURSES_REVBG")) ? 1 : 0;
+    }
+    else
+    {
+        rawcurses_stdio_revbg = 0;
+        if (RAWCURSES__EQ(termType, "putty-vt52"))
+        {
+            rawcurses_stdio_revbg = 1;
         }
     }
     if (rawcurses_getenv_boolean("RAWCURSES_BTERM"))
@@ -6992,6 +9125,26 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
             }
             btermlike += strlen(btermlike) + 1;
         }
+    }
+    if (rawcurses_getenv_boolean("RAWCURSES_SGR0SI"))
+    {
+        rawcurses_stdio_acs_sgr0si = *(rawcurses_getenv_boolean("RAWCURSES_SGR0SI")) ? 1 : 0;
+    }
+    else
+    {
+        rawcurses_stdio_acs_sgr0si = 0;
+        if (RAWCURSES__STARTSWITH(termType, "ttyemul"))
+        {
+            rawcurses_stdio_acs_sgr0si = 1;
+        }
+    }
+    if (rawcurses_getenv_boolean("RAWCURSES_SO"))
+    {
+        rawcurses_stdio_acs_so = *(rawcurses_getenv_boolean("RAWCURSES_SO")) ? 1 : 0;
+    }
+    else
+    {
+        rawcurses_stdio_acs_so = 0;
     }
     if (rawcurses_getenv_boolean("RAWCURSES_H19"))
     {
@@ -7115,6 +9268,14 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
             m100like += strlen(m100like) + 1;
         }
     }
+    if (rawcurses_getenv_boolean("RAWCURSES_ACS_ACTIVE"))
+    {
+        rawcurses_stdio_acs_active = *(rawcurses_getenv_boolean("RAWCURSES_ACS_ACTIVE")) ? 1 : 0;
+    }
+    else
+    {
+        rawcurses_stdio_acs_active = 0;
+    }
     if (rawcurses_getenv_boolean("RAWCURSES_ACS_M100"))
     {
         rawcurses_stdio_acs_m100 = *(rawcurses_getenv_boolean("RAWCURSES_ACS_M100")) ? 1 : 0;
@@ -7158,6 +9319,10 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
     {
         rawcurses_stdio_acs = 1;
     }
+    if (rawcurses_stdio_acs_so && ! rawcurses_getenv_boolean("RAWCURSES_ACS"))
+    {
+        rawcurses_stdio_acs = 1;
+    }
     if (rawcurses_stdio_acs_h19 && ! rawcurses_getenv_boolean("RAWCURSES_ACS"))
     {
         rawcurses_stdio_acs = 1;
@@ -7182,7 +9347,9 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
     {
         const char *cp437like = RAWCURSES_CP437LIKE;
 
-        rawcurses_stdio_cp437 = 0;
+        rawcurses_stdio_cp437 =
+            (locale_charset_is("cp437") ||
+             locale_charset_is("ibm437"));
         while (strlen(cp437like))
         {
             if (RAWCURSES__EQ(termType, cp437like))
@@ -7199,7 +9366,9 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
     }
     else
     {
-        rawcurses_stdio_cp850 = 0;
+        rawcurses_stdio_cp850 =
+            (locale_charset_is("cp850") ||
+             locale_charset_is("ibm850"));
     }
     if (rawcurses_getenv_boolean("RAWCURSES_KOI8U"))
     {
@@ -7207,7 +9376,13 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
     }
     else
     {
-        rawcurses_stdio_koi8u = 0;
+        rawcurses_stdio_koi8u =
+            (locale_charset_is("koi8-u") ||
+             locale_charset_is("koi8u") ||
+             locale_charset_is("cp1168") ||
+             locale_charset_is("ibm1168") ||
+             locale_charset_is("cp21866") ||
+             locale_charset_is("windows-21866"));
     }
     if (rawcurses_getenv_boolean("RAWCURSES_KOI8R"))
     {
@@ -7217,7 +9392,14 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
     {
         const char *koi8rlike = RAWCURSES_KOI8RLIKE;
 
-        rawcurses_stdio_koi8r = 0;
+        rawcurses_stdio_koi8r = (! rawcurses_stdio_koi8u) &&
+            (locale_charset_is("koi8-r") ||
+             locale_charset_is("koi8r") ||
+             locale_charset_is("cp878") ||
+             locale_charset_is("ibm878") ||
+             locale_charset_is("cskoi8r") ||
+             locale_charset_is("cp20866") ||
+             locale_charset_is("windows-20866"));
         while (strlen(koi8rlike))
         {
             if (RAWCURSES__EQ(termType, koi8rlike))
@@ -7257,6 +9439,23 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
     else
     {
         rawcurses_transparent = 1;
+    }
+    if (rawcurses_getenv_boolean("RAWCURSES_WRAP"))
+    {
+        rawcurses_stdio_wrap = *(rawcurses_getenv_boolean("RAWCURSES_WRAP")) ? 1 : 0;
+    }
+    else
+    {
+        rawcurses_stdio_wrap =
+            rawcurses_stdio_atascii
+            ||
+            rawcurses_stdio_petscii
+            ||
+            rawcurses_stdio_dumb
+            ||
+            rawcurses_stdio_tek
+            ||
+            rawcurses_stdio_emacs;
     }
     if (rawcurses_nw && rawcurses_nh)
     {
@@ -7335,8 +9534,13 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
     rawcurses_y = -1;
     rawcurses_attr = -1;
     rawcurses_old_attr_rgb = FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE;
-    rawcurses_stdio = 1;
+    rawcurses_stdio = -1;
 #if USE_WINCONSOLE
+    rawcurses_win32 = 1;
+    if (rawcurses_getenv_boolean("RAWCURSES_WIN32"))
+    {
+        rawcurses_win32 = *(rawcurses_getenv_boolean("RAWCURSES_WIN32")) ? 1 : 0;
+    }
     if (rawcurses_getenv_boolean("RAWCURSES_STDIO"))
     {
         rawcurses_stdio = *(rawcurses_getenv_boolean("RAWCURSES_STDIO")) ? 1 : 0;
@@ -7345,9 +9549,19 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
     {
         rawcurses_stdio = *(rawcurses_getenv_boolean("RAWCURSES_CONIO")) ? 1 : 0;
     }
-    rawcurses_stdin = GetStdHandle(STD_INPUT_HANDLE);
-    rawcurses_stdout = GetStdHandle(STD_OUTPUT_HANDLE);
-    rawcurses_stderr = GetStdHandle(STD_ERROR_HANDLE);
+    if (rawcurses_win32 == 0)
+    {
+        rawcurses_stdio = 1;
+    }
+    rawcurses_stdin = INVALID_HANDLE_VALUE;
+    rawcurses_stdout = INVALID_HANDLE_VALUE;
+    rawcurses_stderr = INVALID_HANDLE_VALUE;
+    if (rawcurses_stdio != 1)
+    {
+        rawcurses_stdin = GetStdHandle(STD_INPUT_HANDLE);
+        rawcurses_stdout = GetStdHandle(STD_OUTPUT_HANDLE);
+        rawcurses_stderr = GetStdHandle(STD_ERROR_HANDLE);
+    }
     rawcurses_old_mode_valid = 0;
     if (rawcurses_old_screen)
     {
@@ -7464,6 +9678,7 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
             rawcurses_h = rawcurses_csbi.srWindow.Bottom + 1 - rawcurses_csbi.srWindow.Top;
         }
     }
+    if (rawcurses_win32)
     {
         DWORD pipemode = PIPE_READMODE_BYTE | PIPE_NOWAIT;
 
@@ -7471,13 +9686,20 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
     }
 #else /* ! USE_WINCONSOLE */
 #if USE_TOSCONSOLE
+    if (rawcurses_getenv_boolean("RAWCURSES_STCON"))
+    {
+        rawcurses_stdio_stcon = *(rawcurses_getenv_boolean("RAWCURSES_STCON")) ? 1 : 0;
+    }
+    else
     {
         const char *stdindev;
 
         stdindev = ttyname(fileno(stdin));
         if (stdindev
             &&
-            RAWCURSES__EQ(stdindev, "/dev/con"))
+            (RAWCURSES__EQ(stdindev, "/dev/con")
+             ||
+             RAWCURSES__EQ(stdindev, "con")))
         {
             rawcurses_stdio_stcon = 1;
         }
@@ -7488,6 +9710,11 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
     }
 #endif /* USE_TOSCONSOLE */
 #if USE_AROSCONSOLE
+    if (rawcurses_getenv_boolean("RAWCURSES_AROSCON"))
+    {
+        rawcurses_stdio_aroscon = *(rawcurses_getenv_boolean("RAWCURSES_AROSCON")) ? 1 : 0;
+    }
+    else
     {
         if (IsInteractive(Input()))
         {
@@ -7652,6 +9879,13 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
         rawcurses_tty_svr2.c_oflag &= ~CRMOD;
 #endif
 #endif
+#ifdef TAB3
+        rawcurses_tty_svr2.c_oflag &= ~TAB3;
+#else
+#ifdef OXTABS
+        rawcurses_tty_svr2.c_oflag &= ~OXTABS;
+#endif
+#endif
         rawcurses_tty_svr2.c_cc[VMIN] = 0;
         rawcurses_tty_svr2.c_cc[VTIME] = 0;
         ioctl(fileno(stdin), TCSETAF, &rawcurses_tty_svr2);
@@ -7682,6 +9916,13 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
         rawcurses_tty.c_oflag &= ~CRMOD;
 #endif
 #endif
+#ifdef TAB3
+        rawcurses_tty.c_oflag &= ~TAB3;
+#else
+#ifdef OXTABS
+        rawcurses_tty.c_oflag &= ~OXTABS;
+#endif
+#endif
         rawcurses_tty.c_cc[VMIN] = 0;
         rawcurses_tty.c_cc[VTIME] = 0;
         tcsetattr(fileno(stdin), TCSANOW, &rawcurses_tty);
@@ -7697,6 +9938,9 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
         rawcurses_tty_sgtty.sg_flags &= ~ECHO;
 #ifdef CRMOD
         rawcurses_tty_sgtty.sg_flags &= ~CRMOD;
+#endif
+#ifdef XTABS
+        rawcurses_tty_sgtty.sg_flags &= ~XTABS;
 #endif
 #ifdef NODELAY
         rawcurses_tty_sgtty.sg_flags |= NODELAY;
@@ -7754,6 +9998,12 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
         const char *stdindev;
 
         stdindev = ttyname(fileno(stdin));
+        if (isatty(fileno(stdin))
+            &&
+            (stdindev == NULL))
+        {
+            stdindev = "con";
+        }
 #if USE_CONIO_INPUT
         if ((rawcurses_stdio_conio_input == 1)
             ||
@@ -7919,7 +10169,7 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
 
             while (strlen(nocivis))
             {
-                if (RAWCURSES__EQ(termType, nocivis))
+                if (RAWCURSES__STARTSWITH(termType, nocivis))
                 {
                         rawcurses_civis = 0;
                         break;
@@ -7934,9 +10184,9 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
     }
     else if (rawcurses_stdio)
     {
-        if (rawcurses_stdio_utf8) rawcurses_raw = 1;
-#ifndef UNICODE
-        if (rawcurses_stdio_cp437
+        if (rawcurses_stdio_utf8
+            ||
+            rawcurses_stdio_cp437
             ||
             rawcurses_stdio_cp850
             ||
@@ -7946,7 +10196,6 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
         {
             rawcurses_raw = 1;
         }
-#endif
     }
     {
         int got_winsize;
@@ -8001,7 +10250,9 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
             rawcurses_w = 80;
             if (RAWCURSES__STARTSWITH(termType, "atascii")
                 ||
-                RAWCURSES__STARTSWITH(termType, "petscii")
+                RAWCURSES__STARTSWITH(termType, "bobterm")
+                ||
+                RAWCURSES__HASBASE(termType, "petscii")
                 ||
                 RAWCURSES__EQ(termType, "8201")
                 ||
@@ -8031,9 +10282,19 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
             {
                 rawcurses_w = 40;
             }
+            else if (RAWCURSES__HASBASE(termType, "vic")
+                     ||
+                     RAWCURSES__HASBASE(termType, "vic20"))
+            {
+                rawcurses_w = 22;
+            }
             if (RAWCURSES__STARTSWITH(termType, "ibm6153-90"))
             {
                 rawcurses_w = 90;
+            }
+            if (RAWCURSES__HASFLAG(termType, "80x24"))
+            {
+                rawcurses_w = 80;
             }
             if (RAWCURSES__HASFLAG(termType, "132")
                 ||
@@ -8108,11 +10369,13 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
             {
                 rawcurses_h = 16;
             }
-            if (RAWCURSES__STARTSWITH(termType, "petscii")
+            if (RAWCURSES__HASBASE(termType, "petscii")
                 ||
                 RAWCURSES__STARTSWITH(termType, "ansi")
                 ||
                 RAWCURSES__STARTSWITH(termType, "pcansi")
+                ||
+                RAWCURSES__STARTSWITH(termType, "ttyemul-ansi")
                 ||
                 RAWCURSES__CONTAINS(termType, "ntconsole")
                 ||
@@ -8121,6 +10384,12 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
                 RAWCURSES__HASFLAG(termType, "25"))
             {
                 rawcurses_h = 25;
+            }
+            if (RAWCURSES__HASBASE(termType, "vic")
+                ||
+                RAWCURSES__HASBASE(termType, "vic20"))
+            {
+                rawcurses_h = 23;
             }
             if (RAWCURSES__STARTSWITH(termType, "ibm6153-90"))
             {
@@ -8145,6 +10414,10 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
             if (RAWCURSES__HASFLAG(termType, "60"))
             {
                 rawcurses_h = 60;
+            }
+            if (RAWCURSES__HASFLAG(termType, "59"))
+            {
+                rawcurses_h = 59;
             }
             if (RAWCURSES__HASFLAG(termType, "50"))
             {
@@ -8198,11 +10471,16 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
             {
                 rawcurses_h = 30;
             }
+            if (RAWCURSES__HASFLAG(termType, "27"))
+            {
+                rawcurses_h = 27;
+            }
             if (RAWCURSES__HASFLAG(termType, "28"))
             {
                 rawcurses_h = 28;
             }
-            if (RAWCURSES__HASFLAG(termType, "24"))
+            if (RAWCURSES__HASFLAG(termType, "24") ||
+                RAWCURSES__HASFLAG(termType, "80x24"))
             {
                 rawcurses_h = 24;
             }
@@ -8300,24 +10578,63 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
     }
     attrset(0);
     erase();
+    if (rawcurses_getenv_boolean("RAWCURSES_SCOCOLOR"))
+    {
+        rawcurses_stdio_scocolor = *(rawcurses_getenv_boolean("RAWCURSES_SCOCOLOR")) ? 1 : 0;
+    }
+    else
+    {
+        rawcurses_stdio_scocolor = 0;
+        if (RAWCURSES__STARTSWITH(termType, "scoansi"))
+        {
+            rawcurses_stdio_scocolor = 1;
+        }
+    }
+    if (rawcurses_getenv_boolean("RAWCURSES_ANSICOLOR"))
+    {
+        rawcurses_stdio_ansicolor = *(rawcurses_getenv_boolean("RAWCURSES_ANSICOLOR")) ? 1 : 0;
+    }
+    else
+    {
+        rawcurses_stdio_ansicolor = 0;
+    }
+    if (rawcurses_getenv_boolean("RAWCURSES_TEKANSI"))
+    {
+        rawcurses_stdio_tekansi = *(rawcurses_getenv_boolean("RAWCURSES_TEKANSI")) ? 1 : 0;
+    }
+    else
+    {
+        rawcurses_stdio_tekansi = 0;
+    }
+    rawcurses_stdio_tekco = rawcurses_stdio_tekansi ? 7 : 1;
+    if (rawcurses_stdio_scocolor && ! myman_getenv("RAWCURSES_BLINK"))
+    {
+        rawcurses_stdio_blink = 1;
+    }
     if (rawcurses_getenv_boolean("RAWCURSES_COLOR"))
     {
         rawcurses_color = *(rawcurses_getenv_boolean("RAWCURSES_COLOR")) ? 1 : 0;
     }
     else
     {
-        /* true to a first approximation... */
-        if (RAWCURSES__HASFLAG(termType, "mono")
+        if (RAWCURSES__HASFLAG(termType, "color")
+            ||
+            RAWCURSES__HASFLAG(termType, "c"))
+        {
+            rawcurses_color = 1;
+        }
+        else if (RAWCURSES__HASFLAG(termType, "mono")
             ||
             RAWCURSES__HASFLAG(termType, "m")
             ||
             RAWCURSES__EQ(termType, "et52"))
         {
+            /* true to a first approximation... */
             rawcurses_color = 0;
         }
         else
         {
-            rawcurses_color = rawcurses_stdio ? (! ((rawcurses_stdio_vt52 && ! rawcurses_stdio_st52) || rawcurses_stdio_adm3a || rawcurses_stdio_emacs || rawcurses_stdio_dumb || rawcurses_stdio_tek || rawcurses_stdio_atascii)) : 1;
+            rawcurses_color = rawcurses_stdio ? (rawcurses_stdio_scocolor || rawcurses_stdio_ansicolor || ! ((rawcurses_stdio_vt52 && ! (rawcurses_stdio_st52 || rawcurses_stdio_z100)) || rawcurses_stdio_adm3a || rawcurses_stdio_emacs || rawcurses_stdio_dumb || (rawcurses_stdio_tek && ! rawcurses_stdio_tekansi) || rawcurses_stdio_atascii)) : 1;
 #if USE_CONIO
 #if ! defined(_CONIO2_H_)
             if (rawcurses_stdio_conio)
@@ -8379,6 +10696,15 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
 #endif /* USE_TOSCONSOLE */
         }
     }
+    if (rawcurses_getenv_boolean("RAWCURSES_INVIS"))
+    {
+        rawcurses_stdio_invis = *(rawcurses_getenv_boolean("RAWCURSES_INVIS")) ? 1 : 0;
+    }
+    else
+    {
+        rawcurses_stdio_invis = (rawcurses_stdio_tek && rawcurses_color) || rawcurses_stdio_notab || rawcurses_stdio_hp;
+    }
+    rawcurses_resize_backing();
     if (rawcurses_getenv_boolean("RAWCURSES_FIXEDPAL"))
     {
         rawcurses_fixedpal = *(rawcurses_getenv_boolean("RAWCURSES_FIXEDPAL")) ? 1 : 0;
@@ -8437,7 +10763,7 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
         }
         else
         {
-#if USE_WINCONSOLE
+#if USE_WINCONSOLE && USE_WINCONSOLE_REGISTRY
             if (! rawcurses_stdio)
             {
                 rawcurses_win32_get_palette(rawcurses_palette);
@@ -8446,12 +10772,7 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
             memcpy((void *) rawcurses_old_palette, (void *) rawcurses_palette, sizeof(rawcurses_old_palette));
         }
     }
-    if (myman_getenv("RAWCURSES_PETSCII_PALETTE") && *(myman_getenv("RAWCURSES_PETSCII_PALETTE")))
-    {
-        rawcurses_stdio_petscii_palette = atoi(myman_getenv("RAWCURSES_PETSCII_PALETTE"));
-        if (rawcurses_stdio_petscii_palette < 0) rawcurses_stdio_petscii_palette = 0;
-    }
-    else
+    if (rawcurses_stdio_petscii_palette < 0)
     {
         rawcurses_stdio_petscii_palette =
             (rawcurses_w == 80)
@@ -8463,11 +10784,12 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
     fflush(stderr); /* FIXME: this prevents a crash when compiled with winegcc on Mac OS X; figure out why! */
     refresh();
     rawcurses_after_endwin = 0;
+    return 1;
 }
 
 static void rawcurses_palette_snoop(void)
 {
-#if USE_WINCONSOLE
+#if USE_WINCONSOLE && USE_WINCONSOLE_REGISTRY
     if ((! rawcurses_stdio) && rawcurses_palette_changed)
     {
         if (! rawcurses_palette_ever_changed)
@@ -8525,7 +10847,7 @@ static void rawcurses_palette_snoop(void)
 
 static void rawcurses_palette_reset(void)
 {
-#if USE_WINCONSOLE
+#if USE_WINCONSOLE && USE_WINCONSOLE_REGISTRY
     if ((! rawcurses_stdio) && rawcurses_palette_ever_changed)
     {
         if (memcmp((void *) rawcurses_old_palette, (void *) rawcurses_palette, sizeof(rawcurses_palette)))
@@ -8564,6 +10886,7 @@ static void endwin(void)
         rawcurses_h = rawcurses_nh;
     }
     rawcurses_palette_reset();
+    rawcurses_free_backing();
     attrset(0);
     if (rawcurses_stdio)
     {
@@ -8734,6 +11057,7 @@ static int rawcurses_getch(void)
         rawcurses_got_sigtstp = 0;
         if (rawcurses_civis) rawcurses_fput_cnorm(stdout);
         rawcurses_palette_reset();
+        rawcurses_free_backing();
         attrset(0);
         rawcurses_fput_rmcup(stdout, rawcurses_h);
         fflush(stdout);
@@ -8800,6 +11124,7 @@ static int rawcurses_getch(void)
         {
             rawcurses_cursor_visibility ? rawcurses_fput_cnorm(stdout) : rawcurses_fput_civis(stdout);
         }
+        rawcurses_resize_backing();
         attrset(old_attr);
         fflush(stdout);
         return KEY_RESIZE;
@@ -8815,6 +11140,7 @@ static int rawcurses_getch(void)
         rawcurses_got_sigint = 0;
         if (rawcurses_civis) rawcurses_fput_cnorm(stdout);
         rawcurses_palette_reset();
+        rawcurses_free_backing();
         attrset(0);
         rawcurses_fput_rmcup(stdout, rawcurses_h);
         fflush(stdout);
@@ -8881,6 +11207,7 @@ static int rawcurses_getch(void)
         {
             rawcurses_cursor_visibility ? rawcurses_fput_cnorm(stdout) : rawcurses_fput_civis(stdout);
         }
+        rawcurses_resize_backing();
         attrset(old_attr);
         fflush(stdout);
         return KEY_RESIZE;
@@ -8900,6 +11227,7 @@ static int rawcurses_getch(void)
             return ret;
         }
 #if USE_WINCONSOLE
+        if (rawcurses_win32)
         {
             DWORD nevents;
 
@@ -8909,6 +11237,7 @@ static int rawcurses_getch(void)
                 if (nevents)
                 {
                     INPUT_RECORD irec;
+
 
                     ReadConsoleInput(rawcurses_stdin, &irec, 1, &nevents);
                     if (nevents)
@@ -8975,6 +11304,38 @@ static int rawcurses_getch(void)
         }
 #endif /* ! USE_WINCONSOLE */
         {
+#if defined(macintosh) && ! defined(__CARBON__)
+            if ((avail == -1) && isatty(fileno(stdin)))
+            {
+                EventRecord theEvent[1];
+
+                SystemTask();
+                avail = 0;
+                if ((WaitNextEvent(keyDownMask | autoKeyMask, theEvent, 0, NULL) != FALSE)
+                    &&
+                    (theEvent->what != nullEvent))
+                {
+                    if (((theEvent->what == keyDown)
+                         ||
+                         (theEvent->what == autoKey))
+                        &&
+                        !(theEvent->modifiers & cmdKey))
+                    {
+                        avail = 1;
+                        switch (theEvent->message & charCodeMask)
+                        {
+                        case kLeftArrowCharCode: return KEY_LEFT;
+                        case kRightArrowCharCode: return KEY_RIGHT;
+                        case kUpArrowCharCode: return KEY_UP;
+                        case kDownArrowCharCode: return KEY_DOWN;
+                        case kDeleteCharCode: return 0x7f;
+                        default:
+                            return theEvent->message & charCodeMask;
+                        }
+                    }
+                }
+            }
+#endif
 #if USE_CONIO_INPUT
             if ((avail == -1) && rawcurses_stdio_conio_input)
             {
@@ -9197,43 +11558,46 @@ static int rawcurses_getch(void)
 #endif /* defined(FIONREAD) */
 #endif /* USE_IOCTL */
 #if USE_WINCONSOLE
-                if (avail == -1)
+                if (rawcurses_win32)
                 {
-                    DWORD bytes_avail = (DWORD) -1;
-
-                    if (PeekNamedPipe(
-                            rawcurses_stdin,
-                            NULL,
-                            0,
-                            NULL,
-                            &bytes_avail,
-                            NULL))
+                    if (avail == -1)
                     {
-                        if ((bytes_avail != (DWORD) -1)
-                            &&
-                            (((int) bytes_avail) >= 0))
+                        DWORD bytes_avail = (DWORD) -1;
+
+                        if (PeekNamedPipe(
+                                rawcurses_stdin,
+                                NULL,
+                                0,
+                                NULL,
+                                &bytes_avail,
+                                NULL))
                         {
-                            avail = (int) bytes_avail;
+                            if ((bytes_avail != (DWORD) -1)
+                                &&
+                                (((int) bytes_avail) >= 0))
+                            {
+                                avail = (int) bytes_avail;
+                            }
+                        }
+                    }
+                    if (avail == -1)
+                    {
+                        DWORD nbytes;
+                        struct stat st;
+
+                        st.st_size = 0;
+                        if ((! rawcurses_stdio) || (fstat(fileno(stdin), &st) || st.st_size))
+                        {
+                            avail = 0;
+                            if (ReadFile(rawcurses_stdin, (LPVOID) buf, 1, &nbytes, NULL))
+                            {
+                                if (nbytes) ret = buf[0];
+                                else ret = ERR;
+                            }
                         }
                     }
                 }
-                if (avail == -1)
-                {
-                    DWORD nbytes;
-                    struct stat st;
-
-                    st.st_size = 0;
-                    if ((! rawcurses_stdio) || (fstat(fileno(stdin), &st) || st.st_size))
-                    {
-                        avail = 0;
-                        if (ReadFile(rawcurses_stdin, (LPVOID) buf, 1, &nbytes, NULL))
-                        {
-                            if (nbytes) ret = buf[0];
-                            else ret = ERR;
-                        }
-                    }
-                }
-#endif /* ! USE_WINCONSOLE */
+#endif /* USE_WINCONSOLE */
 #if USE_NBIO
                 rawcurses_stdio_old_flags = fcntl(fileno(stdin), F_GETFL, 0);
                 if (rawcurses_stdio_old_flags != -1)
@@ -10093,6 +12457,34 @@ static int rawcurses_getch(void)
                         {
                             if (rawcurses_reset_palette_seqs < COLORS)
                             {
+                                if ((rawcurses_input_param[1] == ';')
+                                    &&
+                                    (rawcurses_input_param[2] == 'r')
+                                    &&
+                                    (rawcurses_input_param[3] == 'g')
+                                    &&
+                                    (rawcurses_input_param[4] == 'b')
+                                    &&
+                                    (rawcurses_input_param[5] == ':')
+                                    &&
+                                    ((strlen(rawcurses_input_param) + 11) < sizeof(rawcurses_input_param))
+                                    &&
+                                    ((strlen(rawcurses_input_param) + 11) < sizeof(rawcurses_input_tmp_param)))
+                                {
+                                    /* urxvt fails to include the
+                                     * palette index in the report, so
+                                     * we patch it to be
+                                     * replayable. */
+                                    memcpy(
+                                        (void *) rawcurses_input_tmp_param,
+                                        (void *) rawcurses_input_param,
+                                        strlen(rawcurses_input_param) + 1);
+                                    sprintf(
+                                        rawcurses_input_param,
+                                        ";%d%s",
+                                        rawcurses_reset_palette_seqs,
+                                        rawcurses_input_tmp_param);
+                                }
                                 rawcurses_reset_palette_seqs ++;
                                 if ((rawcurses_reset_palette_buflen + strlen(OSC("4")) + strlen(rawcurses_input_param + 1) + strlen("\7") + 1)
                                     <
@@ -10129,6 +12521,17 @@ static int rawcurses_getch(void)
                                            (void *) ("\7"),
                                            strlen("\7") + 1);
                                     rawcurses_reset_palette_buflen = strlen(rawcurses_reset_palette_buf);
+                                    if (rawcurses_stdio_nccc == -1)
+                                    {
+                                        if (RAWCURSES__CONTAINS(rawcurses_reset_palette_buf, "rgb:"))
+                                        {
+                                            rawcurses_stdio_nccc = 1;
+                                        }
+                                        else
+                                        {
+                                            rawcurses_stdio_nccc = 0;
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -10173,6 +12576,22 @@ static int attrset(attr_t a)
     if (a & RAWCURSES__A_COLOR)
     {
         a_rgb = rawcurses_pairs[PAIR_NUMBER(a)];
+        if (a & A_DIM)
+        {
+            if (((a_rgb & (FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE))
+                 ==
+                 (FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE))
+                ||
+                (a & (A_STANDOUT | A_REVERSE)))
+            {
+                a_rgb &= ~(FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE);
+                a_rgb |= FOREGROUND_INTENSITY;
+            }
+            else if (a_rgb & (FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE))
+            {
+                a_rgb &= ~FOREGROUND_INTENSITY;
+            }
+        }
     }
     else
     {
@@ -10251,6 +12670,32 @@ static int attrset(attr_t a)
             ((a_rgb & BACKGROUND_INTENSITY) ? FOREGROUND_INTENSITY : 0));
     }
     a_rgb &= FOREGROUND_INTENSITY | FOREGROUND_RED | FOREGROUND_BLUE | FOREGROUND_GREEN | BACKGROUND_INTENSITY | BACKGROUND_RED | BACKGROUND_BLUE | BACKGROUND_GREEN;
+    if (rawcurses_reverse
+        &&
+        (! rawcurses_after_endwin))
+    {
+        attr_t fgmask, bgmask;
+
+        fgmask = FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE;
+        bgmask = BACKGROUND_RED | BACKGROUND_GREEN | BACKGROUND_BLUE;
+        if (COLORS >= 16)
+        {
+            fgmask |= FOREGROUND_INTENSITY;
+            bgmask |= BACKGROUND_INTENSITY;
+        }
+        if (((a_rgb & fgmask) == fgmask)
+            ||
+            ((a_rgb & fgmask) == 0))
+        {
+            a_rgb ^= fgmask;
+        }
+        if (((a_rgb & bgmask) == bgmask)
+            ||
+            ((a_rgb & bgmask) == 0))
+        {
+            a_rgb ^= bgmask;
+        }
+    }
     if ((! rawcurses_transparent)
         &&
         (! rawcurses_after_endwin))
@@ -10361,10 +12806,6 @@ static int wctoa(chtype ch)
     {
         switch (ch)
         {
-        case ACS_LRCORNER:
-        case ACS_URCORNER:
-        case ACS_ULCORNER:
-        case ACS_LLCORNER:
         case ACS_PLUS:
         case ACS_HLINE:
         case ACS_LTEE:
@@ -10372,7 +12813,37 @@ static int wctoa(chtype ch)
         case ACS_BTEE:
         case ACS_TTEE:
         case ACS_VLINE:
+        case ACS_BBDD:
+        case ACS_BBDS:
+        case ACS_BBSD:
+        case ACS_BDBD:
+        case ACS_BDDB:
+        case ACS_BDDD:
+        case ACS_BDSB:
+        case ACS_BDSD:
+        case ACS_BSDB:
+        case ACS_BSDS:
+        case ACS_DBBD:
+        case ACS_DBBS:
+        case ACS_DBDB:
+        case ACS_DBDD:
+        case ACS_DBDS:
+        case ACS_DDBB:
+        case ACS_DDBD:
+        case ACS_DDDB:
+        case ACS_DDDD:
+        case ACS_DSBB:
+        case ACS_DSBS:
+        case ACS_DSDB:
+        case ACS_DSDS:
+        case ACS_SBBD:
+        case ACS_SBSD:
+        case ACS_SDBB:
+        case ACS_SDBD:
+        case ACS_SDSB:
+        case ACS_SDSD:
         case ACS_BLOCK:
+        case ACS_CKBOARD:
         case RAWCURSES__ACS_THALF:
         case RAWCURSES__ACS_BHALF:
         case RAWCURSES__ACS_LHALF:
@@ -10399,6 +12870,13 @@ static int wctoa(chtype ch)
                 return ch;
             }
 #endif /* UNICODE */
+            if ((ch == (chtype) ACS_LRCORNER) ||
+                (ch == (chtype) ACS_URCORNER) ||
+                (ch == (chtype) ACS_ULCORNER) ||
+                (ch == (chtype) ACS_LLCORNER))
+            {
+                return ch;
+            }
             if ((ch == (chtype) ACS_BULLET)
                 &&
                 ! rawcurses_stdio_acs_nobullet)
@@ -10417,85 +12895,147 @@ static int wctoa(chtype ch)
     if ((! rawcurses_stdio) && (GetConsoleOutputCP() == 437)) return ch;
 #endif
 #endif /* ! defined(UNICODE) */
-    if (ch == ACS_BLOCK)
-    {
+    switch (ch) {
+    case (chtype) ACS_BLOCK:
+    case (chtype) ACS_CKBOARD:
         ch = '#';
-    }
-    else if (ch == RAWCURSES__ACS_THALF)
-    {
+        break;
+    case (chtype) RAWCURSES__ACS_THALF:
         ch = '\"';
-    }
-    else if (ch == RAWCURSES__ACS_BHALF)
-    {
+        break;
+    case (chtype) RAWCURSES__ACS_BHALF:
         ch = ',';
-    }
-    else if ((ch == RAWCURSES__ACS_LHALF)
-             || (ch == RAWCURSES__ACS_RHALF))
-    {
+        break;
+    case (chtype) RAWCURSES__ACS_LHALF:
+    case (chtype) RAWCURSES__ACS_RHALF:
         ch = '#';
-    }
-    else if ((ch == ACS_ULCORNER)
-             || (ch == ACS_LLCORNER)
-             || (ch == ACS_PLUS)
-             || (ch == ACS_LTEE)
-             || (ch == ACS_BTEE)
-             || (ch == ACS_TTEE)
-             || (ch == ACS_LRCORNER)
-             || (ch == ACS_URCORNER)
-             || (ch == ACS_RTEE))
-    {
+        break;
+    case (chtype) ACS_PLUS:
+    case (chtype) ACS_LTEE:
+    case (chtype) ACS_BTEE:
+    case (chtype) ACS_TTEE:
+    case (chtype) ACS_RTEE:
         ch = '+';
-    }
-    else if (ch == ACS_HLINE)
-    {
+        break;
+    case (chtype) ACS_BDDB:
+    case (chtype) ACS_BDSB:
+    case (chtype) ACS_BSDB:
+        return wctoa(ACS_ULCORNER);
+    case (chtype) ACS_DDBB:
+    case (chtype) ACS_DSBB:
+    case (chtype) ACS_SDBB:
+        return wctoa(ACS_LLCORNER);
+    case (chtype) ACS_DDDD:
+    case (chtype) ACS_DSDS:
+    case (chtype) ACS_SDSD:
+        return wctoa(ACS_PLUS);
+    case (chtype) ACS_DDDB:
+    case (chtype) ACS_SDSB:
+    case (chtype) ACS_DSDB:
+        return wctoa(ACS_LTEE);
+    case (chtype) ACS_DDBD:
+    case (chtype) ACS_SDBD:
+    case (chtype) ACS_DSBS:
+        return wctoa(ACS_BTEE);
+    case (chtype) ACS_BDDD:
+    case (chtype) ACS_BDSD:
+    case (chtype) ACS_BSDS:
+        return wctoa(ACS_TTEE);
+    case (chtype) ACS_DBBD:
+    case (chtype) ACS_DBBS:
+    case (chtype) ACS_SBBD:
+        return wctoa(ACS_LRCORNER);
+    case (chtype) ACS_BBDD:
+    case (chtype) ACS_BBDS:
+    case (chtype) ACS_BBSD:
+        return wctoa(ACS_URCORNER);
+    case (chtype) ACS_DBDD:
+    case (chtype) ACS_SBSD:
+    case (chtype) ACS_DBDS:
+        return wctoa(ACS_RTEE);
+    case (chtype) ACS_HLINE:
         ch = '-';
-    }
-    else if (ch == ACS_VLINE)
-    {
+        break;
+    case (chtype) ACS_BDBD:
+        return wctoa(ACS_HLINE);
+    case (chtype) ACS_VLINE:
         ch = '|';
-    }
+        break;
+    case (chtype) ACS_DBDB:
+        return wctoa(ACS_VLINE);
 #ifdef UNICODE
-    else if ((ch == 0x2022)
-             || (ch == 0x25a0)
-             || (ch == 0x25cb)
-             || (ch == 0x25cf)
-             || (ch == 0x25d8))
-    {
+    case (chtype) 0x25a0U:
+    case (chtype) 0x25cbU:
+    case (chtype) 0x25cfU:
+    case (chtype) 0x25d8U:
+        if (! (SWAPDOTS)) {
+            return wctoa(ACS_BULLET);
+        }
+    case (chtype) 0x2022U:
         ch = 'o';
-    }
-    else if ((ch == 0x30fb)
-             || (ch == 0x00b7))
-    {
+        break;
+    case (chtype) 0x30fbU:
+        if (SWAPDOTS) {
+            return wctoa(ACS_BULLET);
+        }
+    case (chtype) 0x00b7U:
         ch = '.';
-    }
-    else if (ch == 0x3000)
-    {
+        break;
+    case (chtype) 0x3000U:
         ch = ' ';
-    }
-    else if ((ch == 0x2018)
-             || (ch == 0x2019))
-    {
+        break;
+    case (chtype) 0x2018U:
+    case (chtype) 0x2019U:
         ch = '\'';
-    }
-    else if ((ch == 0x201c)
-             || (ch == 0x201d))
-    {
+        break;
+    case (chtype) 0x201cU:
+    case (chtype) 0x201dU:
         ch = '\"';
-    }
+        break;
 #endif
-    else if (ch == (chtype) ACS_BULLET)
-    {
-        ch = ((SWAPDOTS) ? '.' : 'o');
-    }
+    default:
+        if ((ch == (chtype) ACS_ULCORNER) ||
+            (ch == (chtype) ACS_LLCORNER) ||
+            (ch == (chtype) ACS_LRCORNER) ||
+            (ch == (chtype) ACS_URCORNER))
+        {
+            ch = '+';
+            break;
+        }
+        if (ch == (chtype) ACS_BULLET)
+        {
+            ch = ((SWAPDOTS) ? '.' : 'o');
+        }
 #ifdef UNICODE
-    else if ((ch >= 0xff01)
-             &&
-             (ch <= 0xff5e))
-    {
-        ch = ch - 0xff00 + ' ';
-    }
+        else if ((ch >= 0xff01)
+                 &&
+                 (ch <= 0xff5e))
+        {
+            ch = ch - 0xff00 + ' ';
+        }
 #endif
+    }
     return ((ch == (ch & 0x7f)) ? ch : RAWCURSES_ASCII_REPLACEMENT_CHARACTER);
+}
+
+static int wctoascii(wchar_t wc)
+{
+    int ch;
+    int real_rawcurses_stdio;
+    int real_rawcurses_stdio_acs;
+    int real_rawcurses_raw;
+
+    real_rawcurses_stdio = rawcurses_stdio;
+    real_rawcurses_stdio_acs = rawcurses_stdio_acs;
+    real_rawcurses_raw = rawcurses_raw;
+    rawcurses_stdio = 1;
+    rawcurses_stdio_acs = 0;
+    rawcurses_raw = 0;
+    ch = wctoa(wc);
+    rawcurses_stdio = real_rawcurses_stdio;
+    rawcurses_stdio_acs = real_rawcurses_stdio_acs;
+    rawcurses_raw = real_rawcurses_raw;
+    return ((ch >= ' ') && (ch <= '~')) ? ch : ' ';
 }
 
 static int rawcurses_wcwidth(wchar_t wc)
@@ -10506,10 +13046,6 @@ static int rawcurses_wcwidth(wchar_t wc)
     if (wc == 0x3000) return 2;
     switch (wc)
     {
-    case ACS_LRCORNER:
-    case ACS_URCORNER:
-    case ACS_ULCORNER:
-    case ACS_LLCORNER:
     case ACS_PLUS:
     case ACS_HLINE:
     case ACS_LTEE:
@@ -10517,7 +13053,37 @@ static int rawcurses_wcwidth(wchar_t wc)
     case ACS_BTEE:
     case ACS_TTEE:
     case ACS_VLINE:
+    case ACS_BBDD:
+    case ACS_BBDS:
+    case ACS_BBSD:
+    case ACS_BDBD:
+    case ACS_BDDB:
+    case ACS_BDDD:
+    case ACS_BDSB:
+    case ACS_BDSD:
+    case ACS_BSDB:
+    case ACS_BSDS:
+    case ACS_DBBD:
+    case ACS_DBBS:
+    case ACS_DBDB:
+    case ACS_DBDD:
+    case ACS_DBDS:
+    case ACS_DDBB:
+    case ACS_DDBD:
+    case ACS_DDDB:
+    case ACS_DDDD:
+    case ACS_DSBB:
+    case ACS_DSBS:
+    case ACS_DSDB:
+    case ACS_DSDS:
+    case ACS_SBBD:
+    case ACS_SBSD:
+    case ACS_SDBB:
+    case ACS_SDBD:
+    case ACS_SDSB:
+    case ACS_SDSD:
     case ACS_BLOCK:
+    case ACS_CKBOARD:
         defwidth = 1;
         break;
     case RAWCURSES__ACS_THALF:
@@ -10529,6 +13095,14 @@ static int rawcurses_wcwidth(wchar_t wc)
             defwidth = 1;
         }
         break;
+    default:
+        if ((((chtype) wc) == (chtype) ACS_LRCORNER) ||
+            (((chtype) wc) == (chtype) ACS_URCORNER) ||
+            (((chtype) wc) == (chtype) ACS_LLCORNER) ||
+            (((chtype) wc) == (chtype) ACS_ULCORNER))
+        {
+            defwidth = 1;
+        }
     }
 #ifdef UNICODE
     if (rawcurses_stdio
@@ -10643,6 +13217,15 @@ static int rawcurses_wcwidth(wchar_t wc)
         return defwidth;
     }
 #endif /* ! USE_WINCONSOLE */
+/* FIXME: this horrible hack is for Droid Sans Mono */
+    if ((rawcurses_builtin_wcwidth == -2)
+        &&
+        (((wc >= 0x2180) && (wc <= 0x227f))
+         ||
+         ((wc >= 0x2600) && (wc <= 0x267f))))
+    {
+        return 2;
+    }
 /* FIXME: this is a horrible hack! */
     if ((wc >= 0x0020) && (wc < 0x3000)) return 1;
     return 2;
@@ -10707,10 +13290,109 @@ static int addch(chtype ch)
     }
     wcw = wcwidth(ch);
     if (wcw < 1) return ERR;
-    if ((rawcurses_x + wcw + (rawcurses_stdio && ((rawcurses_y + 1) == rawcurses_h))) > rawcurses_w)
+    if ((rawcurses_x + wcw + ((rawcurses_stdio && ((rawcurses_y + 1) == rawcurses_h)) ? 1 : 0)) > rawcurses_w)
     {
         return ERR;
     }
+    if (rawcurses_stdio && rawcurses_stdio_bs && (rawcurses_attr & (A_BOLD | A_UNDERLINE)))
+    {
+        int iii;
+
+        if (rawcurses_attr & A_BOLD)
+        {
+            int ox, oy;
+
+            ox = rawcurses_x;
+            oy = rawcurses_y;
+            rawcurses_attr ^= A_BOLD;
+            addch(ch);
+            rawcurses_attr ^= A_BOLD;
+            for (iii = 0; iii < wcw; iii ++)
+            {
+#if USE_CONIO
+                if (rawcurses_stdio_conio)
+                {
+                    putch('\b');
+                }
+                else
+#endif
+                {
+                    fputc('\b', stdout);
+                }
+            }
+            rawcurses_x = ox;
+            rawcurses_y = oy;
+        }
+        if (rawcurses_attr & A_UNDERLINE)
+        {
+            for (iii = 0; iii < wcw; iii ++)
+            {
+#if USE_CONIO
+                if (rawcurses_stdio_conio)
+                {
+                    putch('_');
+                }
+                else
+#endif
+                {
+                    fputc('_', stdout);
+                }
+            }
+            for (iii = 0; iii < wcw; iii ++)
+            {
+#if USE_CONIO
+                if (rawcurses_stdio_conio)
+                {
+                    putch('\b');
+                }
+                else
+#endif
+                {
+                    fputc('\b', stdout);
+                }
+            }
+        }
+    }
+    if (rawcurses_stdio && rawcurses_stdio_bsul && (rawcurses_attr & A_UNDERLINE))
+    {
+        int iii;
+        int ox, oy;
+        int ret;
+
+        ox = rawcurses_x;
+        oy = rawcurses_y;
+        rawcurses_attr ^= A_UNDERLINE;
+        ret = addch(ch);
+        rawcurses_attr ^= A_UNDERLINE;
+        for (iii = 0; iii < wcw; iii ++)
+        {
+#if USE_CONIO
+            if (rawcurses_stdio_conio)
+            {
+                putch('\b');
+            }
+            else
+#endif
+            {
+                fputc('\b', stdout);
+            }
+        }
+        for (iii = 0; iii < wcw; iii ++)
+        {
+#if USE_CONIO
+            if (rawcurses_stdio_conio)
+            {
+                putch('_');
+            }
+            else
+#endif
+            {
+                fputc('_', stdout);
+            }
+        }
+        return ret;
+    }
+    rawcurses_write_backing(rawcurses_y, rawcurses_x, rawcurses_attr | ch, wcw);
     rawcurses_x += wcw;
 #if USE_WINCONSOLE
     if (! rawcurses_stdio)
@@ -10721,19 +13403,44 @@ static int addch(chtype ch)
 
         switch (ch)
         {
-        case ACS_ULCORNER:
-        case ACS_LLCORNER:
         case ACS_PLUS:
         case ACS_LTEE:
         case ACS_BTEE:
         case ACS_TTEE:
+        case ACS_BSDB:
+        case ACS_BSDS:
+        case ACS_DSBB:
+        case ACS_DSBS:
+        case ACS_DSDB:
+        case ACS_DSDS:
             ch2 = ACS_HLINE;
+            break;
+        case ACS_BDDB:
+        case ACS_BDDD:
+        case ACS_BDSB:
+        case ACS_BDSD:
+        case ACS_DDBB:
+        case ACS_DDBD:
+        case ACS_DDDB:
+        case ACS_DDDD:
+        case ACS_SDBB:
+        case ACS_SDBD:
+        case ACS_SDSB:
+        case ACS_SDSD:
+            ch2 = ACS_BDBD;
             break;
         case '-':
         case ACS_HLINE:
+        case ACS_BDBD:
         case 0xff0d:
             ch2 = ch;
             break;
+        default:
+            if ((ch == (chtype) ACS_ULCORNER) ||
+                (ch == (chtype) ACS_LLCORNER))
+            {
+                ch2 = ACS_HLINE;
+            }
         }
         buflen = 1;
         buf[0] = wctoa(ch);
@@ -10841,23 +13548,48 @@ static int addch(chtype ch)
             oattr = rawcurses_attr;
             switch (ch)
             {
-            case ACS_ULCORNER:
-            case ACS_LLCORNER:
             case ACS_PLUS:
             case ACS_LTEE:
             case ACS_BTEE:
             case ACS_TTEE:
+            case ACS_BSDB:
+            case ACS_BSDS:
+            case ACS_DSBB:
+            case ACS_DSBS:
+            case ACS_DSDB:
+            case ACS_DSDS:
                 ch2 = ACS_HLINE;
+                break;
+            case ACS_BDDB:
+            case ACS_BDDD:
+            case ACS_BDSB:
+            case ACS_BDSD:
+            case ACS_DDBB:
+            case ACS_DDBD:
+            case ACS_DDDB:
+            case ACS_DDDD:
+            case ACS_SDBB:
+            case ACS_SDBD:
+            case ACS_SDSB:
+            case ACS_SDSD:
+                ch2 = ACS_BDBD;
                 break;
             case '-':
             case ACS_HLINE:
+            case ACS_BDBD:
             case 0xff0d:
                 ch2 = ch;
                 break;
+            default:
+                if ((ch == (chtype) ACS_ULCORNER) ||
+                    (ch == (chtype) ACS_LLCORNER))
+                {
+                    ch2 = ACS_HLINE;
+                }
             }
             ch = wctoa(ch);
             rawcurses_getyx(&y, &x);
-            if ((((x + (y == (rawcurses_h - 1))) > rawcurses_w)
+            if ((((x + ((y == (rawcurses_h - 1)) ? 1 : 0)) > rawcurses_w)
                  ||
                  (y >= rawcurses_h))
                 &&
@@ -10948,12 +13680,6 @@ static int addch(chtype ch)
                     case ACS_HLINE:
                         ch = '\140';
                         break;
-                    case ACS_LLCORNER:
-                        ch = (int) (unsigned) (my_uchar) (acs_shifted ? '\255' : '\152');
-                        break;
-                    case ACS_LRCORNER:
-                        ch = (int) (unsigned) (my_uchar) (acs_shifted ? '\275' : '\153');
-                        break;
                     case ACS_LTEE:
                         ch = ((int) (unsigned) (my_uchar) '\253');
                         break;
@@ -10966,19 +13692,36 @@ static int addch(chtype ch)
                     case ACS_TTEE:
                         ch = ((int) (unsigned) (my_uchar) '\262');
                         break;
-                    case ACS_ULCORNER:
-                        ch = (int) (unsigned) (my_uchar) (acs_shifted ? '\260' : '\165');
-                        break;
-                    case ACS_URCORNER:
-                        ch = (int) (unsigned) (my_uchar) (acs_shifted ? '\256' : '\151');
-                        break;
                     case RAWCURSES__ACS_BHALF:
                         ch = ((int) (unsigned) (my_uchar) '\242');
                         break;
                     case RAWCURSES__ACS_LHALF:
                         ch = ((int) (unsigned) (my_uchar) '\241');
                         break;
+                    case ACS_CKBOARD:
+                        ch = ((int) (unsigned) (my_uchar) (acs_shifted ? '\176' : '\246'));
+                        break;
                     default:
+                        if (ch == (chtype) ACS_LLCORNER)
+                        {
+                            ch = (int) (unsigned) (my_uchar) (acs_shifted ? '\255' : '\152');
+                            break;
+                        }
+                        if (ch == (chtype) ACS_LRCORNER)
+                        {
+                            ch = (int) (unsigned) (my_uchar) (acs_shifted ? '\275' : '\153');
+                            break;
+                        }
+                        if (ch == (chtype) ACS_ULCORNER)
+                        {
+                            ch = (int) (unsigned) (my_uchar) (acs_shifted ? '\260' : '\165');
+                            break;
+                        }
+                        if (ch == (chtype) ACS_URCORNER)
+                        {
+                            ch = (int) (unsigned) (my_uchar) (acs_shifted ? '\256' : '\151');
+                            break;
+                        }
                         if ((! acs_shifted)
                             &&
                             (ch == (chtype) ACS_BULLET))
@@ -11007,6 +13750,9 @@ static int addch(chtype ch)
                 case ACS_BLOCK:
                     ch = 0xa0;
                     break;
+                case ACS_CKBOARD:
+                    ch = '#';
+                    break;
                 case RAWCURSES__ACS_THALF:
                     ch = 0x95;
                     break;
@@ -11018,18 +13764,6 @@ static int addch(chtype ch)
                     break;
                 case RAWCURSES__ACS_RHALF:
                     ch = 0x99;
-                    break;
-                case ACS_LRCORNER:
-                    ch = 0x03;
-                    break;
-                case ACS_URCORNER:
-                    ch = 0x05;
-                    break;
-                case ACS_ULCORNER:
-                    ch = 0x11;
-                    break;
-                case ACS_LLCORNER:
-                    ch = 0x1a;
                     break;
                 case ACS_PLUS:
                     ch = 0x13;
@@ -11053,6 +13787,26 @@ static int addch(chtype ch)
                     ch = '|';
                     break;
                 default:
+                    if (ch == (chtype) ACS_LRCORNER)
+                    {
+                        ch = 0x03;
+                        break;
+                    }
+                    if (ch == (chtype) ACS_URCORNER)
+                    {
+                        ch = 0x05;
+                        break;
+                    }
+                    if (ch == (chtype) ACS_ULCORNER)
+                    {
+                        ch = 0x11;
+                        break;
+                    }
+                    if (ch == (chtype) ACS_LLCORNER)
+                    {
+                        ch = 0x1a;
+                        break;
+                    }
                     if (ch == (chtype) ACS_BULLET)
                     {
                         ch = 0x14;
@@ -11093,6 +13847,23 @@ static int addch(chtype ch)
                                          ||
                                          rawcurses_stdio_koi8u)))
                 {
+                    if (! rawcurses_stdio_petscii_shifted)
+                    {
+                        switch ((chtype) ch)
+                        {
+                        case ACS_LRCORNER:
+                            ch = 0x256fU;
+                            break;
+                        case ACS_URCORNER:
+                            ch = 0x256eU;
+                            break;
+                        case ACS_ULCORNER:
+                            ch = 0x256dU;
+                            break;
+                        case ACS_LLCORNER:
+                            ch = 0x2570U;
+                        }
+                    }
                     fputc_utf8(ch, stdout);
                     if (wcw > 1)
                     {
@@ -11106,7 +13877,34 @@ static int addch(chtype ch)
                 {
                     if (rawcurses_stdio_utf8)
                     {
-                        fputc_utf8_cp437(0x100 | (int) (my_uchar) ch, stdout);
+                        if (! rawcurses_stdio_petscii_shifted)
+                        {
+                            switch ((chtype) ch)
+                            {
+                            case ACS_LRCORNER:
+                                ch = 0x256fU;
+                                fputc_utf8(ch, stdout);
+                                break;
+                            case ACS_URCORNER:
+                                ch = 0x256eU;
+                                fputc_utf8(ch, stdout);
+                                break;
+                            case ACS_ULCORNER:
+                                ch = 0x256dU;
+                                fputc_utf8(ch, stdout);
+                                break;
+                            case ACS_LLCORNER:
+                                ch = 0x2570U;
+                                fputc_utf8(ch, stdout);
+                                break;
+                            default:
+                                fputc_utf8_cp437(0x100 | (int) (my_uchar) ch, stdout);
+                            }
+                        }
+                        else
+                        {
+                            fputc_utf8_cp437(0x100 | (int) (my_uchar) ch, stdout);
+                        }
                         wcw --;
                     }
                     else
@@ -11214,14 +14012,22 @@ static int addch(chtype ch)
                 fputc((int) (my_uchar) ch, stdout);
                 wcw --;
             }
-            if (switch_to_acs) rawcurses_fput_rmacs(stdout);
-            if (switch_to_reverse) attrset(oattr);
+            if (switch_to_acs)
+            {
+                rawcurses_fput_rmacs(stdout);
+                if (rawcurses_stdio_acs_sgr0si)
+                {
+                    rawcurses_attr = RAWCURSES__A_ALTCHARSET_DIRTY;
+                    attrset(0);
+                }
+            }
+            if (switch_to_reverse || rawcurses_stdio_acs_sgr0si) attrset(oattr);
             ch = ch2;
         }
         if (rawcurses_x >= rawcurses_w)
         {
             rawcurses_x = rawcurses_w - 1;
-            if (rawcurses_stdio_atascii || rawcurses_stdio_petscii || rawcurses_stdio_dumb || rawcurses_stdio_tek || rawcurses_stdio_emacs)
+            if (rawcurses_stdio_wrap)
             {
                 rawcurses_x = 0;
                 rawcurses_y ++;

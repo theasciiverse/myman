@@ -30,11 +30,13 @@
 #ifdef FLTK2CURSES
 
 #include <fltk/compat/FL/Fl.H>
+#include <fltk/compat/FL/Enumerations.H>
 #include <fltk/compat/FL/Fl_Text_Buffer.H>
 #include <fltk/compat/FL/Fl_Text_Editor.H>
 #include <fltk/compat/FL/Fl_Window.H>
 #include <fltk/compat/FL/fl_ask.H>
 #include <fltk/compat/FL/fl_draw.H>
+#include <FL/Enumerations.H>
 typedef fltk::Font *Fl_Font;
 typedef fltk::TextDisplay Fl_Text_Display;
 #ifndef fl_beep
@@ -44,6 +46,7 @@ typedef fltk::TextDisplay Fl_Text_Display;
 #else
 
 #include <FL/Fl.H>
+#include <FL/Enumerations.H>
 #include <FL/Fl_Text_Buffer.H>
 #include <FL/Fl_Text_Display.H>
 #include <FL/Fl_Window.H>
@@ -52,6 +55,44 @@ typedef fltk::TextDisplay Fl_Text_Display;
 #endif
 
 /* work-arounds for the Fast Light Tool Kit (FLTK) */
+
+#ifndef FLTKCURSES_UTF8
+#ifdef FL_MAJOR_VERSION
+#ifdef FL_MINOR_VERSION
+#if (FL_MAJOR_VERSION > 1) || ((FL_MAJOR_VERSION == 1) && (FL_MINOR_VERSION >= 3))
+/* Newer FLTK1 always uses UTF-8 (yay!) but I can't figure out how to
+ * make overstrike work (bleh) */
+#define FLTKCURSES_UTF8 0
+#endif
+#endif
+#endif
+#endif
+
+#ifndef FLTKCURSES_UTF8
+#ifdef FLTK2CURSES
+/* FLTK2 always uses UTF-8 (yay!) */
+#define FLTKCURSES_UTF8 1
+#else
+/* Old FLTK1 always uses ISO 8859-1 (bleh) */
+#define FLTKCURSES_UTF8 0
+#endif
+#endif
+
+#ifndef FLTK2CURSES
+#ifndef FLTKCURSES_FL_TEXT_BUFFER_CHAR_AT
+#ifdef FL_MAJOR_VERSION
+#ifdef FL_MINOR_VERSION
+#if (FL_MAJOR_VERSION > 1) || ((FL_MAJOR_VERSION == 1) && (FL_MINOR_VERSION >= 3))
+#define FLTKCURSES_FL_TEXT_BUFFER_CHAR_AT(bufp,pos) ((bufp)->char_at(pos))
+#endif
+#endif
+#endif
+#endif
+#endif
+
+#ifndef FLTKCURSES_FL_TEXT_BUFFER_CHAR_AT
+#define FLTKCURSES_FL_TEXT_BUFFER_CHAR_AT(bufp,pos) ((bufp)->character(pos))
+#endif
 
 #ifndef FLTKCURSES_FONT
 #define FLTKCURSES_FONT "fixed"
@@ -119,6 +160,7 @@ typedef fltk::TextDisplay Fl_Text_Display;
 static int fltkcurses_argc;
 static char *fltkcurses_argv[2] = { NULL, NULL };
 static char *fltkcurses_title = NULL;
+static const char *fltkcurses_utf8 = NULL;
 static int fltkcurses_ready = 0;
 
 typedef unsigned long int chtype;
@@ -346,33 +388,31 @@ static size_t fltkcurses_chtypetombs(chtype ch, char *buf)
     {
         *(buf++) = ch;
     }
-#ifndef FLTK2CURSES
-    /* FLTK1 always uses ISO 8859-1 (bleh) */
-    else if (ch <= 0xffL)
+    else if ((ch <= 0xffL) && ! fltkcurses_utf8)
     {
         *(buf++) = ch;
     }
-#else
-    /* FLTK2 always uses UTF-8 (yay!) */
-    else if (ch <= 0x7ffL)
+    else if (fltkcurses_utf8)
     {
-        *(buf++) = 0xc0 | (ch >> 6);
-        *(buf++) = 0x80 | (ch & 0x3f);
+        if (ch <= 0x7ffL)
+        {
+            *(buf++) = 0xc0 | (ch >> 6);
+            *(buf++) = 0x80 | (ch & 0x3f);
+        }
+        else if (ch <= 0xffffL)
+        {
+            *(buf++) = 0xe0 | (ch >> 12);
+            *(buf++) = 0x80 | ((ch >> 6) & 0x3f);
+            *(buf++) = 0x80 | (ch & 0x3f);
+        }
+        else if (ch <= 0x10ffffL)
+        {
+            *(buf++) = 0xf0 | (ch >> 18);
+            *(buf++) = 0x80 | ((ch >> 12) & 0x3f);
+            *(buf++) = 0x80 | ((ch >> 6) & 0x3f);
+            *(buf++) = 0x80 | (ch & 0x3f);
+        }
     }
-    else if (ch <= 0xffffL)
-    {
-        *(buf++) = 0xe0 | (ch >> 12);
-        *(buf++) = 0x80 | ((ch >> 6) & 0x3f);
-        *(buf++) = 0x80 | (ch & 0x3f);
-    }
-    else if (ch <= 0x10ffffL)
-    {
-        *(buf++) = 0xf0 | (ch >> 18);
-        *(buf++) = 0x80 | ((ch >> 12) & 0x3f);
-        *(buf++) = 0x80 | ((ch >> 6) & 0x3f);
-        *(buf++) = 0x80 | (ch & 0x3f);
-    }
-#endif
     *buf = 0;
     return strlen(buf0);
 }
@@ -650,7 +690,7 @@ static void fltkcurses_updateStyle(int pos, int nInserted, int nDeleted, int nRe
     fltkcurses_styleBuffer->select(pos, pos + nInserted - nDeleted);
 }
 
-static void initscrWithHints(int h, int w, const char *title, const char *shortname)
+static int initscrWithHints(int h, int w, const char *title, const char *shortname)
 {
     int i;
     int fontsize;
@@ -707,6 +747,11 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
     if (myman_getenv("FLTKCURSES_FONTSIZE") && atoi(myman_getenv("FLTKCURSES_FONTSIZE")))
     {
         fontsize = atoi(myman_getenv("FLTKCURSES_FONTSIZE"));
+    }
+    fltkcurses_utf8 = FLTKCURSES_UTF8 ? "1" : NULL;
+    if (myman_getenv("FLTKCURSES_UTF8") && *(myman_getenv("FLTKCURSES_UTF8")))
+    {
+        fltkcurses_utf8 = atoi(myman_getenv("FLTKCURSES_UTF8")) ? "1" : NULL;
     }
     fl_font(face, fontsize);
     fltkcurses_charh = fl_height();
@@ -853,6 +898,7 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
         }
     }
     fltkcurses_ready = 1;
+    return 1;
 }
 
 static void endwin(void)
@@ -1259,25 +1305,38 @@ static int addch(chtype ch)
     if (strlen(buf))
     {
         fltkcurses_textDisplay->insert_position(0);
-        for (int voff = fltkcurses_y; voff; voff --)
+        for (int voff = fltkcurses_y; voff > 0; voff --)
         {
             fltkcurses_textDisplay->move_down();
         }
-        for (int hoff = fltkcurses_x; hoff; hoff --)
+        int hoff = fltkcurses_x;
+        for (; hoff > 0; hoff --)
         {
+            int pos = fltkcurses_textDisplay->insert_position();
+            int wcw2 = wcwidth((chtype) FLTKCURSES_FL_TEXT_BUFFER_CHAR_AT(fltkcurses_textBuffer, pos));
+            while (wcw2 > 1)
+            {
+                hoff --;
+                wcw2 --;
+            }
+            if (hoff <= 0)
+            {
+                break;
+            }
             fltkcurses_textDisplay->move_right();
         }
         int pos = fltkcurses_textDisplay->insert_position();
         char *tmp = fltkcurses_textBuffer->text_range(pos, pos + strlen(buf));
         if (strcmp(tmp, buf)
             ||
-            (fltkcurses_curattr != fltkcurses_styleBuffer->character(pos)))
+            (fltkcurses_curattr !=
+             (char) FLTKCURSES_FL_TEXT_BUFFER_CHAR_AT(fltkcurses_styleBuffer, pos)))
         {
             fltkcurses_textDisplay->overstrike(buf);
         }
         free((void *) tmp);
     }
-    fltkcurses_x ++;
+    fltkcurses_x += (wcw > 1) ? wcw : 1;
     return OK;
 }
 

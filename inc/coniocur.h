@@ -360,11 +360,11 @@ static coniocurses_attr_t coniocurses_attr = 0;
 
 #define A_BOLD 0x400000UL
 
-#define A_STANDOUT 0x200000UL
+#define A_REVERSE 0x200000UL
 
 #define A_CHARTEXT 0x1fffffUL
 
-#define A_REVERSE A_STANDOUT
+#define A_STANDOUT (A_UNDERLINE | A_BOLD | A_REVERSE)
 
 #define CONIOCURSES___A_COLOR 0xff000000UL
 
@@ -388,7 +388,7 @@ static coniocurses_attr_t coniocurses_attr = 0;
 
 #define COLOR_WHITE (COLOR_RED | COLOR_GREEN | COLOR_BLUE)
 
-#define PEN_BRIGHT 8
+#define CONIOCURSES_PEN_BRIGHT 8
 
 #define _PAIR_SHIFT 24
 
@@ -509,13 +509,29 @@ static int init_pair(short i, short fg, short bg);
 
 #define INITSCR_WITH_HINTS
 
-static void initscrWithHints(int h, int w, const char *title, const char *shortname)
+static int initscrWithHints(int h, int w, const char *title, const char *shortname)
 {
     int i;
 
     coniocurses_color = 1;
     coniocurses_w = 80;
     coniocurses_h = 25;
+    if (myman_getenv("CONIOCURSES_LINES") && atoi(myman_getenv("CONIOCURSES_LINES")))
+    {
+        coniocurses_h = atoi(myman_getenv("CONIOCURSES_LINES"));
+    }
+    else if (myman_getenv("LINES") && atoi(myman_getenv("LINES")))
+    {
+        coniocurses_h = atoi(myman_getenv("LINES"));
+    }
+    if (myman_getenv("CONIOCURSES_COLUMNS") && atoi(myman_getenv("CONIOCURSES_COLUMNS")))
+    {
+        coniocurses_w = atoi(myman_getenv("CONIOCURSES_COLUMNS"));
+    }
+    else if (myman_getenv("COLUMNS") && atoi(myman_getenv("COLUMNS")))
+    {
+        coniocurses_w = atoi(myman_getenv("COLUMNS"));
+    }
     do
     {
         struct text_info screensize_info;
@@ -675,6 +691,7 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
         coniocurses_pairs[i].bg = i / COLORS;
     }
     attrset(0);
+    return 1;
 }
 
 static void endwin(void)
@@ -701,6 +718,8 @@ static int coniocurses_addch(coniocurses_chtype ch);
 static int erase(void)
 {
     if (! coniocurses_ready) return ERR;
+    textcolor(COLOR_WHITE);
+    textbackground(COLOR_BLACK);
     clrscr();
     gotoxy(1, 1);
     attrset(0);
@@ -829,7 +848,9 @@ static int coniocurses_getch(void) {
     int ret = ERR;
     int i, j;
 
-    if (! coniocurses_ready) return (coniocurses_chtype) ERR;
+    i = coniocurses_w;
+    j = coniocurses_h;
+    if (! coniocurses_ready) return ERR;
     do
     {
         struct text_info screensize_info;
@@ -948,6 +969,24 @@ static int coniocurses_getch(void) {
     if (kbhit())
     {
         ret = getch();
+#ifdef __CACA_CONIO_H__
+        if (ret == CACA_KEY_UP)
+        {
+            return KEY_UP;
+        }
+        if (ret == CACA_KEY_LEFT)
+        {
+            return KEY_LEFT;
+        }
+        if (ret == CACA_KEY_RIGHT)
+        {
+            return KEY_RIGHT;
+        }
+        if (ret == CACA_KEY_DOWN)
+        {
+            return KEY_DOWN;
+        }
+#endif
         if (ret == 0)
         {
             ret = getch();
@@ -1024,9 +1063,6 @@ static int insch(const coniocurses_chtype ch)
 
 static int delch(void)
 {
-    int ret;
-    int oy, ox;
-
     if (! coniocurses_ready) return ERR;
     movetext(coniocurses_x + 1, coniocurses_y + 1,
              coniocurses_w, coniocurses_y + 1,
@@ -1130,19 +1166,19 @@ static int coniocurses_addch(coniocurses_chtype ch)
     {
         pair_content(PAIR_NUMBER(coniocurses_attr), &fg, &bg);
     }
-    if (coniocurses_attr & A_UNDERLINE)
-    {
-        fg = COLOR_BLUE;
-        bg = COLOR_BLACK;
-    }
-    else if ((coniocurses_attr & A_STANDOUT) && has_colors())
+    if (((coniocurses_attr & (A_UNDERLINE | A_BOLD)) == (A_UNDERLINE | A_BOLD)) && has_colors())
     {
         fg = COLOR_MAGENTA;
         bg = COLOR_BLACK;
     }
+    else if (coniocurses_attr & A_UNDERLINE)
+    {
+        fg = COLOR_BLUE;
+        bg = COLOR_BLACK;
+    }
     else if ((coniocurses_attr & A_BOLD) && has_colors())
     {
-        fg = COLOR_YELLOW | PEN_BRIGHT;
+        fg = COLOR_YELLOW | CONIOCURSES_PEN_BRIGHT;
         bg = COLOR_BLACK;
     }
     if (has_colors() && PAIR_NUMBER(coniocurses_attr))
@@ -1151,9 +1187,9 @@ static int coniocurses_addch(coniocurses_chtype ch)
     }
     if (coniocurses_attr & A_BOLD)
     {
-        fg |= PEN_BRIGHT;
+        fg |= CONIOCURSES_PEN_BRIGHT;
     }
-    if (coniocurses_attr & (A_STANDOUT | A_REVERSE))
+    if (((coniocurses_attr & A_STANDOUT) == A_STANDOUT) || ((coniocurses_attr & A_REVERSE) == A_REVERSE))
     {
         short tmp;
 

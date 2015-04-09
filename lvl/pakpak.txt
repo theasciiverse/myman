@@ -13,22 +13,22 @@ MORTAR_COLORS="\x02\x03\x03\x02" \
 WALL_COLORS="\x0A\x0B\x0B\x0A" \
 ABOUT="Inspired by the 'Pak Pak Monster' game for Epoch's Cassette Vision console"
          
- ■  •  · 
-  •   •  
+ ■  ∙  · 
+  ∙   ∙  
    ·≡·   
- • • • • 
-   ·•·   
-  •   •  
- ·  •  · 
+ ∙ ∙ ∙ ∙ 
+   ·∙·   
+  ∙   ∙  
+ ·  ∙  · 
          
          
- ■  •  · 
-  •   •  
+ ■  ∙  · 
+  ∙   ∙  
    ·≡·   
- • • • • 
-   ·•·   
-  •   •  
- ·  •  · 
+ ∙ ∙ ∙ ∙ 
+   ·∙·   
+  ∙   ∙  
+ ·  ∙  · 
          
          
  ·     ■ 
@@ -40,11 +40,11 @@ ABOUT="Inspired by the 'Pak Pak Monster' game for Epoch's Cassette Vision consol
  ·     · 
          
          
- ·  •  ■ 
-  •   •  
+ ·  ∙  ■ 
+  ∙   ∙  
    ·≡·   
- • • • • 
-   ·•·   
-  •   •  
- ·  •  · 
+ ∙ ∙ ∙ ∙ 
+   ·∙·   
+  ∙   ∙  
+ ·  ∙  · 
          

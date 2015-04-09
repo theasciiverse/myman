@@ -1070,7 +1070,7 @@ static int pair_content(int i, short *fg, short *bg) {
     return OK;
 }
 
-static void initscrWithHints(int h, int w, const char *title, const char *shortname)
+static int initscrWithHints(int h, int w, const char *title, const char *shortname)
 {
     int fg, bg;
     int auto_x, auto_y;
@@ -1099,7 +1099,7 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
     {
         fprintf(stderr, "ggiInit failed\n");
         fflush(stderr);
-        exit(1);
+        return 0;
     }
     ggicurses_wmh = 0;
 #if USE_GGIWMH
@@ -1119,7 +1119,7 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
         ggiExit();
         fprintf(stderr, "ggiOpen failed\n");
         fflush(stderr);
-        exit(1);
+        return 0;
     }
     ggiParseMode("", &ggicurses_mode);
     auto_x = ggicurses_mode.visible.x == GGI_AUTO;
@@ -1143,7 +1143,7 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
             }
 #endif
             ggiExit();
-            exit(1);
+            return 0;
         }
     }
     ggiGetMode(ggicurses_visual, &ggicurses_mode);
@@ -1256,7 +1256,7 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
         }
 #endif
         ggiExit();
-        exit(1);
+        return 0;
     }
     memset((void *) ggicurses_backing, 0, 2 * ggicurses_w * ggicurses_h * sizeof(ggicurses_cell_t));
     ggicurses_need_resize = 0.0;
@@ -1357,7 +1357,7 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
                  ggicurses_frame));
         fflush(stderr);
         endwin();
-        exit(1);
+        return 0;
     }
     if ((ggicurses_mode.frames > 1)
         &&
@@ -1384,7 +1384,7 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
                  ggicurses_frame));
         fflush(stderr);
         endwin();
-        exit(1);
+        return 0;
     }
     if ((! ggicurses_direct)
         &&
@@ -1403,7 +1403,7 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
                  ggicurses_frame));
         fflush(stderr);
         endwin();
-        exit(1);
+        return 0;
     }
 #if USE_GGIWMH
     if (ggicurses_wmh)
@@ -1419,6 +1419,7 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
     }
 #endif
     ggicurses_ready = 1;
+    return 1;
 }
 
 static void endwin(void) {

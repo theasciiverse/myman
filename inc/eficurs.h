@@ -406,7 +406,7 @@ static int init_pair(short i, short fg, short bg);
 
 #define INITSCR_WITH_HINTS
 
-static void initscrWithHints(int h, int w, const char *title, const char *shortname)
+static int initscrWithHints(int h, int w, const char *title, const char *shortname)
 {
     int i;
     char *ignored = NULL;
@@ -428,6 +428,7 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
     }
     ST->ConOut->SetAttribute(ST->ConOut, EFI_TEXT_ATTR(EFI_LIGHTGRAY, EFI_BLACK));
     attrset(0);
+    return 1;
 }
 
 static void endwin(void)

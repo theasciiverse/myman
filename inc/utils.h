@@ -34,10 +34,14 @@
 #else /* ! defined(_WIN32) */
 #if defined(DOS) || defined(_MSDOS) || defined(__DOS__) || defined(__TURBOC__)
 
+#ifndef __atarist__
+
 /* some DOS C compilers do not define __MSDOS__ */
 #ifndef __MSDOS__
 #define __MSDOS__ 1
 #endif
+
+#endif /* ! defined(__atarist__) */
 
 #endif /* defined(DOS) || defined(_MSDOS) || defined(__DOS__) || defined(__TURBOC__) */
 #endif /* ! defined(_WIN32) */
@@ -132,13 +136,21 @@ extern const char *DONEMESSAGE;
 #define MYMANVERSION "devel"
 #endif
 
-/* legal notice to display before starting */
-extern const char *MYMANLEGALNOTICE;
+/* legal notice to display before starting, NULL-terminated array of
+ * pointers to strings */
+extern const char **myman_legal_notice_strs;
 
-extern const char *MYMANKEYS;
+/* description of key bindings, NULL-terminated array of pointers to
+ * strings */
+extern const char **myman_keys_strs;
 
 extern const char *short_options;
 extern struct option *long_options;
+
+/* used in Mac-specific code */
+#ifndef MYMAN_FOUR_CHAR_CODE
+#define MYMAN_FOUR_CHAR_CODE(k) ((((long)((k)[0])) << 24) | ((255 & (long)(unsigned)((k)[1])) << 16) | ((255 & (unsigned)((k)[2])) << 8) | (255 & (unsigned)((k)[3])))
+#endif
 
 /* UCS/Unicode mapping for CP437 (used in HTML snapshots) */
 
@@ -217,6 +229,8 @@ extern long *strtollist_word(const char *from, const char **endp, size_t *lenp);
 
 extern double *strtodlist_word(const char *from, const char **endp, size_t *lenp);
 
+extern void mymanfescape(FILE *stream, const char *s, int len);
+
 extern void mymanescape(const char *s, int len);
 
 extern int readfont(const char *fontfile,
@@ -228,7 +242,8 @@ extern int readfont(const char *fontfile,
                     int *color,
                     const char **args);
 
-extern void writefont(const char *file,
+extern void writefont(int dump_text,
+                      const char *file,
                       const char *prefix,
                       int w, int h,
                       const char **font,
@@ -237,24 +252,25 @@ extern void writefont(const char *file,
                       int *color,
                       const char *args);
 
-extern int parse_tile_args(const char *tilefile, const char *tile_args);
+extern int parse_tile_a(const char *tilefile, const char *tile_a);
 
-extern int parse_sprite_args(const char *spritefile, const char *sprite_args);
+extern int parse_sprite_a(const char *spritefile, const char *sprite_a);
 
 extern const char *progname;
 
 extern int readmaze(const char *mazefile,
                     int *levels,
-                    int *w,
-                    int *h,
-                    char **maze,
+                    int **widths,
+                    int **heights,
+                    char ***mazes,
                     int *flags,
-                    char **color,
+                    char ***colors,
                     const char **args);
 
-extern void writemaze(const char *mazefile);
+extern void writemaze(int dump_text,
+                      const char *mazefile);
 
-extern int parse_maze_args(const char *mazefile, const char *maze_args);
+extern int parse_maze_a(const char *mazefile, const char *maze_a);
 
 extern char *mystrdup(const char *s);
 
@@ -262,6 +278,8 @@ extern char *mystrdup(const char *s);
 #undef strdup
 #endif
 #define strdup(s) mystrdup(s)
+
+extern int mystrcasecmp(const char *s1, const char *s2);
 
 #ifndef MIN
 #define MIN(x,y) (((x) < (y)) ? (x) : (y))
@@ -294,73 +312,90 @@ extern char *mystrdup(const char *s);
 #define INTERMISSION_N 3
 #endif
 
-extern char *maze;
-extern char *maze_color;
-extern char *blank_maze;
-extern char *blank_maze_color;
+extern char **mazes;
+extern char **maze_colors;
+extern char **blank_mazes;
+extern char **blank_maze_colors;
 extern my_uchar *dirty_cell;
 extern int all_dirty;
 
 extern int nogame;
 
 extern int maze_n;
-extern int maze_w;
-extern int maze_h;
-extern int maze_flags;
+extern int *maze_w;
+extern int *maze_h;
+extern int maze_maxwidth;
+extern int maze_maxheight;
+extern int maze_f;
 extern int maze_level;
-extern const char *maze_args;
+extern const char *maze_a;
 
 extern int tile_w;
 extern int tile_h;
-extern int tile_flags;
-extern const char *tile_args;
-extern const char *tile[256];
-extern int tile_used[256];
-extern int tile_color[256];
+extern int tile_f;
+extern const char *tile_a;
+extern const char *tile_d[256];
+extern int tile_u[256];
+extern int tile_c[256];
 
 extern int sprite_w;
 extern int sprite_h;
-extern int sprite_flags;
-extern const char *sprite_args;
-extern const char *sprite[256];
-extern int sprite_used[256];
-extern int sprite_color[256];
+extern int sprite_f;
+extern const char *sprite_a;
+extern const char *sprite_d[256];
+extern int sprite_u[256];
+extern int sprite_c[256];
 
 #ifndef VISIBLE_EYES
-#define VISIBLE_EYES (! ((sprite_flags) & 1))
+#define VISIBLE_EYES (! ((sprite_f) & 1))
 #endif
 
 #ifndef SOLID_WALLS
-#define SOLID_WALLS ((tile_flags) & 2)
+#define SOLID_WALLS ((tile_f) & 2)
 #endif
 
 #ifndef SOLID_WALLS_BGCOLOR
-#define SOLID_WALLS_BGCOLOR ((tile_flags) & 4)
+#define SOLID_WALLS_BGCOLOR ((tile_f) & 4)
 #endif
 
 /* whether to always switch maze levels, rather than only during intermissions */
 #ifndef FLIP_ALWAYS
-#define FLIP_ALWAYS (! ((maze_flags) & 1))
+#define FLIP_ALWAYS (! ((maze_f) & 1))
 #endif
 
 /* whether to repeat the flip_to maze after showing the last one */
 #ifndef FLIP_LOCK
-#define FLIP_LOCK ((maze_flags) & 2)
+#define FLIP_LOCK ((maze_f) & 2)
 #endif
 
 /* if set, base the WALL_COLOR vs. MORTAR_COLOR choice on wall thickness rather than wall edge vs. wall fill*/
 #ifndef BICOLOR_WALLS
-#define BICOLOR_WALLS ((maze_flags) & 4)
+#define BICOLOR_WALLS ((maze_f) & 4)
 #endif
 
-#define XWRAP(x) (((x) + maze_w + 1) % (maze_w + 1))
-#define YWRAP(y) (((y) + maze_h) % maze_h)
+/* if set, offset sprites one half tile rightward and downward for
+ * drawing, and treat them as occupying squares of 8 tiles
+ * simultaneously */
+#ifndef QUAD_DOTS
+#define QUAD_DOTS ((maze_f) & 8)
+#endif
 
-#define XWRAP2(x) (XWRAP(x) % maze_w)
+#ifndef DOTS_FRUIT1
+#define DOTS_FRUIT1 (70 * total_dots[maze_level] / 244)
+#endif
 
-#define CLEAN_ALL() do { memset((void *)dirty_cell, 0, maze_h * ((maze_w + 1 + 7) >> 3) * sizeof(*dirty_cell)); all_dirty = 0; } while (0)
+#ifndef DOTS_FRUIT2
+#define DOTS_FRUIT2 (170 * total_dots[maze_level] / 244)
+#endif
+
+#define XWRAP(x) (((x) + maze_w[maze_level] + 1) % (maze_w[maze_level] + 1))
+#define YWRAP(y) (((y) + maze_h[maze_level]) % maze_h[maze_level])
+
+#define XWRAP2(x) (XWRAP(x) % maze_w[maze_level])
+
+#define CLEAN_ALL() do { memset((void *)dirty_cell, 0, maze_h[maze_level] * ((maze_w[maze_level] + 1 + 7) >> 3) * sizeof(*dirty_cell)); all_dirty = 0; } while (0)
 #define DIRTY_ALL() do { all_dirty = 1; } while (0)
-#define IS_CELL_DIRTY(x,y) (all_dirty || ((((long) (x)) >= 0) && (((long) (y)) >= 0) && ((x) <= maze_w) && ((y) < maze_h) && ((unsigned) dirty_cell[((y)) * ((maze_w+1+7) >> 3) + ((x)>>3)]&(1<<((x)&7)))))
+#define IS_CELL_DIRTY(x,y) (all_dirty || ((((long) (x)) >= 0) && (((long) (y)) >= 0) && ((x) <= maze_w[maze_level]) && ((y) < maze_h[maze_level]) && ((unsigned) dirty_cell[((y)) * ((maze_w[maze_level]+1+7) >> 3) + ((x)>>3)]&(1<<((x)&7)))))
 
 extern void maze_erase(void);
 
@@ -457,11 +492,11 @@ extern my_uchar gfx0(my_uchar c, my_uchar *m);
 
 #define gfx_w (gfx_reflect ? tile_h : tile_w)
 #define gfx_h (gfx_reflect ? tile_w : tile_h)
-#define gfx(c,y,x) ((my_ulong) (my_uchar) gfx2((my_ulong) (my_uchar) gfx1(tile, (my_ulong) (my_uchar) gfx0(((my_ulong) (my_uchar) (c)), (reflect_cp437)), (y) % gfx_h, (x) % gfx_w, tile_w)))
+#define gfx(c,y,x) ((my_ulong) (my_uchar) gfx2((my_ulong) (my_uchar) gfx1(tile_d, (my_ulong) (my_uchar) gfx0(((my_ulong) (my_uchar) (c)), (reflect_cp437)), (y) % gfx_h, (x) % gfx_w, tile_w)))
 
 #define sgfx_w (gfx_reflect ? sprite_h : sprite_w)
 #define sgfx_h (gfx_reflect ? sprite_w : sprite_h)
-#define sgfx(c,y,x) ((my_ulong) (my_uchar) gfx2((my_ulong) (my_uchar) gfx1(sprite, (my_ulong) (my_uchar) gfx0(((my_ulong) (my_uchar) (c)), (reflect_sprite)), (y) % sgfx_h, (x) % sgfx_w, sprite_w)))
+#define sgfx(c,y,x) ((my_ulong) (my_uchar) gfx2((my_ulong) (my_uchar) gfx1(sprite_d, (my_ulong) (my_uchar) gfx0(((my_ulong) (my_uchar) (c)), (reflect_sprite)), (y) % sgfx_h, (x) % sgfx_w, sprite_w)))
 
 extern int reflect;
 extern int gfx_reflect;
@@ -473,8 +508,8 @@ extern int gfx_reflect;
 #define collide(s1, s2) ((XTILE(sprite_register_x[s1] - sgfx_w / 2) == XTILE(sprite_register_x[s2] - sgfx_w / 2)) \
 && (YTILE(sprite_register_y[s1] - sgfx_h / 2) == YTILE(sprite_register_y[s2] - sgfx_h / 2)))
 
-#define PIX_W ((maze_w + 1) * gfx_w)
-#define PIX_H (maze_h * gfx_h)
+#define PIX_W ((maze_w[maze_level] + 1) * gfx_w)
+#define PIX_H (maze_h[maze_level] * gfx_h)
 
 #define XPIXWRAP(x) (((x) + PIX_W) % PIX_W)
 #define YPIXWRAP(y) (((y) + PIX_H) % PIX_H)
@@ -491,6 +526,7 @@ extern int gfx_reflect;
 #define YGHOST (RGHOST * gfx_h)
 #define XGHOST (CGHOST * gfx_w)
 #define YTOP (RTOP * gfx_h)
+#define GHOST_VRETURN ((YTOP < YGHOST) ? MYMAN_DOWN : MYMAN_UP)
 
 #define INSIDE_WALL_INVERTED 0x0001
 #define INSIDE_WALL_NON_INVERTABLE 0x0002
@@ -501,12 +537,42 @@ extern int gfx_reflect;
 #define INSIDE_WALL_NO 0x0040
 #define INSIDE_WALL_PHASE2 0x0080
 #define INSIDE_WALL_PHASE3 0x0100
-#define IS_INVERTED(x,y) (((unsigned) inside_wall[(maze_level*maze_h+(y)) * (maze_w + 1)+(x)]) & INSIDE_WALL_INVERTED)
-#define IS_FULLY_INVERTED(x,y) (((unsigned) inside_wall[(maze_level*maze_h+(y)) * (maze_w + 1)+(x)]) & INSIDE_WALL_FULLY_INVERTED)
-#define IS_FULLY_NON_INVERTED(x,y) (((unsigned) inside_wall[(maze_level*maze_h+(y)) * (maze_w + 1)+(x)]) & INSIDE_WALL_FULLY_NON_INVERTED)
+#define IS_INVERTED(x,y) (((unsigned) inside_walls[maze_level][(y) * (maze_w[maze_level] + 1)+(x)]) & INSIDE_WALL_INVERTED)
+#define IS_FULLY_INVERTED(x,y) (((unsigned) inside_walls[maze_level][(y) * (maze_w[maze_level] + 1)+(x)]) & INSIDE_WALL_FULLY_INVERTED)
+#define IS_FULLY_NON_INVERTED(x,y) (((unsigned) inside_walls[maze_level][(y) * (maze_w[maze_level] + 1)+(x)]) & INSIDE_WALL_FULLY_NON_INVERTED)
+
+/* special pen indeces (may be ORed together); special pen indeces
+ * always have the low and high nybbles equal; note that some of these
+ * (all involving MY_PEN___SPECIAL) overlap and so cannot be combined
+ * with the other attributes, except as noted.
+ */
+#define MY_PEN_REVERSE   0x44
+#define MY_PEN_BOLD      0x22
+#define MY_PEN_UNDERLINE 0x11
+#define MY_PEN_NORMAL    0x00
+#define MY_PEN___SPECIAL 0x88
+#define MY_PEN__STANDOUT (MY_PEN___SPECIAL | MY_PEN_REVERSE)
+#define MY_PEN__DIM      (MY_PEN___SPECIAL | MY_PEN_BOLD)
+/* MY_PEN__REVDIM is equivalent to MY_PEN__DIM | MY_PEN_REVERSE */
+#define MY_PEN__REVDIM   (MY_PEN___SPECIAL | MY_PEN_REVERSE | MY_PEN_BOLD)
 
 extern double doubletime(void);
 extern void my_usleep(long usecs);
+extern int my_addch(my_ulong b, int p);
+extern int my_addstr(const char *s, int c);
+extern void my_erase(void);
+extern int my_vlines(void);
+extern int my_vcols(void);
+extern int my_rlines(void);
+extern int my_rcols(void);
+extern int my_cols(void);
+extern void my_move(int y, int x);
+extern void my_clearattrs(void);
+extern int my_choose_pen(int p);
+extern int my_refresh(void);
+extern void my_showpause(void);
+extern int pen_to_mono_pen(int c);
+extern int pen_to_color_pen(int c);
 
 extern void gameintro(void);
 extern void gamedemo(void);
@@ -524,14 +590,25 @@ extern int gamecycle(int lines, int cols);
 extern void creditscreen(void);
 extern void paint_walls(int verbose);
 
-extern my_ushort *inside_wall;
+extern void pager_addch(my_ulong c, int p);
+extern int pager_cols(void);
+extern int pager_lines(void);
+extern int pager_big(void);
+extern void pager_getyx(int *y, int *x);
+extern void pager_move(int y, int x);
+
+extern my_ushort **inside_walls;
 extern FILE *snapshot;
 extern FILE *snapshot_txt;
 extern int xoff_received;
 extern double td;
+
+#define pager_tile_h (tile_h + 1)
+
 extern const char * pager_notice;
 extern const char * pager_remaining;
 extern int pager_arrow_magic;
+
 extern int reinit_requested;
 extern long myman_intro;
 extern my_ulong myman_start;
@@ -596,6 +673,12 @@ extern long pellet_timer,
 #define GHOST_NAMES_EN 2
 
 #define GHOST_NAMES_XLT 3
+
+#define GHOST_NAMES_OTTO 4
+
+#define GHOST_NAMES_MS 5
+
+#define GHOST_NAMES_JR 6
 
 #if GHOST_NAMES == GHOST_NAMES_JA
 
@@ -741,19 +824,127 @@ extern long pellet_timer,
 
 #endif
 
+#if GHOST_NAMES == GHOST_NAMES_OTTO
+
+#ifndef GHOST0_NAME
+#define GHOST0_NAME "-BRUTE"
+#endif
+
+#ifndef GHOST0_NICK
+#define GHOST0_NICK "\"FREUD\""
+#endif
+
+#ifndef GHOST2_NAME
+#define GHOST2_NAME "-KILLER"
+#endif
+
+#ifndef GHOST2_NICK
+#define GHOST2_NICK "\"DARWIN\""
+#endif
+
+#ifndef GHOST1_NAME
+#define GHOST1_NAME "-MAD DOG"
+#endif
+
+#ifndef GHOST1_NICK
+#define GHOST1_NICK "\"PLATO\""
+#endif
+
+#ifndef GHOST3_NAME
+#define GHOST3_NAME "-SAM"
+#endif
+
+#ifndef GHOST3_NICK
+#define GHOST3_NICK "\"NEWTON\""
+#endif
+
+#endif
+
+#if GHOST_NAMES == GHOST_NAMES_MS
+
+#ifndef GHOST0_NAME
+#define GHOST0_NAME " INKY"
+#endif
+
+#ifndef GHOST0_NICK
+#define GHOST0_NICK ""
+#endif
+
+#ifndef GHOST2_NAME
+#define GHOST2_NAME " PINKY"
+#endif
+
+#ifndef GHOST2_NICK
+#define GHOST2_NICK ""
+#endif
+
+#ifndef GHOST1_NAME
+#define GHOST1_NAME " BLINKY"
+#endif
+
+#ifndef GHOST1_NICK
+#define GHOST1_NICK ""
+#endif
+
+#ifndef GHOST3_NAME
+#define GHOST3_NAME " SUE"
+#endif
+
+#ifndef GHOST3_NICK
+#define GHOST3_NICK ""
+#endif
+
+#endif
+
+#if GHOST_NAMES == GHOST_NAMES_JR
+
+#ifndef GHOST0_NAME
+#define GHOST0_NAME " INKY"
+#endif
+
+#ifndef GHOST0_NICK
+#define GHOST0_NICK ""
+#endif
+
+#ifndef GHOST2_NAME
+#define GHOST2_NAME " PINKY"
+#endif
+
+#ifndef GHOST2_NICK
+#define GHOST2_NICK ""
+#endif
+
+#ifndef GHOST1_NAME
+#define GHOST1_NAME " BLINKY"
+#endif
+
+#ifndef GHOST1_NICK
+#define GHOST1_NICK ""
+#endif
+
+#ifndef GHOST3_NAME
+#define GHOST3_NAME " TIM"
+#endif
+
+#ifndef GHOST3_NICK
+#define GHOST3_NICK ""
+#endif
+
+#endif
+
 #define ghosts ((GHOSTS > MAXGHOSTS) ? MAXGHOSTS : GHOSTS)
 
-#define WHOSE_HOME_DIR(r,c) (((unsigned) home_dir[(GHOST2 % ghosts*maze_h+(r))*(maze_w+1)+(c)]) ? GHOST2 \
-                             : ((unsigned) home_dir[(GHOST0 % ghosts*maze_h+(r))*(maze_w+1)+(c)]) ? GHOST0 \
-                             : ((unsigned) home_dir[(GHOST3 % ghosts*maze_h+(r))*(maze_w+1)+(c)]) ? GHOST3 \
+#define WHOSE_HOME_DIR(r,c) (((unsigned) home_dir[(GHOST2 % ghosts*maze_h[maze_level]+(r))*(maze_w[maze_level]+1)+(c)]) ? GHOST2 \
+                             : ((unsigned) home_dir[(GHOST0 % ghosts*maze_h[maze_level]+(r))*(maze_w[maze_level]+1)+(c)]) ? GHOST0 \
+                             : ((unsigned) home_dir[(GHOST3 % ghosts*maze_h[maze_level]+(r))*(maze_w[maze_level]+1)+(c)]) ? GHOST3 \
                              : GHOST1)
 
-#define rmsg (RMSG % maze_h)
-#define cmsg (CMSG % maze_w)
-#define rmsg2 (RMSG2 % maze_h)
-#define cmsg2 (CMSG2 % maze_w)
+#define rmsg (RMSG % maze_h[maze_level])
+#define cmsg (CMSG % maze_w[maze_level])
+#define rmsg2 (RMSG2 % maze_h[maze_level])
+#define cmsg2 (CMSG2 % maze_w[maze_level])
 
-#define COMPLEXITY_ADJUST(x) ((x) * (maze_h + maze_w) / (28 + 31))
+#define COMPLEXITY_ADJUST(x) ((x) * (maze_h[maze_level] + maze_w[maze_level]) / (28 + 31))
 
 #define TWOSECS    (10 * MYMANFIFTH)
 #define ONESEC     (TWOSECS / 2)
@@ -783,7 +974,7 @@ extern long pellet_timer,
 #define CJK_MODE (uni_cp437[0x20] == uni_cp437_fullwidth[0x20])
 
 #ifndef CHERO
-#define CHERO (maze_CHERO_len ? maze_CHERO[maze_level % maze_CHERO_len] : (maze_w * 0.5))
+#define CHERO (maze_CHERO_len ? maze_CHERO[maze_level % maze_CHERO_len] : (maze_w[maze_level] * 0.5))
 #endif
 
 #ifndef RHERO
@@ -938,7 +1129,7 @@ extern long *maze_RMSG2;
 extern size_t maze_RMSG2_len;
 extern long *maze_CMSG2;
 extern size_t maze_CMSG2_len;
-extern int dirhero;
+extern int *dirheros;
 extern long scroll_offset_x0;
 extern long scroll_offset_y0;
 extern int msglen;
@@ -1003,7 +1194,7 @@ extern int visible_frame;
 #define MORTAR_COLOR maze_MORTAR_COLORS[maze_level % maze_MORTAR_COLORS_len]
 #endif
 
-#define TRANSLATED_MORTAR_COLOR (((BICOLOR_WALLS) && (((unsigned) udlr[(unsigned) (my_uchar) (char) maze[(maze_level*maze_h+ytile)*(maze_w+1)+xtile]]) & 0xAA)) ? (WALL_COLOR) : (MORTAR_COLOR))
+#define TRANSLATED_MORTAR_COLOR (((BICOLOR_WALLS) && (((unsigned) udlr[(unsigned) (my_uchar) (char) mazes[maze_level][ytile*(maze_w[maze_level]+1)+xtile]]) & 0xAA)) ? (WALL_COLOR) : (MORTAR_COLOR))
 
 #define TRANSLATED_WALL_COLOR ((BICOLOR_WALLS) ? TRANSLATED_MORTAR_COLOR : (WALL_COLOR))
 
@@ -1066,8 +1257,13 @@ extern void my_clearok(int ok);
 #endif
 #endif
 
-extern int use_underline;
+extern int use_direct;
 extern int use_color;
+extern int use_dim_and_bright;
+extern int use_fullwidth;
+extern int use_sound;
+extern int use_underline;
+extern int use_bitmap;
 extern int bonus_score[8];
 
 #define COLLISION_TYPE_HERO 1
@@ -1082,8 +1278,28 @@ extern long maze_visual(int n, int i, int j);
 
 extern int myman_setenv(const char *name, const char *value);
 
+extern int myman_super_setenv(const char *arg);
+
 extern char *myman_getenv(const char *name);
 
 extern char *myman_strrstr(const char *haystack, const char *needle);
+
+extern void myman_expand_args(int *argcp, char ***argvp, const char *progname);
+
+#ifndef USE_DOS_PATHNAME_SYNTAX
+#if defined(WIN32) || defined(__MSDOS__) || defined(__EFI__) || defined(__atarist__)
+#define USE_DOS_PATHNAME_SYNTAX 1
+#else
+#define USE_DOS_PATHNAME_SYNTAX 0
+#endif
+#endif
+
+#ifndef USE_MAC_PATHNAME_SYNTAX
+#ifdef macintosh
+#define USE_MAC_PATHNAME_SYNTAX 1
+#else
+#define USE_MAC_PATHNAME_SYNTAX 0
+#endif
+#endif
 
 #endif /* ! defined(MYMAN_UTILS_H_INCLUDED) */

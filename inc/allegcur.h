@@ -1220,7 +1220,7 @@ static int pair_content(int i, short *fg, short *bg) {
 
 static int allegrocurses_init_done = 0;
 
-static void initscrWithHints(int h, int w, const char *title, const char *shortname)
+static int initscrWithHints(int h, int w, const char *title, const char *shortname)
 {
     int fg, bg, depth, maxw, maxh;
 
@@ -1242,7 +1242,7 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
         if (allegro_init())
         {
             allegro_message("allegro_init failed: %s\n", allegro_error);
-            exit(1);
+            return 0;
         }
         allegro_404_char = '*';
     }
@@ -1258,7 +1258,7 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
         if (! allegrocurses_font)
         {
             allegro_message("%s: load_txt_font failed: %s\n", myman_getenv("ALLEGROCURSES_TXT_FONT"), allegro_error);
-            exit(1);
+            return 0;
         }
     }
     else if (myman_getenv("ALLEGROCURSES_FONT") && *(myman_getenv("ALLEGROCURSES_FONT")))
@@ -1267,7 +1267,7 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
         if (! allegrocurses_font)
         {
             allegro_message("%s: load_font failed: %s\n", myman_getenv("ALLEGROCURSES_FONT"), allegro_error);
-            exit(1);
+            return 0;
         }
     }
     if (allegrocurses_bitmap)
@@ -1300,31 +1300,31 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
     {
         set_gfx_mode(GFX_TEXT, 0, 0, 0, 0);
         allegro_message("install_sound failed: %s\n", allegro_error);
-        exit(1);
+        return 0;
     }
     if (set_gfx_mode(GFX_SAFE, w * allegrocurses_charwidth, h * allegrocurses_charheight, 0, 0))
     {
         set_gfx_mode(GFX_TEXT, 0, 0, 0, 0);
         allegro_message("set_gfx_mode failed: %s\n", allegro_error);
-        exit(1);
+        return 0;
     }
     if (install_keyboard())
     {
         set_gfx_mode(GFX_TEXT, 0, 0, 0, 0);
         allegro_message("install_keyboard failed: %s\n", allegro_error);
-        exit(1);
+        return 0;
     }
     if (install_timer() < 0)
     {
         set_gfx_mode(GFX_TEXT, 0, 0, 0, 0);
         allegro_message("install_timer failed: %s\n", allegro_error);
-        exit(1);
+        return 0;
     }
     if (install_mouse() == -1)
     {
         set_gfx_mode(GFX_TEXT, 0, 0, 0, 0);
         allegro_message("install_mouse failed: %s\n", allegro_error);
-        exit(1);
+        return 0;
     }
     if (install_joystick(JOY_TYPE_AUTODETECT)
         &&
@@ -1332,7 +1332,7 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
     {
         set_gfx_mode(GFX_TEXT, 0, 0, 0, 0);
         allegro_message("install_joystick failed: %s\n", allegro_error);
-        exit(1);
+        return 0;
     }
     set_window_title(allegrocurses_title);
     allegrocurses_closed = 0;
@@ -1379,7 +1379,7 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
         set_gfx_mode(GFX_TEXT, 0, 0, 0, 0);
         perror("malloc");
         fflush(stderr);
-        exit(1);
+        return 0;
     }
     memset((void *) allegrocurses_backing, 0, 2 * allegrocurses_w * allegrocurses_h * sizeof(allegrocurses_cell_t));
     allegrocurses_need_resize = 0.0;
@@ -1393,6 +1393,7 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
     LOCK_VARIABLE(allegrocurses_beep_offset);
     LOCK_VARIABLE(allegrocurses_beep_midi);
     LOCK_FUNCTION(allegrocurses_beep_tick);
+    return 1;
 }
 
 static void endwin(void) {

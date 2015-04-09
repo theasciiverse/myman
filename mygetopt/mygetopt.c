@@ -25,11 +25,19 @@
 /* HAVE_SYS_TYPES_H: do we have <sys/types.h>? */
 
 #ifndef HAVE_SYS_TYPES_H
-#ifndef macintosh
-#ifndef __PACIFIC__
-#ifndef AZTEC
+#ifndef __VBCC__
 #ifndef __EFI__
+#ifndef __DESMET__
+#ifndef __PACIFIC__
+#ifndef __PUREC__
+#ifndef __TURBOC__
+#ifndef AZTEC
+#ifndef macintosh
 #define HAVE_SYS_TYPES_H 1
+#endif
+#endif
+#endif
+#endif
 #endif
 #endif
 #endif

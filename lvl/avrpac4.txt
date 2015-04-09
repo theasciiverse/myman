@@ -1,0 +1,25 @@
+﻿1 16x11 ABOUT="Inspired by a game for the Atmel AT-TINY2313 and MEGA48" \
+GHOSTS=3 \
+DIRHERO=DOWN \
+ RHERO=5.5  CHERO=10.5 \
+RFRUIT=5.5 CFRUIT=8.5 \
+  RTOP=5.5 \
+RGHOST=5.5 CGHOST=6.5 ROGHOST=0 COGHOST=0 \
+ RMSG2=3    CMSG2=5 \
+  RMSG=7     CMSG=5 \
+   READY=" READY!" \
+ PLAYER1=" P ONE " \
+ PLAYER2=" P TWO " \
+GAMEOVER="GOODBYE" \
+NOTE="Ghost monster positions are not accurate"
+╔═════╝ ╚══╦═══╗
+║·■········║■··║
+║·╥·╔═╡ ╞╡ ╨·╥·║
+║·╨·║       ·╨·║
+║···╨ ╞╗ ╥ ╥···║
+╠═╡·   ║ ║ ╠═╡·║
+║···╥ ╞╝ ╨ ╨···║
+║·╥·║       ·╥·║
+║·╨·╚═╡ ╞╡ ╥·╨·║
+║·■········║■··║
+╚═════╗ ╔══╩═══╝

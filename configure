@@ -118,6 +118,14 @@ build=`
 `
 feature build "${build}"
 host=
+if [ :"${with_printf}" = :'' ]; then
+    if [ :"`printf %s test 2>&-`" = :'test' ]; then
+        with_printf=yes
+    else
+        with_printf=no
+    fi
+fi
+feature with_printf "${with_printf}"
 
 ${START_ECHOLINE_LIBRARY}
 
@@ -133,28 +141,32 @@ export char_newline
 
 echoline()
 {
-    _echoline_all="${*}"
-    _echoline_firstline="${_echoline_all%%
-*}"
-    _echoline_rest=""
-    _echoline_has_rest=f
-    if test :"${_echoline_firstline}" != :"${_echoline_all}"
-    then
-        _echoline_has_rest=t
-        _echoline_rest="${_echoline_all#*
-}"
-    fi
-    if test :"${_echoline_firstline}" = :"__EOF__"
-    then
-        echo "${_echoline_firstline}"
+    if [ :"${with_printf:-no}" != :no ]; then
+        printf %s\\n "$*"
     else
-        cat <<__EOF__
+        _echoline_all="${*}"
+        _echoline_firstline="${_echoline_all%%
+*}"
+        _echoline_rest=""
+        _echoline_has_rest=f
+        if test :"${_echoline_firstline}" != :"${_echoline_all}"
+        then
+            _echoline_has_rest=t
+            _echoline_rest="${_echoline_all#*
+}"
+        fi
+        if test :"${_echoline_firstline}" = :"__EOF__"
+        then
+            echo "${_echoline_firstline}"
+        else
+            cat <<__EOF__
 ${_echoline_firstline}
 __EOF__
-    fi
-    if test ${_echoline_has_rest} = t
-    then
-        echoline "${_echoline_rest}"
+        fi
+        if test ${_echoline_has_rest} = t
+        then
+            echoline "${_echoline_rest}"
+        fi
     fi
 }
 
@@ -191,7 +203,7 @@ varsafe()
 qw()
 {
     echoline "$*" |
-        ${SED} -ne 's/\([ '\!'"#$&'\''()*;<>?@^`{|}~\\]\|\[\|\]\)/\\\1/g; 1 h; 2,$ H; $ {; g; s/\
+        ${SED} -ne 's/[ '\!'"#$&'\''()*;<>?@^`{|}~\\]/\\&/g;s/\[/\\&/g;s/\]/\\&/g; 1 h; 2,$ H; $ {; g; s/\
 /"${char_newline}"/g; s/'"${char_tab}"'/"${char_tab}"/g; p; }'
 }
 
@@ -317,6 +329,9 @@ do
           echoline
           echoline Some useful \`make\' variables \(specify using VAR\=VALUE\):
           echoline SHELL"              "Bourne-compatible shell \(e.g. /bin/sh or /bin/bash\)
+          echoline SED"                "GNU-compatible sed \(e.g. sed or gsed\)
+          echoline INSTALL"            "GNU-compatible install \(e.g. install or ginstall\)
+          echoline RMDIR"              "GNU-compatible rmdir \(e.g. rmdir or grmdir\)
           echoline \[BUILD_\]EXE_SUFFIX" "\[Build\] executable-file suffix \(e.g. .exe or .prg\)
           echoline \[BUILD_\]OBJ_SUFFIX" "\[Build\] object-file suffix \(e.g. .o or .obj\)
           echoline \[BUILD_\]SH_SUFFIX"  "\[Build\] Bourne-compatible shell script suffix \(e.g. .sh\)
@@ -388,8 +403,11 @@ do
           echoline "                   "\(installs myman.ct\)
           echoline "--with-zip         "generate .zip-format binary distribution
           echoline "--with-dmg         "generate .dmg-format binary distribution
+          echoline "--with-app         "build NeXTSTEP/Mac OS X-style application bundle
           echoline "--with-mac-icon    "include program icon for Mac OS
           echoline "--with-win-icon    "include program icon and version information for Win32
+          echoline "--with-imagemagick "use ImageMagick convert\(1\) for PNG to ICO conversion \(rather than netpbm\)
+          echoline "--with-printf      "use printf\(1\) in shell scripts
           echoline
           echoline Output drivers \(select at most one\):
           echoline "--with-curses      "use system curses library \(SysV-curses or ncurses\)
@@ -568,6 +586,9 @@ then
     eval "${dump_command}"' "${'"${dump}"'}"'"${dump_tr}"
     exit 0
 fi
+
+# print autodetected variables
+echoline "use shell printf... "${with_printf}
 
 # create config.status
 echo ${echo_n} "creating config.status... "${echo_c}

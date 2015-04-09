@@ -29,7 +29,7 @@
 import os, sys, getopt
 
 boxmap_double = [
-    u'\N{BULLET}',
+    u'\N{BULLET OPERATOR}',
     u'\N{BOX DRAWINGS VERTICAL SINGLE AND LEFT DOUBLE}',
     u'\N{BOX DRAWINGS VERTICAL SINGLE AND RIGHT DOUBLE}',
     u'\N{BOX DRAWINGS VERTICAL SINGLE AND HORIZONTAL DOUBLE}',
@@ -56,7 +56,7 @@ boxmap_double = [
     ]
 
 boxmap_single = [
-    u'\N{BULLET}',
+    u'\N{BULLET OPERATOR}',
     u'\N{BOX DRAWINGS LIGHT HORIZONTAL}',
     u'\N{BOX DRAWINGS LIGHT HORIZONTAL}',
     u'\N{BOX DRAWINGS LIGHT HORIZONTAL}',
@@ -84,7 +84,7 @@ boxmap_single = [
 
 fixup_single = {
     '|': {
-    u'\N{BULLET}': (0, u'\N{BOX DRAWINGS LIGHT VERTICAL}'),
+    u'\N{BULLET OPERATOR}': (0, u'\N{BOX DRAWINGS LIGHT VERTICAL}'),
     u'\N{BOX DRAWINGS LIGHT HORIZONTAL}': (0, u'\N{BOX DRAWINGS LIGHT VERTICAL AND HORIZONTAL}'),
     u'\N{BOX DRAWINGS LIGHT DOWN AND LEFT}': (8, u'\N{BOX DRAWINGS LIGHT VERTICAL AND LEFT}'),
     u'\N{BOX DRAWINGS LIGHT DOWN AND RIGHT}': (8, u'\N{BOX DRAWINGS LIGHT VERTICAL AND RIGHT}'),
@@ -94,7 +94,7 @@ fixup_single = {
     u'\N{BOX DRAWINGS LIGHT UP AND HORIZONTAL}': (4, u'\N{BOX DRAWINGS LIGHT VERTICAL AND HORIZONTAL}'),
     },
     '-': {
-    u'\N{BULLET}': (0, u'\N{BOX DRAWINGS LIGHT HORIZONTAL}'),
+    u'\N{BULLET OPERATOR}': (0, u'\N{BOX DRAWINGS LIGHT HORIZONTAL}'),
     u'\N{BOX DRAWINGS LIGHT DOWN AND LEFT}': (2, u'\N{BOX DRAWINGS LIGHT DOWN AND HORIZONTAL}'),
     u'\N{BOX DRAWINGS LIGHT DOWN AND RIGHT}': (1, u'\N{BOX DRAWINGS LIGHT DOWN AND HORIZONTAL}'),
     u'\N{BOX DRAWINGS LIGHT UP AND LEFT}': (2, u'\N{BOX DRAWINGS LIGHT UP AND HORIZONTAL}'),
@@ -104,13 +104,13 @@ fixup_single = {
     u'\N{BOX DRAWINGS LIGHT VERTICAL AND RIGHT}': (1, u'\N{BOX DRAWINGS LIGHT VERTICAL AND HORIZONTAL}'),
     },
     '+': {
-        u'\N{BULLET}': (0, u'\N{BULLET}'),
+        u'\N{BULLET OPERATOR}': (0, u'\N{BULLET OPERATOR}'),
         },
     }
 
 fixup_double = {
     '|': {
-    u'\N{BULLET}': (0, u'\N{BOX DRAWINGS DOUBLE VERTICAL}'),
+    u'\N{BULLET OPERATOR}': (0, u'\N{BOX DRAWINGS DOUBLE VERTICAL}'),
     u'\N{BOX DRAWINGS DOUBLE HORIZONTAL}': (0, u'\N{BOX DRAWINGS DOUBLE VERTICAL AND HORIZONTAL}'),
     u'\N{BOX DRAWINGS DOUBLE DOWN AND LEFT}': (8, u'\N{BOX DRAWINGS DOUBLE VERTICAL AND LEFT}'),
     u'\N{BOX DRAWINGS DOUBLE DOWN AND RIGHT}': (8, u'\N{BOX DRAWINGS DOUBLE VERTICAL AND RIGHT}'),
@@ -120,7 +120,7 @@ fixup_double = {
     u'\N{BOX DRAWINGS DOUBLE UP AND HORIZONTAL}': (4, u'\N{BOX DRAWINGS DOUBLE VERTICAL AND HORIZONTAL}'),
     },
     '-': {
-    u'\N{BULLET}': (0, u'\N{BOX DRAWINGS DOUBLE HORIZONTAL}'),
+    u'\N{BULLET OPERATOR}': (0, u'\N{BOX DRAWINGS DOUBLE HORIZONTAL}'),
     u'\N{BOX DRAWINGS DOUBLE DOWN AND LEFT}': (2, u'\N{BOX DRAWINGS DOUBLE DOWN AND HORIZONTAL}'),
     u'\N{BOX DRAWINGS DOUBLE DOWN AND RIGHT}': (1, u'\N{BOX DRAWINGS DOUBLE DOWN AND HORIZONTAL}'),
     u'\N{BOX DRAWINGS DOUBLE UP AND LEFT}': (2, u'\N{BOX DRAWINGS DOUBLE UP AND HORIZONTAL}'),
@@ -130,13 +130,13 @@ fixup_double = {
     u'\N{BOX DRAWINGS DOUBLE VERTICAL AND RIGHT}': (1, u'\N{BOX DRAWINGS DOUBLE VERTICAL AND HORIZONTAL}'),
     },
     '+': {
-        u'\N{BULLET}': (0, u'\N{BULLET}'),
+        u'\N{BULLET OPERATOR}': (0, u'\N{BULLET OPERATOR}'),
         },
     }
 
 fixup_both = {
     '|': {
-    u'\N{BULLET}': (0, u'\N{BOX DRAWINGS DOUBLE VERTICAL}'),
+    u'\N{BULLET OPERATOR}': (0, u'\N{BOX DRAWINGS DOUBLE VERTICAL}'),
     u'\N{BOX DRAWINGS LIGHT HORIZONTAL}': (0, u'\N{BOX DRAWINGS LIGHT VERTICAL AND HORIZONTAL}'),
     u'\N{BOX DRAWINGS LIGHT DOWN AND LEFT}': (8, u'\N{BOX DRAWINGS LIGHT VERTICAL AND LEFT}'),
     u'\N{BOX DRAWINGS LIGHT DOWN AND RIGHT}': (8, u'\N{BOX DRAWINGS LIGHT VERTICAL AND RIGHT}'),
@@ -153,7 +153,7 @@ fixup_both = {
     u'\N{BOX DRAWINGS DOUBLE UP AND HORIZONTAL}': (4, u'\N{BOX DRAWINGS DOUBLE VERTICAL AND HORIZONTAL}'),
     },
     '-': {
-    u'\N{BULLET}': (0, u'\N{BOX DRAWINGS DOUBLE HORIZONTAL}'),
+    u'\N{BULLET OPERATOR}': (0, u'\N{BOX DRAWINGS DOUBLE HORIZONTAL}'),
     u'\N{BOX DRAWINGS LIGHT DOWN AND LEFT}': (2, u'\N{BOX DRAWINGS LIGHT DOWN AND HORIZONTAL}'),
     u'\N{BOX DRAWINGS LIGHT DOWN AND RIGHT}': (1, u'\N{BOX DRAWINGS LIGHT DOWN AND HORIZONTAL}'),
     u'\N{BOX DRAWINGS LIGHT UP AND LEFT}': (2, u'\N{BOX DRAWINGS LIGHT UP AND HORIZONTAL}'),
@@ -170,7 +170,7 @@ fixup_both = {
     u'\N{BOX DRAWINGS DOUBLE VERTICAL AND RIGHT}': (1, u'\N{BOX DRAWINGS DOUBLE VERTICAL AND HORIZONTAL}'),
     },
     '+': {
-        u'\N{BULLET}': (0, u'\N{BULLET}'),
+        u'\N{BULLET OPERATOR}': (0, u'\N{BULLET OPERATOR}'),
         },
     }
 
@@ -538,22 +538,23 @@ def main(argv, envp, stdin, stdout, stderr):
         infile = sys.stdin
     else:
         infile = file(infn, 'rb')
+    line = infile.readline().decode('utf-8').rstrip(u'\r\n').lstrip(u'\ufeff')
+    while ("".join(line.split(u"\\\\")))[-1:] == u"\\":
+        line = line + u'\r\n' + infile.readline().decode('utf-8').rstrip(u'\r\n')
+    n, wxhl = line.split(' ',1)
+    opts = ''
+    flags = '0'
+    if len(wxhl.split()) > 1: wxhl, opts = wxhl.split(None, 1)
+    if '~' in wxhl: wxhl, flags = wxhl.split('~',1)
+    flags = int(flags, 0)
+    w_h = [wxh.split('x', 1) for wxh in wxhl.split(',')]
+    n, w_h = int(n), [(int(wi[0]), int(wi[1])) for wi in w_h]
+    assert len(w_h) <= n, "too many maze dimension specifications"
     if outfn == '-':
         outfile = sys.stdout
     else:
         outfile = file(outfn, 'wb')
-    line = infile.readline().decode('utf-8').rstrip(u'\r\n').lstrip(u'\ufeff')
-    while ("".join(line.split(u"\\\\")))[-1:] == u"\\":
-        line = line + u'\r\n' + infile.readline().decode('utf-8').rstrip(u'\r\n')
-    n, wxh = line.split(' ',1)
-    opts = ''
-    flags = '0'
-    if len(wxh.split()) > 1: wxh, opts = wxh.split(None, 1)
-    if '~' in wxh: wxh, flags = wxh.split('~',1)
-    flags = int(flags, 0)
-    w, h = wxh.split('x', 1)
-    n, w, h = int(n), int(w), int(h)
-    outfile.write(((u'\ufeff%s %sx%s') % (n, w, h)).encode('utf-8'))
+    outfile.write(((u'\ufeff%s %s') % (n, ','.join(['%sx%s' % (w_h[i][0], w_h[i][1]) for i in xrange(len(w_h))]))).encode('utf-8'))
     if flags: outfile.write((u'~%d' % flags).encode('utf-8'))
     if opts: outfile.write((u' %s' % opts).encode('utf-8'))
     fixup[thickness]['+'] = fixup[thickness].get('+', {})
@@ -573,6 +574,7 @@ def main(argv, envp, stdin, stdout, stderr):
     outfile.write(u'\r\n'.encode('utf-8'))
     outfile.flush()
     for maze in xrange(n):
+        w, h = w_h[maze % len(w_h)]
         rows = [ infile.readline().decode('utf-8').rstrip('\r\n') + u'X' for row in xrange(h) ] + [ u''.join(u'X' for col in xrange(w + 1)) ]
         dots = [ row for row in rows ]
         for row in xrange(0, h):
@@ -711,6 +713,8 @@ def main(argv, envp, stdin, stdout, stderr):
             outfile.write(u'\r\n'.encode('utf-8'))
         outfile.flush()
     outfile.close()
+    for line in infile:
+        assert not len(infile.read().decode('utf-8').rstrip(u'\r\n')), "unused maze data at end of input"
     infile.close()
 
 if __name__ == '__main__':

@@ -66,15 +66,12 @@ static int gettimeofday(struct timeval *tv, void *tz)
 
 /* HACK: this is wildly, wildly wrong for anything but tick counting! */
 
-/* originally from http://www.lightner.net/lightner/bruce/photopc/msdos/patch/usleep.c */
+    clock_t ticks;
 
-    static unsigned long far *p;
-    unsigned long ticks;
-
-    if (!p) p = MK_FP(0, 0x46c);
-    ticks = *p;
-    tv->tv_usec = ((ticks & 0xff) * 55000L) % 1000000L;
-    tv->tv_sec = (ticks & 0xff) * 55L / 1000L;
+    ticks = clock();
+    tv->tv_sec = ticks / CLOCKS_PER_SEC;
+    ticks -= CLOCKS_PER_SEC * (clock_t) tv->tv_sec;
+    tv->tv_usec = ticks * 1000000L / CLOCKS_PER_SEC;
 
 #else /* ! defined(__MSDOS__) */
 
@@ -102,35 +99,7 @@ static int gettimeofday(struct timeval *tv, void *tz)
 #define usleep dispcurses_usleep
 static int usleep(unsigned long usecs)
 {
-    while (usecs)
-    {
-        struct timeval tv0, tv1;
-
-        if (myman_gettimeofday(&tv0, NULL)) break;
-        sleep(0);
-        if (myman_gettimeofday(&tv1, NULL)) break;
-        if (tv1.tv_sec < tv0.tv_sec) break;
-        if ((tv1.tv_sec == tv0.tv_sec)
-            &&
-            (tv1.tv_usec <= tv0.tv_usec))
-        {
-            break;
-        }
-        if ((tv1.tv_sec - tv0.tv_sec) > (usecs / 1000000L))
-        {
-            break;
-        }
-        if (((tv1.tv_sec - tv0.tv_sec) * 1000000L
-             +
-             (tv1.tv_usec - tv0.tv_usec))
-            >=
-            usecs)
-        {
-            break;
-        }
-        usecs -= (tv1.tv_sec - tv0.tv_sec) * 1000000L;
-        usecs -= tv1.tv_usec - tv0.tv_usec;
-    }
+    msleep(usecs/1000);
     return 0;
 }
 
@@ -212,6 +181,8 @@ static dispcurses_attr_t dispcurses_attr = 0;
 static int dispcurses_mode = -1;
 
 static int dispcurses_orig_mode = -1;
+
+static int dispcurses_brightbg = -1;
 
 #define clear erase
 
@@ -405,7 +376,7 @@ static int init_pair(short i, short fg, short bg);
 
 #define INITSCR_WITH_HINTS
 
-static void initscrWithHints(int h, int w, const char *title, const char *shortname)
+static int initscrWithHints(int h, int w, const char *title, const char *shortname)
 {
     int i;
     char *ignored = NULL;
@@ -450,6 +421,22 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
     dispcurses_w = disp_numcols ? disp_numcols : w;
     dispcurses_h = disp_numrows ? disp_numrows : h;
     dispcurses_ready = 1;
+    dispcurses_brightbg = -1;
+
+    if (myman_getenv("DISPCURSES_BRIGHTBG") && *myman_getenv("DISPCURSES_BRIGHTBG"))
+    {
+        dispcurses_mode = (int) strtol(myman_getenv("DISPCURSES_BRIGHTBG"), &ignored, 0);
+    }
+    else
+    {
+    /* Win32 console defaults to BRIGHTBG, DOS defaults to BLINK */
+#ifdef WIN32
+        dispcurses_brightbg = 1;
+#else
+        dispcurses_brightbg = 0;
+#endif
+    }
+
     dispcurses_attr = -1;
     for (i = 0; i < COLOR_PAIRS; i ++)
     {
@@ -459,6 +446,7 @@ static void initscrWithHints(int h, int w, const char *title, const char *shortn
     disp_startstand();
     disp_endstand();
     attrset(0);
+    return 1;
 }
 
 static void endwin(void)
@@ -485,12 +473,27 @@ static int move(int y, int x);
 
 static int dispcurses_addch(dispcurses_chtype ch);
 
+void dispcurses__move(int y, int x)
+{
+    if (x >= dispcurses_w)
+    {
+        x = 0;
+        y ++;
+    }
+    if (y >= dispcurses_h)
+    {
+        y = dispcurses_h - 1;
+        x = dispcurses_w - 1;
+    }
+    disp_move(y, x);
+}
+
 static int erase(void)
 {
     if (! dispcurses_ready) return ERR;
     attrset(0);
     move(0, 0);
-    disp_move(dispcurses_y, dispcurses_x);
+    dispcurses__move(dispcurses_y, dispcurses_x);
     disp_eeop();
     return OK;
 }
@@ -560,7 +563,7 @@ static int dispcurses_getch(void) {
 static int refresh(void)
 {
     if (! dispcurses_ready) return OK;
-    disp_move(dispcurses_y, dispcurses_x);
+    dispcurses__move(dispcurses_y, dispcurses_x);
     disp_flush();
     return OK;
 }
@@ -569,9 +572,9 @@ static int move(int y, int x)
 {
     if (! dispcurses_ready) return ERR;
     if (y < 0) return ERR;
-    if (y > dispcurses_h) return ERR;
+    if (y >= dispcurses_h) return ERR;
     if (x < 0) return ERR;
-    if (x > dispcurses_w) return ERR;
+    if (x >= dispcurses_w) return ERR;
     dispcurses_y = y;
     dispcurses_x = x;
     return OK;
@@ -815,11 +818,11 @@ static int dispcurses_addch(dispcurses_chtype ch)
         fg = (fg == COLOR_MAGENTA) ? 2 : (((fg >> 1) | (fg & 1)) % 4);
         bg = (bg == COLOR_MAGENTA) ? 2 : (((bg >> 1) | (bg & 1)) % 4);
     }
-#ifndef WIN32
-    /* Win32 console defaults to BRIGHTBG, DOS defaults to BLINK */
-    if (bg == (DISP_INTENSITY | COLOR_BLACK)) bg = COLOR_WHITE;
-    bg = bg & ~DISP_INTENSITY;
-#endif
+    if (! dispcurses_brightbg)
+    {
+        if (bg == (DISP_INTENSITY | COLOR_BLACK)) bg = COLOR_WHITE;
+        bg = bg & ~DISP_INTENSITY;
+    }
     if (fg == bg) fg = (bg != COLOR_BLACK) ? COLOR_BLACK : COLOR_WHITE;
     disp_pokew(dispcurses_y, dispcurses_x, (ch & 0xff) | ((bg & 0xf) << 12) | ((fg & 0xf) << 8));
     dispcurses_x ++;
@@ -829,7 +832,7 @@ static int dispcurses_addch(dispcurses_chtype ch)
 static int clrtobot(void)
 {
     if (! dispcurses_ready) return ERR;
-    disp_move(dispcurses_y, dispcurses_x);
+    dispcurses__move(dispcurses_y, dispcurses_x);
     disp_eeop();
     return OK;
 }
@@ -837,7 +840,7 @@ static int clrtobot(void)
 static int clrtoeol(void)
 {
     if (! dispcurses_ready) return ERR;
-    disp_move(dispcurses_y, dispcurses_x);
+    dispcurses__move(dispcurses_y, dispcurses_x);
     disp_eeol();
     return OK;
 }

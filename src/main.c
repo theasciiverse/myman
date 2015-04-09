@@ -26,13 +26,26 @@
 /* configuration information */
 #ifdef HAVE_CONFIG_H
 #ifndef MYMAN_CONFIG_H_INCLUDED
+#ifdef MY_CONFIG_H
+#include MY_CONFIG_H
+#else
 #include "config.h"
 #endif
+#endif
+
+#ifndef MYMAN_CONFIG_H_INCLUDED
+#error "Got wrong \"config.h\"; add -DMY_CONFIG_H=\"{{builddir}}/config.h\""
+#endif
+
 #endif
 
 /* feature guessing */
 #ifndef MYMAN_GUESS_H_INCLUDED
 #include "guess.h"
+#endif
+
+#ifndef MYMAN_GUESS_H_INCLUDED
+#error "Got wrong \"guess.h\"; add -I{{srcdir}}/inc"
 #endif
 
 #include <ctype.h>
@@ -49,6 +62,22 @@
 #include <unistd.h>
 #endif
 #include <stdlib.h>
+
+#ifndef EXIT_SUCCESS
+#define EXIT_SUCCESS 0
+#endif
+
+#ifndef EXIT_FAILURE
+#define EXIT_FAILURE (!(EXIT_SUCCESS))
+#endif
+
+#ifndef MYMAN_EXIT_USAGE
+#if EXIT_SUCCESS
+#define MYMAN_EXIT_USAGE EXIT_FAILURE
+#else
+#define MYMAN_EXIT_USAGE 2
+#endif
+#endif
 
 /* command-line argument parser */
 #ifndef MYGETOPT_H
@@ -83,7 +112,13 @@
 #endif
 
 /* MyMan utilities; also defines cruft like __MSDOS__ under some circumstances */
+#ifndef MYMAN_UTILS_H_INCLUDED
 #include "utils.h"
+#endif
+
+#ifndef MYMAN_UTILS_H_INCLUDED
+#error "Got wrong \"utils.h\"; add -I{{srcdir}}/inc"
+#endif
 
 #ifdef XCURSES
 #define XCURSES_USAGE \
@@ -132,16 +167,22 @@ MYMANCOPYRIGHT "\n"
 
 #ifdef BUILTIN_SIZES
 const char *builtin_size;
-const char *builtin_tilefile;
-const char *builtin_spritefile;
+const char *tile_s;
+const char *sprite_s;
 #endif
 
 #ifdef BUILTIN_VARIANTS
 const char *builtin_variant;
-const char *builtin_mazefile;
-const char *maze_data;
-const char *maze_color_data;
+const char *maze_s;
+const char **maze_d;
+const char **maze_c;
 extern int main_builtin(int argc, char *argv[], char *envp[]);
+#endif
+
+#if defined(__APPLE__) || defined(macintosh)
+#ifdef BUILTIN_SIZES
+extern void my_mac_fixargs(int *argcp, char ***argvp, const char* progname);
+#endif
 #endif
 
 int
@@ -156,7 +197,9 @@ main(int argc, char *argv[]
     extern char **environ;
     char **envp = environ;
 #endif
+    int ret;
     int i, option_index;
+    int show_usage = 0;
     static char MYMANVARIANT_str[] = MYMANVARIANT;
     const char *defvariant = MYMANVARIANT_str;
     static char MYMANSIZE_str[] = MYMANSIZE;
@@ -169,7 +212,8 @@ main(int argc, char *argv[]
     char scratch[] = PRIVATELIBEXECDIR "/\0" MYMANVARIANTS "-" MYMANSIZES;
 #endif
 
-    if (argc >= 1)
+    ret = EXIT_FAILURE;
+    if ((argc >= 1) && argv[0])
     {
         progname = argv[0];
     }
@@ -187,9 +231,23 @@ main(int argc, char *argv[]
      * be a bogus process serial number parameter. */
     if ((argc == 2) && (! strncmp(argv[1], "-psn_", strlen("-psn_"))))
     {
-        argc = 1;
+        argc = 0;
+#ifdef BUILTIN_SIZES
+        my_mac_fixargs(&argc, &argv, progname);
+#endif
+        if (argc == 0)
+        {
+            argc = 1;
+        }
+    }
+#ifdef BUILTIN_SIZES
+    else
+    {
+        my_mac_fixargs(&argc, &argv, progname);
     }
 #endif
+#endif
+    myman_expand_args(&argc, &argv, progname);
     while((i = getopt_long(argc, argv, short_options,
                            long_options, &option_index))
           != -1)
@@ -222,6 +280,7 @@ main(int argc, char *argv[]
         case 't':
         case 'u':
         case 'U':
+        case 'Q':
         case 'M':
         case 'S':
         case 'T':
@@ -239,15 +298,14 @@ main(int argc, char *argv[]
             defvariant = optarg;
             break;
         case 'h':
-            printf(USAGE(progname, defvariant, defsize));
-            printf("Variant ");
+            show_usage = 1;
             goto nomoreargs;
         case 'V':
             printf(MYMANVERSION_INFO);
             goto nomoreargs;
         default:
             fprintf(stderr, SUMMARY(progname));
-            fflush(stderr), exit(2);
+            fflush(stderr), exit(MYMAN_EXIT_USAGE);
         }
   nomoreargs:
     for (size = sizes;
@@ -263,7 +321,7 @@ main(int argc, char *argv[]
     {
         fprintf(stderr, "%s: unrecognized size\n", defsize);
         fprintf(stderr, SUMMARY(progname));
-        fflush(stderr), exit(2);
+        fflush(stderr), exit(MYMAN_EXIT_USAGE);
     }
     for (variant = variants;
          *variant != '\0';
@@ -278,13 +336,19 @@ main(int argc, char *argv[]
     {
         fprintf(stderr, "%s: unrecognized variant\n", defvariant);
         fprintf(stderr, SUMMARY(progname));
-        fflush(stderr), exit(2);
+        fflush(stderr), exit(MYMAN_EXIT_USAGE);
     }
 #ifdef PRIVATELIBEXECDIR
     strncat(scratch, defvariant, strlen(defvariant));
     strncat(scratch, "-", 1);
     strncat(scratch, defsize, strlen(defsize));
 #endif
+    if (show_usage)
+    {
+        printf(USAGE(progname, defvariant, defsize));
+        printf("Variant ");
+        fflush(stdout);
+    }
     fflush(stdout);
     fflush(stderr);
 #ifdef BUILTIN_SIZES
@@ -294,39 +358,39 @@ main(int argc, char *argv[]
     { \
         if (! strcmp(defsize, # size)) \
         { \
-            extern char *builtin_tilefile_ ## size; \
-            extern char *tile_ ## size [256]; \
-            extern int tile_used_ ## size [256]; \
-            extern int tile_color_ ## size [256]; \
+            extern char *tile_s_ ## size; \
+            extern char *tile_d_ ## size [256]; \
+            extern int tile_u_ ## size [256]; \
+            extern int tile_c_ ## size [256]; \
             extern int tile_w_ ## size; \
             extern int tile_h_ ## size; \
-            extern int tile_flags_ ## size; \
-            extern const char *tile_args_ ## size; \
-            extern char *builtin_spritefile_ ## size; \
-            extern char *sprite_ ## size [256]; \
-            extern int sprite_used_ ## size [256]; \
-            extern int sprite_color_ ## size [256]; \
+            extern int tile_f_ ## size; \
+            extern const char *tile_a_ ## size; \
+            extern char *sprite_s_ ## size; \
+            extern char *sprite_d_ ## size [256]; \
+            extern int sprite_u_ ## size [256]; \
+            extern int sprite_c_ ## size [256]; \
             extern int sprite_w_ ## size; \
             extern int sprite_h_ ## size; \
-            extern int sprite_flags_ ## size; \
-            extern const char *sprite_args_ ## size; \
-            builtin_tilefile = builtin_tilefile_ ## size; \
-            memcpy((void *) tile, (void *)tile_ ## size, sizeof(tile)); \
-            memcpy((void *) tile_used, (void *) tile_used_ ## size, sizeof(tile_used)); \
-            memcpy((void *) tile_color, (void *) tile_color_ ## size, sizeof(tile_color)); \
+            extern int sprite_f_ ## size; \
+            extern const char *sprite_a_ ## size; \
+            tile_s = tile_s_ ## size; \
+            memcpy((void *) tile_d, (void *) tile_d_ ## size, sizeof(tile_d)); \
+            memcpy((void *) tile_u, (void *) tile_u_ ## size, sizeof(tile_u)); \
+            memcpy((void *) tile_c, (void *) tile_c_ ## size, sizeof(tile_c)); \
             tile_w = tile_w_ ## size; \
             tile_h = tile_h_ ## size; \
-            tile_flags = tile_flags_ ## size; \
-            tile_args = tile_args_ ## size; \
-            builtin_spritefile = builtin_spritefile_ ## size; \
-            memcpy((void *) sprite, (void *)sprite_ ## size, sizeof(sprite)); \
-            memcpy((void *) sprite_used, (void *) sprite_used_ ## size, sizeof(sprite_used)); \
-            memcpy((void *) sprite_color, (void *) sprite_color_ ## size, sizeof(sprite_color)); \
+            tile_f = tile_f_ ## size; \
+            tile_a = tile_a_ ## size; \
+            sprite_s = sprite_s_ ## size; \
+            memcpy((void *) sprite_d, (void *) sprite_d_ ## size, sizeof(sprite_d)); \
+            memcpy((void *) sprite_u, (void *) sprite_u_ ## size, sizeof(sprite_u)); \
+            memcpy((void *) sprite_c, (void *) sprite_c_ ## size, sizeof(sprite_c)); \
             sprite_w = sprite_w_ ## size; \
             sprite_h = sprite_h_ ## size; \
-            sprite_flags = sprite_flags_ ## size; \
-            sprite_flags = sprite_flags_ ## size; \
-            sprite_args = sprite_args_ ## size; \
+            sprite_f = sprite_f_ ## size; \
+            sprite_f = sprite_f_ ## size; \
+            sprite_a = sprite_a_ ## size; \
             builtin_size = # size; \
         } \
     } while(0);
@@ -350,24 +414,25 @@ main(int argc, char *argv[]
         { \
             if (! strcmp(defvariant, # variant)) \
             { \
-                extern char *builtin_mazefile_ ## variant; \
-                extern const char *maze_data_ ## variant; \
-                extern const char *maze_color_data_ ## variant; \
+                extern const char *maze_s_ ## variant; \
+                extern const char **maze_d_ ## variant; \
+                extern const char **maze_c_ ## variant; \
                 extern int maze_n_ ## variant; \
-                extern int maze_w_ ## variant; \
-                extern int maze_h_ ## variant; \
-                extern int maze_flags_ ## variant; \
-                extern const char *maze_args_ ## variant; \
-                builtin_mazefile = builtin_mazefile_ ## variant; \
-                maze_data = maze_data_ ## variant; \
-                maze_color_data = maze_color_data_ ## variant; \
+                extern int *maze_w_ ## variant; \
+                extern int *maze_h_ ## variant; \
+                extern int maze_f_ ## variant; \
+                extern const char *maze_a_ ## variant; \
+                maze_s = maze_s_ ## variant; \
+                maze_d = maze_d_ ## variant; \
+                maze_c = maze_c_ ## variant; \
                 maze_n = maze_n_ ## variant; \
                 maze_w = maze_w_ ## variant; \
                 maze_h = maze_h_ ## variant; \
-                maze_flags = maze_flags_ ## variant; \
-                maze_args = maze_args_ ## variant; \
+                maze_f = maze_f_ ## variant; \
+                maze_a = maze_a_ ## variant; \
                 builtin_variant = # variant; \
-                return main_builtin(argc,argv,envp); \
+                ret = main_builtin(argc,argv,envp); \
+                goto main_done; \
             } \
         } \
     } while(0);
@@ -378,10 +443,16 @@ main(int argc, char *argv[]
     execve(scratch, argv, envp);
     perror(scratch);
 #else
-    fprintf(stderr, "%s: internal error: PRIVATELIBEXECDIR not defined and selected variant not built in\n", argv[0]);
+    fprintf(stderr, "%s: internal error: PRIVATELIBEXECDIR not defined and selected variant not built in\n", progname);
 #endif
     fflush(stderr);
-    return 1;
+  main_done:
+#ifdef __TINYC__
+#ifndef main
+    exit(ret);
+#endif
+#endif
+    return ret;
 }
 #ifdef END_OF_MAIN
 END_OF_MAIN()

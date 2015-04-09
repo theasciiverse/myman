@@ -1,5 +1,5 @@
 #!/usr/bin/open -a ToolServer
-# -*- shell-script -*- coding: mac-roman -*-
+# -*- mode: shell-script; coding: mac-roman -*-
 # macbuild.txt - MPW build script for the MyMan video game
 # Copyright 2008, Benjamin C. Wiley Sittler <bsittler@gmail.com>
 #
@@ -35,11 +35,27 @@ set char_infinity '°'
 # '¶', '\266', '\xB6', MacRoman 0xB6 (Option-D), U+2202 PARTIAL DIFFERENTIAL
 set char_partial_differential '¶'
 
+# Older MPW versions do not quote the quoting character (partial
+# differential) inside double-bracket expansions in double-quoted
+# strings, but MPW 3.6b2 does
+if :"{{char_partial_differential}}.{{char_partial_differential}}." == :".."
+    set char_partial_differential "{{char_partial_differential}}{{char_partial_differential}}{{char_partial_differential}}{{char_partial_differential}}"
+    set protected_char_partial_differential "{{char_partial_differential}}{{char_partial_differential}}{{char_partial_differential}}{{char_partial_differential}}"
+else
+    set protected_char_partial_differential "{{char_partial_differential}}"
+end
+
 # verify at least that the byte count is correct
 if `echo -n "{{char_not_sign}}{{char_bullet}}{{char_infinity}}{{char_partial_differential}}" | count -c` != 4
     echo "File ``quote "{{0}}"`` #Error: MacRoman special characters are corrupted" > dev:stderr
     exit 1
 end
+
+# for sending string literals to the C compiler via the shell and including the solidus in them (which MyMan autoconverts to colon when needed)
+set char_quotation_mark "'"'"'"'"
+set char_solidus "'"'\057'"'"
+set char_newline {char_partial_differential}n
+set char_tab {char_partial_differential}t
 
 ### Building MyMan for Carbon and Classic Mac OS in MPW Shell
 ##
@@ -47,6 +63,8 @@ end
 ##    including the "Updated Components".
 ##
 ##   http://developer.apple.com/tools/mpw-tools/
+##
+##   (NOTE: This link is dead now, you are on your own...)
 ##
 ##    You may also install the old Universal Interfaces 2.1.5, which
 ##    allows building 68k apps that run on System 6 (and possibly
@@ -60,6 +78,8 @@ end
 ##
 ##   ftp://ftp.apple.com/developer/Tool_Chest/Interfaces-Libraries/
 ##
+##   (NOTE: This link is also dead now...)
+##
 ## 2) Launch MPW Shell and raise MPW Memory Limits:
 ##
 ## HINT: Use Enter or Cmd-Return to run commands in MPW Shell;
@@ -72,14 +92,41 @@ end
 #
 #directory volName:path:to:myman
 #
-## 4) Build for the default hosts (Carbon, Carbon with ATSUI, "fat"
-##    application, MPW Tool)
-##
 ## NOTE: The type code must be set to TEXT explicitly for older System
-## versions
+## versions:
 #
 #setfile -t TEXT :utl:macbuild.txt
-#:utl:macbuild.txt smallman
+#
+## 4) Prepare a runnable copy of macbuild.txt, one of (a) or (b)
+#
+## *Either:* a) No-op for MPW 3.6b2
+#
+#catenate :utl:macbuild.txt > :utl:macbuild
+#
+## *or* b) Line ending conversion for MPW 3.5 or earlier
+#
+## NOTE: The file line endings must be converted for older MPW Shell
+## versions (MPW 3.6b2 does not have this problem.) For this we build
+## a helper tool "_u2m" (for DOS/Unix to Mac line-ending conversion):
+#
+#echo '#include <stdio.h>' > _u2m.c
+#echo 'int main(void){int i,j;while(1){if((i=getchar())==-1)break;' >> _u2m.c
+#echo '(i==13)?(j=getchar(),(j==10)?(i=j):(j!=-1)?ungetc(j,stdin):0)' >> _u2m.c
+#echo ':0;putchar((i==10)?13:i);}return 0;}' >> _u2m.c
+#
+## Speed tip: change -fat to either -68k or -powerpc according to your machine
+#createmake -tool -fat _u2m _u2m.c
+#make -f _u2m.make > _u2m.makeout
+#_u2m.makeout
+#_u2m < :utl:macbuild.txt > :utl:macbuild
+#delete -i _u2m.c _u2m.make _u2m.makeout _u2m
+#delete -i _u2m.c.o _u2m.c.x _u2m.NJ _u2m.SYM _u2m.xcoff
+#
+## 4) Build for the default hosts (Carbon, Carbon with ATSUI, "fat"
+##    application, "fat" application with SIOW, MPW Tool)
+#
+## Speed tip: add either -build-68k or -build-ppc according to your machine
+#:utl:macbuild smallman
 #
 ## 5) Run MyMan MPW Tool:
 #
@@ -90,19 +137,20 @@ end
 #
 #fat-smallman -wait
 #
-## 7) Launch MyMan Carbon application (Either Mac OS X or Mac OS 8.6
-## or greater with CarbonLib 1.6), and wait for it to exit:
+## 7) Launch MyMan Carbon application (Either Mac OS X 10.0 ... 10.6
+## or Mac OS 8.6 or greater with CarbonLib 1.6), and wait for it to
+## exit:
 #
 #carbon-smallman -wait
 #
 ## 8) Delete everything, since we're done:
 #
-#:utl:macbuild.txt -clean
+#:utl:macbuild -clean
 
+# NOTE: older MPW did not posess "set -e", so we export separately
+export Exit TraceFailures
 set Exit 1
-export Exit
 set TraceFailures 1
-export TraceFailures
 
 set obj ":obj:"
 set src ":"
@@ -116,9 +164,9 @@ for src1 in "``echo -n "{{0}}" | streamedit -e '$ rep /['"{{char_not_sign}}"':]*
 end
 
 set all_sizes "bigman hugeman smallman squareman bitman"
-set all_hosts "mpw mpw-68k mpw-ppc mpw-atsu fat 68k ppc cfm cfm-68k atsu carbon carbon-ppc carbon-atsu"
+set all_hosts "mpw mpw-68k mpw-ppc mpw-atsu mpw-raw mpw-raw-68k mpw-raw-ppc siow siow-68k siow-ppc siow-raw siow-raw-68k siow-raw-ppc siow-cfm siow-cfm-68k fat 68k ppc cfm cfm-68k atsu carbon carbon-ppc carbon-atsu carbon-raw"
 
-set defhosts "mpw fat carbon carbon-atsu"
+set defhosts "mpw fat carbon carbon-atsu siow"
 set defhost "{{host}}"
 for host2 in {defhosts} {all_hosts}
     set defhost "{{host2}}"
@@ -137,6 +185,11 @@ set sizes ""
 set specs ""
 set sdkroot ""
 set sdkroot-68k ""
+set 68KGCC "gC"
+set PPCGCC "gC -fno-builtin -d pascal= -d __useAppleExts__=1 -c"
+set APPLEC "C"
+set POWERC "PPCC"
+set TOOLARCHFLAGS '-fat'
 
 if {#} <> 0
     loop
@@ -149,14 +202,24 @@ if {#} <> 0
             set cleanMode 1
         else if :"{{1}}" == :"-debug"
             set debugMode 1
-        else if :"{{1}}" == :"-c"
-            set -e C C
-        else if :"{{1}}" == :"-ppcc"
-            set -e PPCC PPCC
+        else if :"{{1}}" == :"-sc" or :"{{1}}" == :"-sc-68k"
+            export C
+            set C SC
+        else if :"{{1}}" == :"-mrc" or :"{{1}}" == :"-mrc-ppc"
+            export PPCC
+            set PPCC MrC
+        else if :"{{1}}" == :"-c" or :"{{1}}" == :"-c-68k" or :"{{1}}" == :"-mpwc" or :"{{1}}" == :"-mpwc-68k" or :"{{1}}" == :"-applec" or :"{{1}}" == :"-applec-68k"
+            export C
+            set C "{{APPLEC}}"
+        else if :"{{1}}" == :"-ppcc" or :"{{1}}" == :"-mpwppcc" or :"{{1}}" == :"-c-ppc" or :"{{1}}" == :"-mpwc-ppc" or :"{{1}}" == :"-powerc" or :"{{1}}" == :"-powerc-ppc"
+            export PPCC
+            set PPCC "{{POWERC}}"
         else if :"{{1}}" == :"-gcc-68k"
-            set -e C gC
+            export C
+            set C "{{68KGCC}}"
         else if :"{{1}}" == :"-gcc-ppc"
-            set -e PPCC gC
+            export PPCC
+            set PPCC "{{PPCGCC}}"
         else if :"{{1}}" == :"-help" or :"{{1}}" == :"-h"
             echo '#usage: '"{{0}}"' [ OPTION ... ] [ HOST[-SIZE] | SIZE ] ...'
             echo "#options to select an action:"
@@ -170,10 +233,19 @@ if {#} <> 0
             echo "#-sdkroot DIR    use the MPW SDK (Interfaces&Libraries) in directory DIR"
             echo "#-sdkroot-68k DIR"
             echo "#                use the MPW 68k SDK (Interfaces&Libraries) in directory DIR"
-            echo "#-c              use the C compiler "'"C"'" for 68k compilation"
-            echo "#-ppcc           use the C compiler "'"PPCC"'" for PowerPC compilation"
-            echo "#-gcc-68k        use "'"gC"'" (m68k-macos-gcc) for 68k compilation"
-            echo "#-gcc-ppc        use "'"gC"'" (powerpc-macos-gcc) for PowerPC compilation"
+            echo "#options to select a toolchain: (default: use "'{C}'" and "'{PPCC}'" environment variables)"
+            echo "#-mrc[-ppc]      use the MPW C compiler "'"MrC"'" (Apple+Symantec C/Macintosh on RISC "'"'"Frankenstein"'"'") for PowerPC compilation"
+            echo "#-sc[-68k]       use the MPW C compiler "'"SC"'" (Apple+Symantec C) for 68k compilation"
+            echo "#-gcc-ppc        use the GNU C compiler "'"gC"'" (powerpc-macos-gcc) for PowerPC compilation [PARTLY WORKING]"
+            echo "#-gcc-68k        use the GNU C compiler "'"gC"'" (m68k-macos-gcc) for 68k compilation [UNTESTED]"
+            echo "#-[mpw]c-ppc, -powerc[-ppc] or"
+            echo "#-[mpw]ppcc      use "'"PPCC"'" (pre-Symantec Apple C) for PowerPC compilation [UNTESTED]"
+            echo "#-applec[-68k] or"
+            echo "#-[mpw]c[-68k]   use "'"C"'" (pre-Symantec Apple C) for 68k compilation [PARTLY WORKING]"
+            echo "#options influencing build-time intermediate MPW tools:"
+            echo "#-build-68k      generate 68k-only intermediate MPW tools"
+            echo "#-build-ppc      generate PowerPC-only intermediate MPW tools (a.k.a. -build-powerpc)"
+            echo "#-build-fat      generate 68k+PowerPC "'"'"fat"'"'" intermediate MPW tools (default)"
             echo "#host and size selecion:"
             echo "#-all            build and/or clean all possible hosts and sizes"
             echo "#-host HOST      select the given host; multiple hosts can be selected by repeating this option"
@@ -206,6 +278,12 @@ if {#} <> 0
             set sdkroot-68k "{{1}}"
         else if :"{{1}}" == :"-all"
             set allMode 1
+        else if :"{{1}}" == :"-build-68k"
+            set TOOLARCHFLAGS ''
+        else if :"{{1}}" == :"-build-powerpc" or :"{{1}}" == :"-build-ppc"
+            set TOOLARCHFLAGS '-powerpc'
+        else if :"{{1}}" == :"-build-fat"
+            set TOOLARCHFLAGS '-fat'
         else if :"{{1}}" == :"-host"
             shift
             set hosts "{{hosts}} ``quote "{{1}}"``"
@@ -225,13 +303,25 @@ if {#} <> 0
     end
 end
 
-if :"{{specs}}" == :""
-    set specs "{{sizes}}"
+if {{debugMode}} != 0 and :"{{PPCC}}" == :"{{PPCGCC}}"
+    set PPCGCC "{{PPCGCC}} -g"
+    export PPCC
+    set PPCC "{{PPCGCC}}"
+end
+
+if {{debugMode}} != 0 and :"{{C}}" == :"{{68KGCC}}"
+    set 68KGCC "{{68KGCC}} -g"
+    export C
+    set C "{{68KGCC}}"
 end
 
 if :"{{sizes}}" == :""
     # default sizes to build
     set sizes "{{defsizes}}"
+end
+
+if :"{{specs}}" == :""
+    set specs "{{sizes}}"
 end
 
 if :"{{hosts}}" == :""
@@ -263,18 +353,19 @@ if :"{{sdkroot}}" != :""
         exit 2
     end
     set sdkroot "``exists -q -d "{{sdkroot}}"``"
-    set -e AIncludes "{{sdkroot}}Interfaces:AIncludes:"
-    set -e CFM68KLibraries "{{sdkroot}}Libraries:CFM68KLibraries:"
-    set -e CIncludes "{{sdkroot}}Interfaces:CIncludes:"
-    set -e CLibraries "{{sdkroot}}Libraries:CLibraries:"
-    set -e Libraries "{{sdkroot}}Libraries:Libraries:"
-    set -e PInterfaces "{{sdkroot}}Interfaces:PInterfaces:"
-    set -e PLibraries "{{sdkroot}}Libraries:PLibraries:"
-    set -e PPCCIncludes "{{sdkroot}}Interfaces:CIncludes:"
-    set -e PPCLibraries "{{sdkroot}}Libraries:PPCLibraries:"
-    set -e RIncludes "{{sdkroot}}Interfaces:RIncludes:"
-    set -e SCIncludes "{{sdkroot}}Interfaces:CIncludes:"
-    set -e SharedLibraries "{{sdkroot}}Libraries:SharedLibraries:"
+    export AIncludes CFM68KLibraries CIncludes CLibraries Libraries PInterfaces PLibraries PPCCIncludes PPCLibraries RIncludes SCIncludes SharedLibraries
+    set AIncludes "{{sdkroot}}Interfaces:AIncludes:"
+    set CFM68KLibraries "{{sdkroot}}Libraries:CFM68KLibraries:"
+    set CIncludes "{{sdkroot}}Interfaces:CIncludes:"
+    set CLibraries "{{sdkroot}}Libraries:CLibraries:"
+    set Libraries "{{sdkroot}}Libraries:Libraries:"
+    set PInterfaces "{{sdkroot}}Interfaces:PInterfaces:"
+    set PLibraries "{{sdkroot}}Libraries:PLibraries:"
+    set PPCCIncludes "{{sdkroot}}Interfaces:CIncludes:"
+    set PPCLibraries "{{sdkroot}}Libraries:PPCLibraries:"
+    set RIncludes "{{sdkroot}}Interfaces:RIncludes:"
+    set SCIncludes "{{sdkroot}}Interfaces:CIncludes:"
+    set SharedLibraries "{{sdkroot}}Libraries:SharedLibraries:"
     for sdksubdir in "{{CFM68KLibraries}}" "{{CIncludes}}" "{{CLibraries}}" "{{PPCCIncludes}}" "{{PPCLibraries}}" "{{SCIncludes}}" "{{SharedLibraries}}"
         if not "``exists -d "{{sdksubdir}}"``"
             echo "#SDK subdirectory {{sdksubdir}} does not exist" > dev:stderr
@@ -290,13 +381,14 @@ if :"{{sdkroot-68k}}" != :""
         exit 2
     end
     set sdkroot-68k "``exists -q -d "{{sdkroot-68k}}"``"
-    set -e AIncludes "{{sdkroot-68k}}Interfaces:AIncludes:"
-    set -e CFM68KLibraries "{{sdkroot-68k}}Libraries:CFM68KLibraries:"
-    set -e CLibraries "{{sdkroot-68k}}Libraries:CLibraries:"
-    set -e Libraries "{{sdkroot-68k}}Libraries:Libraries:"
-    set -e PInterfaces "{{sdkroot-68k}}Interfaces:PInterfaces:"
-    set -e PLibraries "{{sdkroot-68k}}Libraries:PLibraries:"
-    set -e SCIncludes "{{sdkroot-68k}}Interfaces:CIncludes:"
+    export AIncludes CFM68KLibraries CLibraries Libraries PInterfaces PLibraries SCIncludes
+    set AIncludes "{{sdkroot-68k}}Interfaces:AIncludes:"
+    set CFM68KLibraries "{{sdkroot-68k}}Libraries:CFM68KLibraries:"
+    set CLibraries "{{sdkroot-68k}}Libraries:CLibraries:"
+    set Libraries "{{sdkroot-68k}}Libraries:Libraries:"
+    set PInterfaces "{{sdkroot-68k}}Interfaces:PInterfaces:"
+    set PLibraries "{{sdkroot-68k}}Libraries:PLibraries:"
+    set SCIncludes "{{sdkroot-68k}}Interfaces:CIncludes:"
     for sdksubdir in "{{CFM68KLibraries}}" "{{CLibraries}}" "{{SCIncludes}}"
         if not "``exists -d "{{sdksubdir}}"``"
             echo "#68k SDK subdirectory {{sdksubdir}} does not exist" > dev:stderr
@@ -304,6 +396,48 @@ if :"{{sdkroot-68k}}" != :""
         end
     end
 end
+
+# Set GCCIncludes for powerpc-gcc
+if :"{{PPCC}}" == :"{{PPCGCC}}"
+    export GCCIncludes
+    set GCCIncludes "{{CIncludes}}"
+end
+
+# cq: quote stdin for inclusion in a C string literal
+
+# NOTE: The \040 replacement for space, \074 replacement for < and
+# \076 for > work around a quoting bug in the MPW PowerPC gcc driver.
+alias cq 'streamedit -set char_tab="'"{{char_partial_differential}}"'\t" -set char_question_mark="'"{{char_partial_differential}}"'\077" -set char_quotation_mark="'"{{char_partial_differential}}"'\042" -set char_reverse_solidus="'"{{char_partial_differential}}"'\134" -set char_space="'"{{char_partial_differential}}"'\040" -set char_solidus="'"{{char_partial_differential}}"'\057" -set char_less_than_sign="'"{{char_partial_differential}}"'\074" -set char_greater_than_sign="'"{{char_partial_differential}}"'\076" -e "{{cq1}}" | translate "'"{{char_newline}}"'" "/" | streamedit -set char_newline="'"{{char_partial_differential}}"'\n" -e "{{cq2}}"' &&
+set cq1 '/[\\]/ rep /[\\]/ char_reverse_solidus -c '"{{char_infinity}}"'; /'"{{char_tab}}"'/ rep /'"{{char_tab}}"'/ char_tab -c '"{{char_infinity}}"'; /[""]/ rep /[""]/ char_quotation_mark -c '"{char_infinity}"'; /[?]/ rep /[?]/ char_question_mark -c '"{{char_infinity}}"'; /'"{{protected_char_partial_differential}}"'// rep /'"{{protected_char_partial_differential}}"'// char_solidus -c '"{{char_infinity}}"'; / / rep / / char_space -c '"{{char_infinity}}"'; /[<]/ rep /[<]/ char_less_than_sign -c '"{{char_infinity}}"'; /[>]/ rep /[>]/ char_greater_than_sign -c '"{{char_infinity}}"'' &&
+set cq2 '/'"{{protected_char_partial_differential}}"'// rep /'"{{protected_char_partial_differential}}"'// char_newline -c '"{{char_infinity}}"'; $ rep /'"{{protected_char_partial_differential}}"'\n'"{{char_infinity}}"'/ "" -c 1' &&
+# pp: post-process stdin for inclusion in a shell expansion
+alias pp 'streamedit -set protected_char_partial_differential="{{protected_char_partial_differential}}" -e "{{pp1}}"'
+set pp1 '/'"{{protected_char_partial_differential}}{{protected_char_partial_differential}}"'/ rep /'"{{protected_char_partial_differential}}{{protected_char_partial_differential}}"'/ protected_char_partial_differential -c '"{{char_infinity}}"''
+# q: quote stdin for inclusion in an MPW shell command line argument
+alias q '(quote -n "``pp``")' &&
+# qcq: composition of q and cq
+alias qcq 'cq | q | pp' &&
+
+# verify cq is working
+set test_cq_input 'quotes "" backslash \ question ? slash / less < greater > nl '"{{char_newline}}"' ht '"{{char_tab}}"'.' &&
+set test_expected_cq_output 'quotes\040\042\042\040backslash\040\134\040question\040\077\040slash\040\057\040less\040\074\040greater\040\076\040nl\040\n\040ht\040\t.' &&
+set test_actual_cq_output "``echo -n "{{test_cq_input}}" | cq``" &&
+if :"{{test_actual_cq_output}}" != :"{{test_expected_cq_output}}"
+    echo "File ``quote "{{0}}"`` #Error: quoting characters does not work" > dev:stderr &&
+    echo -n "# Input:           " > dev:stderr &&
+    echo "{{test_cq_input}}" > dev:stderr &&
+    echo -n "# Quoted:         " > dev:stderr &&
+    quote "{{test_cq_input}}" > dev:stderr &&
+    echo -n "# Expected output: " > dev:stderr &&
+    echo "{{test_expected_cq_output}}" > dev:stderr &&
+    echo -n "# Quoted:         " > dev:stderr &&
+    quote "{{test_expected_cq_output}}" > dev:stderr &&
+    echo -n "# Actual output:   " > dev:stderr &&
+    echo "{{test_actual_cq_output}}" > dev:stderr &&
+    echo -n "# Quoted:         " > dev:stderr &&
+    quote "{{test_actual_cq_output}}" > dev:stderr
+    exit 1
+end &&
 
 # generate the POSIX equivalent since this may end up running under
 # Mac OS X in the Carbon case; note that names with non-ASCII
@@ -313,15 +447,6 @@ end
 # FIXME: MacRoman != UTF-8
 set srcdir "``echo -n "{{src}}" | streamedit -e '1 && /'"{{char_bullet}}"'['"{{char_not_sign}}"':]/ ins char_solidus -n; ins ":Volumes:" -n; 1 rep /'"{{char_bullet}}"':/ ".:"; /::/ rep /::/ ":..:" -c '"{{char_infinity}}"'; rep /::/ ":..:" -c '"{{char_infinity}}"'; 1 && /'"{{char_bullet}}"':/ rep /:/ "" -c 1' | translate ':/' '/:'``"
 
-# cq: quote stdin for inclusion in a C string literal
-alias cq 'streamedit -e "{{cq1}}" | translate "'"{{char_partial_differential}}"'r'"{{char_partial_differential}}"'n" "?/" | streamedit -e "{{cq2}}"'
-set cq1 '/[\\]/ rep /[\\]/ "'"{{char_partial_differential}}"'\134" -c '"{{char_infinity}}"'; /'"{{char_partial_differential}}"'t/ rep /'"{{char_partial_differential}}"'t/ "'"{{char_partial_differential}}"'\t" -c '"{{char_infinity}}"'; /[""]/ rep /[""]/ "'"{{char_partial_differential}}"'\042" -c '"{char_infinity}"'; /[?]/ rep /[?]/ "'"{{char_partial_differential}}"'\?" -c '"{{char_infinity}}"'; /'"{{char_partial_differential}}"'// rep /'"{{char_partial_differential}}"'// "'"{{char_partial_differential}}"'\057" -c '"{{char_infinity}}"''
-set cq2 '/[?]/ rep /[?]/ "'"{{char_partial_differential}}"'\r" -c '"{{char_infinity}}"'; /'"{{char_partial_differential}}"'// rep /'"{{char_partial_differential}}"'// "'"{{char_partial_differential}}"'\n" -c '"{{char_infinity}}"'; $ rep /'"{{char_partial_differential}}"'\n'"{{char_infinity}}"'/ "" -c 1'
-# q: quote stdin for inclusion in an MPW shell command line argument
-alias q '(quote -n "``catenate``")'
-# qcq: composition of q and cq
-alias qcq 'cq | q'
-
 set CREATEMAKEFLAGS ""
 
 ## We used to try to optimize but it broke horribly. Not sure whether
@@ -330,7 +455,7 @@ set CREATEMAKEFLAGS ""
 #set CREATEMAKEFLAGS "-opt size"
 
 if {{debugMode}} != 0
-    # In debug mode we build a symbol files
+    # In debug mode we build symbol files
     set CREATEMAKEFLAGS "-sym"
 end &&
 
@@ -338,31 +463,41 @@ if {{buildMode}} != 0
     # make sure the object directory exists
     if not "``exists -d "{{obj}}"``"
         newfolder "{{obj}}"
-    end
+    end &&
     if not "``exists -d "{{obj}}"``"
         echo "#could not create directory {{obj}}" > dev:stderr
         exit 2
-    end
-    set obj "``exists -q -d "{{obj}}"``"
+    end &&
+    set obj "``exists -q -d "{{obj}}"``" &&
 
     # create our line ending conversion tool
-    delete -i u2m.c "{{obj}}"u2m.c.x "{{obj}}"u2m.c.o u2m.NJ u2m.SYM u2m.xcoff
-    echo '#include <stdio.h>' > u2m.c
-    echo 'int main(void){int i,j;while(1){i=getchar();if(i==-1) break;' >> u2m.c
-    echo 'if(i==0x0d){j=getchar();if(j==0x0a)i=0x0a;else if(j!=-1)ungetc(j,stdin);}' >> u2m.c
-    echo 'if(i==0x0a)i=0x0d;putchar(i);}return 0;}' >> u2m.c
+    delete -i u2m.c "{{obj}}"u2m.c.x "{{obj}}"u2m.c.o u2m.NJ u2m.SYM u2m.xcoff &&
+    echo '#include <stdio.h>' > u2m.c &&
+    echo 'int main(void){int i,j;while(1){i=getchar();if(i==-1) break;' >> u2m.c &&
+    echo 'if(i==0x0d){j=getchar();if(j==0x0a)i=j;else if(j!=-1)ungetc(j,stdin);}' >> u2m.c &&
+    echo 'if(i==0x0a)puts("");else putchar(i);}return 0;}' >> u2m.c &&
     delete -i u2m u2m.make u2m.makeout &&
-    createmake u2m u2m.c -tool -fat {CREATEMAKEFLAGS} -objdir "{{obj}}" &&
+    set FLAGS "{{CREATEMAKEFLAGS}}" &&
+    if :"{{PPCC}}" == :"{{PPCGCC}}"
+        set FLAGS "{{FLAGS}} ``quote "{GCCPPCLibraries}libgcc.xcoff"``"
+    end &&
+    createmake u2m u2m.c -tool {TOOLARCHFLAGS} {FLAGS} -objdir "{{obj}}" &&
+    # HACK: remove -sym {on,off} for powerpc gcc
+    if :"{{PPCC}}" == :"{{PPCGCC}}"
+        streamedit -e '/Sym-PPC/ rep /-sym on/ ""' -e '/Sym-PPC/ rep /-sym off/ ""' -o u2m.make u2m.make
+    end &&
     make -e -f u2m.make > u2m.makeout &&
     u2m.makeout &&
+
+    # convert source and include file type codes to 'TEXT'
+    setfile -t TEXT "{{src}}"inc:maccurs.h "{{src}}"inc:guess.h "{{src}}"inc:utils.h "{{src}}"src:myman.c "{{src}}"src:utils.c "{{src}}"src:logic.c "{{src}}"mygetopt:getopt.h "{{src}}"mygetopt:mygetopt.c "{{src}}"mygetopt:mygetopt.h "{{src}}"inc:optcurs.h "{{src}}"inc:rawcurs.h "{{src}}"gfx:myman.r &&
 
     # use our line ending conversion tool
     setfile -t TEXT "{{src}}"VERSION "{{src}}"COPYRIGHT &&
     set MYMANVERSION "``catenate "{{src}}"VERSION | :u2m``" &&
     set MYMANCOPYRIGHT "``catenate "{{src}}"COPYRIGHT | :u2m``" &&
-
-    # convert source and include file type codes to 'TEXT'
-    setfile -t TEXT "{{src}}"inc:maccurs.h "{{src}}"inc:guess.h "{{src}}"inc:utils.h "{{src}}"src:myman.c "{{src}}"src:utils.c "{{src}}"src:logic.c "{{src}}"mygetopt:getopt.h "{{src}}"mygetopt:mygetopt.c "{{src}}"mygetopt:mygetopt.h "{{src}}"inc:optcurs.h
+    delete -i "{{obj}}"macicons.r &&
+    :u2m < "{{src}}"gfx:myman.r > "{{obj}}"macicons.r
 
 end &&
 
@@ -372,49 +507,45 @@ if {{cleanMode}} != 0
     delete -i u2m u2m.make u2m.makeout
 end &&
 
-# for sending string literals to the C compiler and including the solidus in them (which MyMan autoconverts to colon when needed)
-set char_quotation_mark "'"'"'"'" &&
-set char_solidus "{{char_quotation_mark}}CHAR_SOLIDUS{{char_quotation_mark}}" &&
-
 # "myman" is the default maze; see Makefile for more
 set MAZEFILE_myman "maze.txt" &&
-set mymanmaze "-D MAZEFILE={{char_quotation_mark}}lvl{{char_solidus}}{{MAZEFILE_myman}}{{char_quotation_mark}}" &&
-set myman "-D MYMANVARIANT={{char_quotation_mark}}myman{{char_quotation_mark}} {{mymanmaze}}" &&
+set mymanmaze "-d MAZEFILE={{char_quotation_mark}}lvl{{char_solidus}}{{MAZEFILE_myman}}{{char_quotation_mark}}" &&
+set myman "-d MYMANVARIANT={{char_quotation_mark}}myman{{char_quotation_mark}} {{mymanmaze}}" &&
 
 # "big" is the default size (large ASCII-art pictures)
 set bigman "{{big}} {{myman}}" &&
 
 # "huge" is the largest size (huge ASCII-art pictures)
 set TILEFILE_huge "chr5x3.txt" &&
-set hugetiles "-D TILEFILE={{char_quotation_mark}}chr{{char_solidus}}{{TILEFILE_huge}}{{char_quotation_mark}}" &&
+set hugetiles "-d TILEFILE={{char_quotation_mark}}chr{{char_solidus}}{{TILEFILE_huge}}{{char_quotation_mark}}" &&
 set SPRITEFILE_huge "spr10x6.txt" &&
-set hugesprites "-D SPRITEFILE={{char_quotation_mark}}spr{{char_solidus}}{{SPRITEFILE_huge}}{{char_quotation_mark}}" &&
-set huge "-D MYMANSIZE={{char_quotation_mark}}huge{{char_quotation_mark}} {{hugetiles}} {{hugesprites}}" &&
+set hugesprites "-d SPRITEFILE={{char_quotation_mark}}spr{{char_solidus}}{{SPRITEFILE_huge}}{{char_quotation_mark}}" &&
+set huge "-d MYMANSIZE={{char_quotation_mark}}huge{{char_quotation_mark}} {{hugetiles}} {{hugesprites}}" &&
 set hugeman "{{huge}} {{myman}}" &&
 
 # "small" uses a pair of character-cells to represent each tile and sprite
 set TILEFILE_small "khr2h.txt" &&
-set smalltiles "-D TILEFILE={{char_quotation_mark}}chr{{char_solidus}}{{TILEFILE_small}}{{char_quotation_mark}}" &&
+set smalltiles "-d TILEFILE={{char_quotation_mark}}chr{{char_solidus}}{{TILEFILE_small}}{{char_quotation_mark}}" &&
 set SPRITEFILE_small "spr2h.txt" &&
-set smallsprites "-D SPRITEFILE={{char_quotation_mark}}spr{{char_solidus}}{{SPRITEFILE_small}}{{char_quotation_mark}}" &&
-set small "-D MYMANSIZE={{char_quotation_mark}}small{{char_quotation_mark}} {{smalltiles}} {{smallsprites}}" &&
+set smallsprites "-d SPRITEFILE={{char_quotation_mark}}spr{{char_solidus}}{{SPRITEFILE_small}}{{char_quotation_mark}}" &&
+set small "-d MYMANSIZE={{char_quotation_mark}}small{{char_quotation_mark}} {{smalltiles}} {{smallsprites}}" &&
 set smallman "{{small}} {{myman}}" &&
 
 # "square" uses one character-cell to represent each tile and sprite
 set TILEFILE_square "khr1.txt" &&
-set squaretiles "-D TILEFILE={{char_quotation_mark}}chr{{char_solidus}}{{TILEFILE_square}}{{char_quotation_mark}}" &&
+set squaretiles "-d TILEFILE={{char_quotation_mark}}chr{{char_solidus}}{{TILEFILE_square}}{{char_quotation_mark}}" &&
 set SPRITEFILE_square "spr1.txt" &&
-set squaresprites "-D SPRITEFILE={{char_quotation_mark}}spr{{char_solidus}}{{SPRITEFILE_square}}{{char_quotation_mark}}" &&
-set square "-D MYMANSIZE={{char_quotation_mark}}square{{char_quotation_mark}} {{squaretiles}} {{squaresprites}}" &&
+set squaresprites "-d SPRITEFILE={{char_quotation_mark}}spr{{char_solidus}}{{SPRITEFILE_square}}{{char_quotation_mark}}" &&
+set square "-d MYMANSIZE={{char_quotation_mark}}square{{char_quotation_mark}} {{squaretiles}} {{squaresprites}}" &&
 set squareman "{{square}} {{myman}}" &&
 
 # "bitmap" uses pseudo-bitmap tiles and overrides the fontsize to match
 set TILEFILE_bitmap "khr8.txt" &&
-set bitmaptiles "-D TILEFILE={{char_quotation_mark}}chr{{char_solidus}}{{TILEFILE_bitmap}}{{char_quotation_mark}}" &&
+set bitmaptiles "-d TILEFILE={{char_quotation_mark}}chr{{char_solidus}}{{TILEFILE_bitmap}}{{char_quotation_mark}}" &&
 set SPRITEFILE_bitmap "spr16.txt" &&
-set bitmapsprites "-D SPRITEFILE={{char_quotation_mark}}spr{{char_solidus}}{{SPRITEFILE_bitmap}}{{char_quotation_mark}}" &&
-set bitmap "-D MYMANSIZE={{char_quotation_mark}}bitmap{{char_quotation_mark}} {{bitmaptiles}} {{bitmapsprites}}" &&
-set bitman "-D MACCURSES_FONTSIZE=1 -D MACCURSES_FONT={{char_quotation_mark}}Monaco{{char_quotation_mark}} {{bitmap}} {{myman}}" &&
+set bitmapsprites "-d SPRITEFILE={{char_quotation_mark}}spr{{char_solidus}}{{SPRITEFILE_bitmap}}{{char_quotation_mark}}" &&
+set bitmap "-d MYMANSIZE={{char_quotation_mark}}bitmap{{char_quotation_mark}} {{bitmaptiles}} {{bitmapsprites}}" &&
+set bitman "-d MACCURSES_FONTSIZE=1 -d MACCURSES_FONT={{char_quotation_mark}}Monaco{{char_quotation_mark}} {{bitmap}} {{myman}}" &&
 
 for host in {hosts}
     set matched 0
@@ -487,7 +618,7 @@ for size in {all_sizes}
             echo 'set DEFS "{{'"{{size}}"'}}"' > "{{hostsize}}".makeout
             execute "{{hostsize}}".makeout
             delete -i "{{hostsize}}".makeout
-            if ":{{DEFS}}" == ":"
+            if :"{{DEFS}}" == :""
                 echo "#size {{size}} not defined" > dev:stderr
                 exit 2
             end
@@ -501,7 +632,14 @@ for size in {all_sizes}
             delete -i "{{hostsize}}" "{{hostsize}}".make "{{hostsize}}".makeout &&
             if {{buildMode}} != 0
                 # C compiler flags, all architectures
-                set CFLAGS "-x -noMapCR -D PRIVATEDATADIR={{char_quotation_mark}}``echo -n "{{srcdir}}" | qcq``{{char_quotation_mark}} -D MACCURSES=1 -D MYGETOPT=1 -D MYMANVERSION={{char_quotation_mark}}``echo -n "{{MYMANVERSION}}" | qcq``{{char_quotation_mark}} -D MYMANCOPYRIGHT={{char_quotation_mark}}``echo -n "{{MYMANCOPYRIGHT}}" | qcq``{{char_quotation_mark}} {{DEFS}}" &&
+                set CFLAGS "-d PRIVATEDATADIR={{char_quotation_mark}}``echo -n "{{srcdir}}" | qcq``{{char_quotation_mark}} -d MYGETOPT=1 -d MYMANVERSION={{char_quotation_mark}}``echo -n "{{MYMANVERSION}}" | qcq``{{char_quotation_mark}} -d MYMANCOPYRIGHT={{char_quotation_mark}}``echo -n "{{MYMANCOPYRIGHT}}" | qcq``{{char_quotation_mark}} {{DEFS}}" &&
+
+                # Extra flags for curses flavor
+                if :"{{host}}" == :"mpw-raw" or :"{{host}}" == :"mpw-raw-ppc" or :"{{host}}" == :"mpw-raw-68k" or :"{{host}}" == :"carbon-raw" or :"{{host}}" == :"siow-raw" or :"{{host}}" == :"siow-raw-ppc" or :"{{host}}" == :"siow-raw-68k"
+                    set CFLAGS "{{CFLAGS}} -d RAWCURSES=1"
+                else
+                    set CFLAGS "{{CFLAGS}} -d MACCURSES=1"
+                end &&
 
                 # Linker flags, all architectures
                 set LDFLAGS "" &&
@@ -514,6 +652,19 @@ for size in {all_sizes}
                 end &&
                 set 68KCFLAGS "{{68KCFLAGS}}" &&
 
+                if :"{{C}}" != :"{{68KGCC}}"
+                    set 68KCFLAGS "-x {{68KCFLAGS}}"
+                end &&
+
+                if :"{{C}}" == :"{{APPLEC}}"
+                    # HACK: Without this, MPW C crashes in logic.c and
+                    # corrupts MPW Shell memory. Unfortunately, this
+                    # means only MC68020+ Macs can run the generated
+                    # code, although "Sim020" might allow it to run on
+                    # older ones...
+                    set 68KCFLAGS "{{68KCFLAGS}} -mc68020" &&
+                end &&
+
                 # Extra flags for the 68k linker
 
                 # -br 68k: Generate branch islands (MC68000-compatible)
@@ -522,13 +673,51 @@ for size in {all_sizes}
                 # Extra flags for the PowerPC C compiler
                 set PPCCFLAGS "" &&
 
+                if :"{{PPCC}}" == :"{{PPCGCC}}"
+                    # HACK: <Dictionary.h> uses structure-packing
+                    # pragmas which <ConditionalMacros.h> thinks MPW
+                    # powerpc-gcc understands, but actually it does
+                    # not understand them, and <LanguageAnalysis.h>
+                    # depends on <Dictionary.h>.
+                    set PPCCFLAGS "{{PPCCFLAGS}} -d __DICTIONARY__=1 -d __LANGUAGEANALYSIS__=1" &&
+                end &&
+                    
+                if :"{{PPCC}}" != :"{{PPCGCC}}"
+                    set PPCCFLAGS "-x {{PPCCFLAGS}}"
+                end &&
+
+                if :"{{host}}" == :"carbon-raw" and :"{{PPCC}}" != :"{{PPCGCC}}"
+                    # This target outputs on a Mac OS X terminal, so
+                    # we prefer Unix-style line endings for it.
+                    set PPCCFLAGS "-noMapCR {{PPCCFLAGS}}"
+                end &&
+
                 # Extra flags for the PowerPC linker
                 set PPCLDFLAGS "" &&
 
+                if :"{{PPCC}}" == :"{{PPCGCC}}"
+                    # powerpc-gcc runtime library
+                    set PPCLDFLAGS "{{PPCLDFLAGS}} ``quote "{GCCPPCLibraries}libgcc.xcoff"``"
+                end &&
+
                 # shared libraries for the non-Carbon builds
                 set LIBS "" &&
+                set weaklibs "" &&
                 for lib in FontManager TextCommon WindowsLib ATSUnicodeLib UnicodeConverter TextEncodingConverter AppearanceLib
-                    set LIBS "{{LIBS}} `quote "{{SharedLibraries}}{{lib}}"`"
+                    set LIBS "{{LIBS}} ``quote "{{SharedLibraries}}{{lib}}"``"
+                    if :"{{weaklibs}}" == :''
+                        set weaklibs "{{lib}}"
+                    else
+                        set weaklibs "{{weaklibs}},{{lib}}"
+                    end
+                end &&
+                if :"{{weaklibs}}" != :''
+                    if :"{{host}}" != :"carbon" and :"{{host}}" != :"carbon-ppc" and :"{{host}}" != :"carbon-atsu" and :"{{host}}" != :"carbon-raw"
+                        set PPCLDFLAGS "-weaklib {{weaklibs}} {{PPCLDFLAGS}}"
+                    end &&
+                    if :"{{host}}" == :"siow-cfm" or :"{{host}}" == :"siow-cfm-68k" or :"{{host}}" == :"cfm" or :"{{host}}" == :"cfm-68k"
+                        set 68KLDFLAGS "-weaklib {{weaklibs}} {{68KLDFLAGS}}"
+                    end &&
                 end &&
                 if {{debugMode}} != 0
                     for lib in ::DebuggingLibraries:SharedLibraries:StdCLibDbg
@@ -540,17 +729,17 @@ for size in {all_sizes}
                 end &&
 
                 # PowerPC libraries for the non-Carbon builds
-                set PPCLIBS "" &&
+                set PPCLIBS "{{LIBS}}" &&
                 for lib in CarbonAccessors.o
-                    set PPCLIBS "{{LIBS}} ``quote "{{PPCLibraries}}{{lib}}"``"
+                    set PPCLIBS "{{PPCLIBS}} ``quote "{{PPCLibraries}}{{lib}}"``"
                 end &&
 
                 # Memory partition sizes arrived at empirically:
                 #     ppc and 68k: 700k
                 set MEMSIZE 700 &&
                 #     carbon: 1200k
-                for carbonhost in carbon-ppc carbon-atsu carbon
-                    if ":{{carbonhost}}" == ":{{host}}"
+                for carbonhost in carbon-ppc carbon-atsu carbon carbon-raw
+                    if :"{{carbonhost}}" == :"{{host}}"
                         set MEMSIZE 1400 &&
                         break
                     end
@@ -561,51 +750,87 @@ for size in {all_sizes}
                 echo '#include "Types.r"' > "{{obj}}{{hostsize}}".r &&
                 echo "resource 'SIZE' (-1) "'{'"0,1,0,1,1,0,0,0,1,1,0,0,0,0,0,0,{{MEMSIZE}}*1024,{{MEMSIZE}}*1024"'}'";" >> "{{obj}}{{hostsize}}".r &&
 
+                # Use icons previously converted from PNG originals by :utl:macicons.py
+                catenate "{{obj}}"macicons.r >> "{{obj}}{{hostsize}}".r &&
+
+                # Expose default argv and envp for ResEdit (no effect for MPW tools)
+                echo "resource 'STR#' (128, "'"'"envp"'"'")"' { { }; };' >> "{{obj}}{{hostsize}}".r &&
+                echo "resource 'STR#' (129, "'"'"argv"'"'")"' { { }; };' >> "{{obj}}{{hostsize}}".r &&
+
                 set HOSTFLAGS "{{CREATEMAKEFLAGS}}" &&
-                if ":{{host}}" == ":mpw"
+                if :"{{host}}" == :"mpw" or :"{{host}}" == :"mpw-raw"
                     # Classic 68K + PowerPC "fat" toolbox QuickDraw Text MPW tool
+                    # Classic 68k + PowerPC "fat" stdio MPW tool (BROKEN: crashes on PPC)
                     set HOSTFLAGS "{{HOSTFLAGS}} ``quote {PPCLIBS} {LIBS}`` -fat -model far -tool"
-                else if ":{{host}}" == ":mpw-68k"
+                    set CFLAGS "{{CFLAGS}} -d HAVE_COMMAND_LINE=1"
+                else if :"{{host}}" == :"mpw-68k" or :"{{host}}" == :"mpw-raw-68k"
                     # Classic 68k toolbox QuickDraw Text MPW tool
-                    set HOSTFLAGS "{{HOSTFLAGS}} ``quote {LIBS}`` -68k -model far -tool"
-                else if ":{{host}}" == ":mpw-ppc"
+                    # Classic 68k stdio MPW tool
+                    set HOSTFLAGS "{{HOSTFLAGS}} ``quote {LIBS}`` -model far -tool"
+                    set CFLAGS "{{CFLAGS}} -d HAVE_COMMAND_LINE=1"
+                else if :"{{host}}" == :"mpw-ppc" or :"{{host}}" == :"mpw-raw-ppc"
                     # Classic PowerPC toolbox QuickDraw Text MPW tool
+                    # Classic PowerPC stdio MPW tool
                     set HOSTFLAGS "{{HOSTFLAGS}} ``quote {PPCLIBS} {LIBS}`` -powerpc -tool"
-                else if ":{{host}}" == ":mpw-atsu"
+                    set CFLAGS "{{CFLAGS}} -d HAVE_COMMAND_LINE=1"
+                else if :"{{host}}" == :"mpw-atsu"
                     # Classic PowerPC toolbox ATSUI MPW tool
                     set HOSTFLAGS "{{HOSTFLAGS}} ``quote {PPCLIBS} {LIBS}`` -powerpc -tool"
-                    set PPCCFLAGS "{{PPCCFLAGS}} -D UNICODE=1"
-                else if ":{{host}}" == ":ppc"
+                    set CFLAGS "{{CFLAGS}} -d HAVE_COMMAND_LINE=1"
+                    set PPCCFLAGS "{{PPCCFLAGS}} -d UNICODE=1"
+                else if :"{{host}}" == :"siow" or :"{{host}}" == :"siow-raw"
+                    # Classic 68k + PowerPC "fat" toolbox QuickDraw Text SIOW app
+                    # Classic 68k + PowerPC "fat" stdio SIOW app
+                    set HOSTFLAGS "{{HOSTFLAGS}} ``quote {PPCLIBS} {LIBS}`` -fat -model far -siow"
+                else if :"{{host}}" == :"siow-68k" or :"{{host}}" == :"siow-raw-68k"
+                    # Classic 68k toolbox QuickDraw Text SIOW app
+                    # Classic 68k stdio SIOW app
+                    set HOSTFLAGS "{{HOSTFLAGS}} ``quote {LIBS}`` -model far -siow"
+                else if :"{{host}}" == :"siow-ppc" or :"{{host}}" == :"siow-raw-ppc"
+                    # Classic PowerPC toolbox QuickDraw Text SIOW app
+                    # Classic PowerPC stdio SIOW app
+                    set HOSTFLAGS "{{HOSTFLAGS}} ``quote {PPCLIBS} {LIBS}`` -powerpc -siow"
+                else if :"{{host}}" == :"siow-cfm-68k"
+                    # Classic CFM-68K toolbox QuickDraw Text SIOW app
+                    set HOSTFLAGS "{{HOSTFLAGS}} -c MyMa ``quote {LIBS}`` -model cfm68k -siow"
+                    set 68KCFLAGS "{{68KCFLAGS}} -auto_import 128 -b3"
+                else if :"{{host}}" == :"siow-cfm"
+                    # Classic CFM-68K + PowerPC "fat" toolbox QuickDraw Text SIOW app
+                    set HOSTFLAGS "{{HOSTFLAGS}} -c MyMa ``quote {PPCLIBS} {LIBS}`` -fat -model cfm68k -siow"
+                    set 68KCFLAGS "{{68KCFLAGS}} -auto_import 128 -b3"
+                else if :"{{host}}" == :"ppc"
                     # Classic PowerPC toolbox QuickDraw Text application
                     set HOSTFLAGS "{{HOSTFLAGS}} -c MyMa ``quote {PPCLIBS} {LIBS}`` -powerpc"
-                else if ":{{host}}" == ":68k"
+                else if :"{{host}}" == :"68k"
                     # Classic 68k toolbox QuickDraw Text application
-                    set HOSTFLAGS "{{HOSTFLAGS}} -c MyMa ``quote {LIBS}`` -68k -model far"
-                else if ":{{host}}" == ":fat"
+                    set HOSTFLAGS "{{HOSTFLAGS}} -c MyMa ``quote {LIBS}`` -model far"
+                else if :"{{host}}" == :"fat"
                     # Classic 68k + PowerPC "fat" toolbox QuickDraw Text application
                     set HOSTFLAGS "{{HOSTFLAGS}} -c MyMa ``quote {PPCLIBS} {LIBS}`` -fat -model far"
-                else if ":{{host}}" == ":cfm-68k"
-                    # Classic CFM-68K toolbox QuickDraw Text application (BROKEN: DOES NOT RUN)
-                    set HOSTFLAGS "{{HOSTFLAGS}} -c MyMa ``quote {LIBS}`` -68k -model cfm68k"
-                    # HACK: optimizing for space breaks the CFM-68K build, so we disable that
-                    set HOSTFLAGS "``echo "{{HOSTFLAGS}}" | streamedit -e '/-opt size/ rep /-opt size/ ""'``"
-                else if ":{{host}}" == ":cfm"
-                    # Classic CFM-68K + PowerPC "fat" toolbox QuickDraw Text application (BROKEN: DOES NOT RUN)
+                else if :"{{host}}" == :"cfm-68k"
+                    # Classic CFM-68K toolbox QuickDraw Text application
+                    set HOSTFLAGS "{{HOSTFLAGS}} -c MyMa ``quote {LIBS}`` -model cfm68k"
+                    set 68KCFLAGS "{{68KCFLAGS}} -auto_import 128 -b3"
+                else if :"{{host}}" == :"cfm"
+                    # Classic CFM-68K + PowerPC "fat" toolbox QuickDraw Text application
                     set HOSTFLAGS "{{HOSTFLAGS}} -c MyMa ``quote {PPCLIBS} {LIBS}`` -fat -model cfm68k"
-                    # HACK: optimizing for space breaks the CFM-68K build, so we disable that
-                    set HOSTFLAGS "``echo "{{HOSTFLAGS}}" | streamedit -e '/-opt size/ rep /-opt size/ ""'``"
-                else if ":{{host}}" == ":atsu"
+                    set 68KCFLAGS "{{68KCFLAGS}} -auto_import 128 -b3"
+                else if :"{{host}}" == :"atsu"
                     # Classic PowerPC toolbox ATSUI application
                     set HOSTFLAGS "{{HOSTFLAGS}} -c MyMa ``quote {PPCLIBS} {LIBS}`` -powerpc"
-                    set PPCCFLAGS "{{PPCCFLAGS}} -D UNICODE=1"
-                else if ":{{host}}" == ":carbon-ppc"
+                    set PPCCFLAGS "{{PPCCFLAGS}} -d UNICODE=1"
+                else if :"{{host}}" == :"carbon-ppc"
                     # Carbon QuickDraw Text application
                     set HOSTFLAGS "{{HOSTFLAGS}} -c MyMa -powerpc -carbon -noSizeRsrc"
-                else if ":{{host}}" == ":carbon-atsu"
+                else if :"{{host}}" == :"carbon-atsu"
                     # Carbon ATSUI application
                     set HOSTFLAGS "{{HOSTFLAGS}} -c MyMa -powerpc -carbon -noSizeRsrc"
-                    set PPCCFLAGS "{{PPCCFLAGS}} -D UNICODE=1"
-                else if ":{{host}}" == ":carbon"
+                    set PPCCFLAGS "{{PPCCFLAGS}} -d UNICODE=1"
+                else if :"{{host}}" == :"carbon-raw"
+                    # Carbon PowerPC stdio application (BROKEN: only works on Mac OS X with LaunchCFMApp and special tty settings)
+                    set HOSTFLAGS "{{HOSTFLAGS}} -c MyMa -powerpc -carbon -noSizeRsrc"
+                    set PPCCFLAGS "{{PPCCFLAGS}} -d UNICODE=1"
+                else if :"{{host}}" == :"carbon"
                     # Carbon + 68k "fat" QuickDraw Text application
                     set HOSTFLAGS "{{HOSTFLAGS}} -c MyMa -fat -carbon -noSizeRsrc -model far"
                 else
@@ -614,12 +839,14 @@ for size in {all_sizes}
                 end &&
                 createmake "{{hostsize}}" -I "{{src}}"inc: -I "{{src}}"mygetopt: "{{src}}"src:myman.c "{{src}}"src:utils.c "{{src}}"src:logic.c "{{src}}"mygetopt:mygetopt.c "{{obj}}{{hostsize}}".r {HOSTFLAGS} -COptions "{{CFLAGS}} {{68KCFLAGS}}" -ppcCOptions "{{CFLAGS}} {{PPCCFLAGS}}" -LinkOptions "{{LDFLAGS}} {{68KLDFLAGS}}" -ppcLinkOptions "{{LDFLAGS}} {{PPCLDFLAGS}}" -objdir "{{obj}}" &&
 
-                # HACK: tweak CFM-68K builds to use the pure 32-bit model
-                if ":{{host}}" == ":cfm" or ":{{host}}" == ":cfm-68k"
-                    streamedit -e '/-model cfmseg/ rep /-model cfmseg/ "-model cfmflat"' -o "{{hostsize}}".make "{{hostsize}}".make
+                # HACK: remove -sym {on,off} for powerpc gcc
+                if :"{{PPCC}}" == :"{{PPCGCC}}"
+                    streamedit -e '/Sym-PPC/ rep /-sym on/ ""' -e '/Sym-PPC/ rep /-sym off/ ""' -o "{{hostsize}}".make "{{hostsize}}".make
                 end &&
+
                 make -e -f "{{hostsize}}".make > "{{hostsize}}".makeout &&
                 "{{hostsize}}".makeout &&
+                setfile -a C "{{hostsize}}" &&
                 #echo "{{hostsize}} #MyMan {{MYMANVERSION}} host={{host}} size={{size}}"
             end &&
             if {{cleanMode}} != 0
@@ -633,6 +860,11 @@ for size in {all_sizes}
             end
         end
     end
+end &&
+
+if {{cleanMode}} != 0
+    # delete icon resource file
+    delete -i "{{obj}}"macicons.r
 end
 
 # vim:fencs=macroman

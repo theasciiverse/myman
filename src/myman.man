@@ -28,6 +28,7 @@
 .I num
 ]
 .RI [\-D " name" [= value "] ... ]"
+.RI "[\-D {" n1 "[=" v1 "]," n2 "[=" v2 "][,...]} ... ]"
 [\-g
 .I num
 ]
@@ -68,6 +69,12 @@
 The optional \fItoolkit-options\fP are only accepted when
 .B myman
 is built with PDCurses for X (a.k.a. XCurses)
+.RE
+
+.RS
+.B NOTE:
+The special token @@file causes the contents of that file to be
+included as if they had been entered on the command line.
 .RE
 
 .B @SHELL@ \fI@bindir@/\fP@XMYMAN_EXE@@SH_SUFFIX@
@@ -404,6 +411,9 @@ microseconds/refresh
 .BI \-D " name" \fR[\fP= "value" \fR]\fP
 define environment variable (default value is 1 if omitted)
 .TP
+.BI "\-D {" "n1" \fR[\fP= "v1" \fR]\fP, "n2" \fR[\fP= "v2" \fR][\fP,\fR...]\fP}
+define multiple environment variables (default value is 1 if omitted)
+.TP
 .BI \-g " num"
 play against
 .I num
@@ -597,6 +607,15 @@ Move left then right with no intervening keystrokes:
 equivalent to ESC
 .SH FILES
 .PP
+The optional startup file ~/.mymanrc, ~/_mymanrc, ./mymanrc or
+@privatedatadir@/mymanrc (optionally with .txt extension) is read at
+start-up and contains additional command-line arguments. Inside the
+file arguments are delimited by whitespace or newlines, with # for
+comments, @@file to include additional files, @@@@foo for literal
+@@foo, double quotes to allow spaces in arguments, and repeated
+(doubled) double quotes for literal double quotes, both inside and
+outside of quoted strings.
+.PP
 The following directories are used by MyMan:
 .I @mazedir@
 Directory of maze datafiles.
@@ -608,10 +627,21 @@ Directory of sprite datafiles.
 .I @privatedocdir@
 Directory of documentation.
 .PP
-Refer to the
+Certain files influence the program's behavior. See the file
+.I @privatedocdir@/README
+for more details. Refer to the
 .BR @CURSES_FLAVOR@ (@CURSES_FLAVOR_SECTION@)
 manual for additional information.
 .SH ENVIRONMENT
+.PP
+The MYMANOPTS environment variable supplies additional command-line
+parameters. The syntax is the same as for the contents of .mymanrc.
+.PP
+The MYMANRC environment variable overrides the location of the
+optional startup file.
+.PP
+The MYMANDIR environment variable overrides the fallback location for
+reading data files. Default: @privatedatadir@
 .PP
 Certain environment variables influence the program's behavior. See the file
 .I @privatedocdir@/README

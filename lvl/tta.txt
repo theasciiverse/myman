@@ -1,0 +1,24 @@
+﻿1 13x13 ABOUT="Inspired by the Pac-Man clone in 'Totally Tiny Arcade' by Flea Circus Games" \
+  RTOP=4.5 \
+RGHOST=5.5 CGHOST=6.5 ROGHOST=2 COGHOST=1 \
+RFRUIT=7.5 CFRUIT=6.5 \
+ RHERO=9.5  CHERO=7.5 DIRHERO=RIGHT \
+  RMSG=12    CMSG=1 \
+ RMSG2=0    CMSG2=1 \
+   READY="  READY!!  " \
+ PLAYER1="PLAYER  ONE" \
+ PLAYER2="PLAYER  TWO" \
+GAMEOVER=" GAME OVER."
+╔═════╦═════╗
+║· · ·║· · ·║
+║ ╞═╡ ╨ ╞═╡ ║
+║· ·     · ·║
+╩═╡ ╔═≡═╗ ╞═╩
+   ·║   ║·   
+╦═╡ ╚═══╝ ╞═╦
+║· · · · · ·║
+║ ╥ ╞═╦═╡ ╥ ║
+║■║· ·║· ·║■║
+║ ╚═╡ ╨ ╞═╝ ║
+║· · · · · ·║
+╚═══════════╝

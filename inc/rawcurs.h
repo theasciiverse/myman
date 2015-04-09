@@ -1550,7 +1550,7 @@ static int rawcurses__wdefwin_getch(void)
 #endif
 
 #ifndef SWAPDOTS
-#define SWAPDOTS (! (rawcurses_stdio && rawcurses_stdio_acs && (rawcurses_stdio_atascii || (rawcurses_stdio_petscii && ! rawcurses_stdio_petscii_shifted) || (rawcurses_stdio_petscii_shifted && rawcurses_stdio_acs_c128 && (rawcurses_w == 80) && rawcurses_color && rawcurses_stdio_petscii_shifted) || rawcurses_stdio_acs_h19 || rawcurses_stdio_acs_wy60 || rawcurses_stdio_cp437 || rawcurses_stdio_cp850 || rawcurses_stdio_koi8r || rawcurses_stdio_koi8u || rawcurses_stdio_noswapdots)))
+#define SWAPDOTS (! (rawcurses_stdio && rawcurses_stdio_acs && (rawcurses_stdio_atascii || (rawcurses_stdio_petscii && ! rawcurses_stdio_petscii_shifted) || (rawcurses_stdio_petscii_shifted && rawcurses_stdio_acs_c128 && (rawcurses_w == 80) && rawcurses_stdio_petscii_shifted) || rawcurses_stdio_acs_h19 || rawcurses_stdio_acs_wy60 || rawcurses_stdio_cp437 || rawcurses_stdio_cp850 || rawcurses_stdio_koi8r || rawcurses_stdio_koi8u || rawcurses_stdio_noswapdots)))
 #endif
 
 #ifndef USE_RAW_UCS

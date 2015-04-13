@@ -2507,6 +2507,7 @@ RAWCURSES_GLOBAL(int rawcurses_stdio_nocuf, = 0);
 RAWCURSES_GLOBAL(int rawcurses_stdio_atascii, = 0);
 RAWCURSES_GLOBAL(int rawcurses_stdio_petscii, = 0);
 RAWCURSES_GLOBAL(int rawcurses_stdio_petscii_shifted, = 1);
+RAWCURSES_GLOBAL(int rawcurses_stdio_petscii_ac, = 0);
 RAWCURSES_GLOBAL(int rawcurses_stdio_petscii_shift_toggled, = 0);
 RAWCURSES_GLOBAL(int rawcurses_stdio_petscii_palette, = -1);
 RAWCURSES_GLOBAL(int rawcurses_stdio_gempal, = 0);
@@ -8780,6 +8781,18 @@ static int initscrWithHints(int h, int w, const char *title, const char *shortna
             rawcurses_stdio_petscii_shifted = 0;
         }
     }
+    if (rawcurses_getenv_boolean("RAWCURSES_PETSCII_AC"))
+    {
+        rawcurses_stdio_petscii_shifted = *(rawcurses_getenv_boolean("RAWCURSES_PETSCII_AC")) ? 1 : 0;
+    }
+    else
+    {
+        rawcurses_stdio_petscii_ac = 0;
+        if (RAWCURSES__HASFLAG(termType, "ac"))
+        {
+            rawcurses_stdio_petscii_ac = 1;
+        }
+    }
     if (rawcurses_stdio_petscii_shift_toggled)
     {
         rawcurses_stdio_petscii_shifted = ! rawcurses_stdio_petscii_shifted;
@@ -11780,7 +11793,9 @@ static int rawcurses_getch(void)
             else if ((ret >= 0xe0) && (ret <= 0xfe)) ret += (0xa0 - 0xe0);
             else if (ret == 0xff) ret = 0x7e;
             if (rawcurses_stdio_petscii_shifted
-               &&
+                &&
+                (! rawcurses_stdio_petscii_ac)
+                &&
                 (((ret >= 'A') && ret <= 'Z')
                  ||
                  ((ret >= 'a') && ret <= 'z')))
@@ -13617,7 +13632,10 @@ static int addch(chtype ch)
                 {
                     if (rawcurses_stdio_petscii_shifted)
                     {
-                        ch ^= 0x20;
+                        if (rawcurses_stdio_petscii_ac)
+                        {
+                            ch ^= 0x20;
+                        }
                     }
                     else
                     {

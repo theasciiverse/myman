@@ -13632,7 +13632,7 @@ static int addch(chtype ch)
                 {
                     if (rawcurses_stdio_petscii_shifted)
                     {
-                        if (rawcurses_stdio_petscii_ac)
+                        if (!rawcurses_stdio_petscii_ac)
                         {
                             ch ^= 0x20;
                         }

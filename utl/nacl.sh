@@ -21,4 +21,4 @@ elif [[ :"$NACL_ARCH" = :x86_64 && ${#LIBRARY_PATH64} != 0 ]]; then
     CC="$CC -m64 -L '${LIBRARY_PATH64//:/\' -L \'}'"
 fi
 
-make -f simple.mk smallman CC="$CC" CURSESLIBS=-lppapi_simple\ -lnacl_spawn\ -lnacl_io\ -lppapi\ -lppapi_cpp\ -lcli_main\ -lstdc++\ -lm CURSESINCLUDE=-DUNICODE\ -DRAWCURSES\ -Dmain=nacl_main
+make -f simple.mk smallman CC="$CC" CURSESLIBS=-lppapi_simple\ -lnacl_spawn\ -lnacl_io\ -lppapi\ -lppapi_cpp\ -lcli_main\ -lstdc++\ -lm\ -u\ _ZN2pp12CreateModuleEv CURSESINCLUDE=-DUNICODE\ -DRAWCURSES\ -Dmain=nacl_main

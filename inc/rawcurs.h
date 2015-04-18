@@ -9027,7 +9027,9 @@ static int initscrWithHints(int h, int w, const char *title, const char *shortna
     else
     {
         rawcurses_stdio_norev = 0;
-        if (RAWCURSES__STARTSWITH(termType, "linux"))
+        if (RAWCURSES__STARTSWITH(termType, "linux")
+            ||
+            RAWCURSES__EQ(termType, "vt52"))
         {
             rawcurses_stdio_norev = 1;
         }
@@ -13632,7 +13634,7 @@ static int addch(chtype ch)
                 {
                     if (rawcurses_stdio_petscii_shifted)
                     {
-                        if (!rawcurses_stdio_petscii_ac)
+                        if (! rawcurses_stdio_petscii_ac)
                         {
                             ch ^= 0x20;
                         }

@@ -2457,7 +2457,7 @@ my_wcswidth(const wchar_t *s, size_t n)
 {
     int ret = 0;
 
-    while (((-- n) >= 0) && (*s != L'\0'))
+    while (((n --) > 0) && (*s != L'\0'))
     {
         int cret = my_wcwidth(*s);
         if (cret != -1)

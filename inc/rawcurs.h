@@ -10618,6 +10618,10 @@ static int initscrWithHints(int h, int w, const char *title, const char *shortna
     else
     {
         rawcurses_stdio_ansicolor = 0;
+        if (RAWCURSES__EQ(termType, "vt52-color"))
+        {
+            rawcurses_stdio_ansicolor = 1;
+        }
     }
     if (rawcurses_getenv_boolean("RAWCURSES_TEKANSI"))
     {

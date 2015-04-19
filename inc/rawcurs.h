@@ -2977,6 +2977,8 @@ static const char *RAWCURSES_VT52LIKE =
     "vt-61" "\0"
     "vt50h" "\0"
     "vt52" "\0"
+    "vt52-color" "\0"
+    "vt52-m" "\0"
     "vt61" "\0"
     "wsiris" "\0"
     "wterm" "\0"
@@ -3016,6 +3018,9 @@ static const char *RAWCURSES_WY60LIKE =
     "wy60-42-w" "\0"
     "wy60-43" "\0"
     "wy60-43-w" "\0"
+    "wy60-color" "\0"
+    "wy60-color-rv" "\0"
+    "wy60-rv-color" "\0"
     "wy60-vb" "\0"
     "wy60-w-vb" "\0"
     "wy60-wvb" "\0"
@@ -3672,6 +3677,9 @@ static const char *RAWCURSES_ADM3ALIKE =
     "wy60-42-w" "\0"
     "wy60-43" "\0"
     "wy60-43-w" "\0"
+    "wy60-color" "\0"
+    "wy60-color-rv" "\0"
+    "wy60-rv-color" "\0"
     "wy60-vb" "\0"
     "wy60-w" "\0"
     "wy60-w-vb" "\0"
@@ -9029,7 +9037,11 @@ static int initscrWithHints(int h, int w, const char *title, const char *shortna
         rawcurses_stdio_norev = 0;
         if (RAWCURSES__STARTSWITH(termType, "linux")
             ||
-            RAWCURSES__EQ(termType, "vt52"))
+            RAWCURSES__EQ(termType, "vt52")
+            ||
+            RAWCURSES__EQ(termType, "vt52-color")
+            ||
+            RAWCURSES__EQ(termType, "vt52-m"))
         {
             rawcurses_stdio_norev = 1;
         }

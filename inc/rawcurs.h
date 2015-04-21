@@ -8840,9 +8840,23 @@ static int initscrWithHints(int h, int w, const char *title, const char *shortna
     else
     {
         rawcurses_stdio_petscii_palette = -1;
-        if (RAWCURSES__HASFLAG(termType, "rgb"))
+        if (RAWCURSES__HASBASE(termType, "vic")
+            ||
+            RAWCURSES__HASBASE(termType, "vic20"))
+        {
+            rawcurses_stdio_petscii_palette = 0;
+        }
+        else if (RAWCURSES__HASFLAG(termType, "rgb"))
         {
             rawcurses_stdio_petscii_palette = 4;
+        }
+        else if (RAWCURSES__HASFLAG(termType, "nt10"))
+        {
+            rawcurses_stdio_petscii_palette = 5;
+        }
+        else if (RAWCURSES__HASFLAG(termType, "c64"))
+        {
+            rawcurses_stdio_petscii_palette = 1;
         }
     }
     if (myman_getenv("RAWCURSES_PETSCII_BGCOLOR") && *(myman_getenv("RAWCURSES_PETSCII_BGCOLOR")))

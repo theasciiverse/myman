@@ -8854,7 +8854,7 @@ static int initscrWithHints(int h, int w, const char *title, const char *shortna
         {
             rawcurses_stdio_petscii_palette = 5;
         }
-        else if (RAWCURSES__HASFLAG(termType, "c64"))
+        else if (RAWCURSES__HASBASE(termType, "c64"))
         {
             rawcurses_stdio_petscii_palette = 1;
         }

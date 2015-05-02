@@ -10688,6 +10688,8 @@ static int initscrWithHints(int h, int w, const char *title, const char *shortna
             ||
             RAWCURSES__HASFLAG(termType, "m")
             ||
+            RAWCURSES__EQ(termType, "xtermm")
+            ||
             RAWCURSES__EQ(termType, "et52"))
         {
             /* true to a first approximation... */

@@ -3021,6 +3021,7 @@ static const char *RAWCURSES_WY60LIKE =
     "wy60-43-w" "\0"
     "wy60-color" "\0"
     "wy60-color-rv" "\0"
+    "wy60-m" "\0"
     "wy60-rv-color" "\0"
     "wy60-vb" "\0"
     "wy60-w-vb" "\0"
@@ -3680,6 +3681,7 @@ static const char *RAWCURSES_ADM3ALIKE =
     "wy60-43-w" "\0"
     "wy60-color" "\0"
     "wy60-color-rv" "\0"
+    "wy60-m" "\0"
     "wy60-rv-color" "\0"
     "wy60-vb" "\0"
     "wy60-w" "\0"
@@ -5197,12 +5199,12 @@ static int rawcurses_fput_sgr(FILE *fh, attr_t a, attr_t a_rgb)
              * \220 black       black           black           black           black            black
              * \037 blue        blue            blue            blue            brown            blue
              * \036 green       green           green           green           dark magenta     green
-             * \227 -           dark gray       pink            dark cyan       cyan             cyan
+             * \227 -           dark gray       pink            dark cyan       cyan             "dark" cyan
              * \034 red         red             red             red             green            red
-             * \201 -           orange          orange          dark purple     dark gray        dark gray
+             * \201 -           orange          orange          dark purple     dark gray        medium gray
              * \225 -           brown           brown           dark yellow     light blue       brown
              * \233 -           light gray      light green     light gray      white            light gray
-             * \230 -           medium gray     blue-green      medium gray     light red        purple
+             * \230 -           medium gray     blue-green      medium gray     light red        "dark" purple
              * \232 -           light blue      dark blue       light blue      yellow           light blue
              * \231 -           light green     light blue      light green     light magenta    light green
              * \237 cyan        cyan            cyan            cyan            dark cyan        cyan

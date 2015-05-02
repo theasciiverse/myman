@@ -1550,7 +1550,7 @@ static int rawcurses__wdefwin_getch(void)
 #endif
 
 #ifndef SWAPDOTS
-#define SWAPDOTS (! (rawcurses_stdio && rawcurses_stdio_acs && (rawcurses_stdio_atascii || (rawcurses_stdio_petscii && ! rawcurses_stdio_petscii_shifted) || (rawcurses_stdio_petscii_shifted && rawcurses_stdio_acs_c128 && (rawcurses_w == 80) && rawcurses_stdio_petscii_shifted) || rawcurses_stdio_acs_h19 || rawcurses_stdio_acs_wy60 || rawcurses_stdio_cp437 || rawcurses_stdio_cp850 || rawcurses_stdio_koi8r || rawcurses_stdio_koi8u || rawcurses_stdio_noswapdots)))
+#define SWAPDOTS (! (rawcurses_stdio && rawcurses_stdio_acs && (rawcurses_stdio_atascii || (rawcurses_stdio_petscii && ! rawcurses_stdio_petscii_shifted) || (rawcurses_stdio_petscii_shifted && ((rawcurses_stdio_acs_c128 && rawcurses_w == 80) || (rawcurses_stdio_acs_c128 == 2)) && rawcurses_stdio_petscii_shifted) || rawcurses_stdio_acs_h19 || rawcurses_stdio_acs_wy60 || rawcurses_stdio_cp437 || rawcurses_stdio_cp850 || rawcurses_stdio_koi8r || rawcurses_stdio_koi8u || rawcurses_stdio_noswapdots)))
 #endif
 
 #ifndef USE_RAW_UCS
@@ -4599,9 +4599,11 @@ static int rawcurses_fput_smacs(FILE *fh)
     if (rawcurses_stdio_wy60 && rawcurses_stdio_acs_wy60) return fputs(ESCAPE("H"), fh) != EOF;
     if (rawcurses_stdio_petscii
         &&
-        rawcurses_stdio_acs_c128
-        &&
-        (rawcurses_w == 80)
+        ((rawcurses_stdio_acs_c128
+          &&
+          (rawcurses_w == 80))
+         ||
+         (rawcurses_stdio_acs_c128 == 2))
         &&
         rawcurses_stdio_petscii_shifted)
     {
@@ -4637,9 +4639,11 @@ static int rawcurses_fput_rmacs(FILE *fh)
     if (rawcurses_stdio_wy60 && rawcurses_stdio_acs_wy60) return 1;
     if (rawcurses_stdio_petscii
         &&
-        rawcurses_stdio_acs_c128
-        &&
-        (rawcurses_w == 80)
+        ((rawcurses_stdio_acs_c128
+          &&
+          (rawcurses_w == 80))
+         ||
+         (rawcurses_stdio_acs_c128 == 2))
         &&
         rawcurses_stdio_petscii_shifted)
     {
@@ -5942,9 +5946,11 @@ static chtype rawcurses_map_acs(chtype ch)
             {
                 return ch;
             }
-            if (((rawcurses_stdio_acs_c128
-                  &&
-                  (rawcurses_w == 80)
+            if (((((rawcurses_stdio_acs_c128
+                    &&
+                    (rawcurses_w == 80))
+                   ||
+                   (rawcurses_stdio_acs_c128 == 2))
                   &&
                   rawcurses_stdio_petscii_shifted)
                  ||
@@ -8770,6 +8776,8 @@ static int initscrWithHints(int h, int w, const char *title, const char *shortna
             ||
             RAWCURSES__HASBASE(termType, "c64")
             ||
+            RAWCURSES__HASBASE(termType, "c64term")
+            ||
             RAWCURSES__HASBASE(termType, "vic")
             ||
             RAWCURSES__HASBASE(termType, "vic20"))
@@ -8818,6 +8826,10 @@ static int initscrWithHints(int h, int w, const char *title, const char *shortna
     if (rawcurses_getenv_boolean("RAWCURSES_ACS_C128"))
     {
         rawcurses_stdio_acs_c128 = *(rawcurses_getenv_boolean("RAWCURSES_ACS_C128")) ? 1 : 0;
+        if (myman_getenv("RAWCURSES_ACS_C128") && (atoi(myman_getenv("RAWCURSES_ACS_C128")) > 0))
+        {
+            rawcurses_stdio_acs_c128 = atoi(myman_getenv("RAWCURSES_ACS_C128"));
+        }
     }
     else
     {
@@ -8837,6 +8849,10 @@ static int initscrWithHints(int h, int w, const char *title, const char *shortna
                 RAWCURSES__HASFLAG(termType, "ruc"))))
         {
             rawcurses_stdio_acs_c128 = 1;
+        }
+        else if (RAWCURSES__HASBASE(termType, "c64term"))
+        {
+            rawcurses_stdio_acs_c128 = 2;
         }
     }
     if (myman_getenv("RAWCURSES_PETSCII_PALETTE") && *(myman_getenv("RAWCURSES_PETSCII_PALETTE")))
@@ -13709,9 +13725,11 @@ static int addch(chtype ch)
                     acs_shifted = rawcurses_stdio_petscii_shifted;
                     if (rawcurses_stdio_petscii
                         &&
-                        rawcurses_stdio_acs_c128
-                        &&
-                        (rawcurses_w == 80)
+                        ((rawcurses_stdio_acs_c128
+                          &&
+                          (rawcurses_w == 80))
+                         ||
+                         (rawcurses_stdio_acs_c128 == 2))
                         &&
                         rawcurses_stdio_petscii_shifted)
                     {

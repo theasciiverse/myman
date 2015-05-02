@@ -7686,6 +7686,10 @@ static const char *rawcurses_term_type(void)
     termType = myman_getenv("TERM");
     x11display = myman_getenv("DISPLAY");
     colorTermType = myman_getenv("COLORTERM");
+    if (! colorTermType)
+    {
+        colorTermType = myman_getenv("COLORTERM_BCE");
+    }
     mlterm = myman_getenv("MLTERM");
     konsoleDcop = myman_getenv("KONSOLE_DCOP");
     konsoleDbusSession = myman_getenv("KONSOLE_DBUS_SESSION");

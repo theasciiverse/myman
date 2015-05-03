@@ -11869,7 +11869,7 @@ static int rawcurses_getch(void)
                     return KEY_RESIZE;
                 }
             }
-            if ((ret == 0x09) || (ret == 0x0e))
+            if ((ret == 0x09) || (ret == 0x0e) || (ret == 0x14))
             {
                 if (! rawcurses_stdio_petscii_shifted)
                 {

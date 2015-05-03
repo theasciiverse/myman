@@ -5161,12 +5161,16 @@ static int rawcurses_fput_sgr(FILE *fh, attr_t a, attr_t a_rgb)
 #endif
     if (rawcurses_stdio_petscii)
     {
+        int petscii_reversed;
+
+        petscii_reversed = 0;
         if ((a_rgb & (BACKGROUND_RED | BACKGROUND_GREEN | BACKGROUND_BLUE | BACKGROUND_INTENSITY))
             !=
             (rawcurses_stdio_petscii_bgcolor << 4))
         {
             attr_t tmp;
 
+            petscii_reversed = 1;
             if (fputs("\022", fh) == EOF) return 0;
             tmp = 0;
             if (a_rgb & FOREGROUND_RED) tmp |= BACKGROUND_RED;
@@ -5251,6 +5255,10 @@ static int rawcurses_fput_sgr(FILE *fh, attr_t a, attr_t a_rgb)
                 ((a_rgb & FOREGROUND_GREEN) ? 2 : 0)
                 |
                 ((a_rgb & FOREGROUND_BLUE) ? 1 : 0);
+            if (petscii_reversed && (rawcurses_stdio_petscii_palette == 6) && (petscii_color == 8))
+            {
+                petscii_color = 7;
+            }
             petscii_palette_entries = petscii_palette[petscii_color % (sizeof(petscii_palette)/sizeof(*petscii_palette))];
             if (fputc(RAWCURSES__PETSCII_PALETTE_ENTRY(petscii_palette_entries), fh) == EOF)
             {

@@ -5195,46 +5195,47 @@ static int rawcurses_fput_sgr(FILE *fh, attr_t a, attr_t a_rgb)
              * 3 C128 (80)
              * 4 C128 RGB (80) (SyncTERM)
              * 5 C64 Novaterm 10
+             * 6 C64TERM
              */
 
             /*
-             *      VIC+        C64/C128 (40)   264 series      C128 (80)       RGB (80)         C64 Novaterm 10
+             *      VIC+        C64/C128 (40)   264 series      C128 (80)       RGB (80)         C64 Novaterm 10  C64TERM normal[/reversed]
              *
-             * \220 black       black           black           black           black            black
-             * \037 blue        blue            blue            blue            brown            blue
-             * \036 green       green           green           green           dark magenta     green
-             * \227 -           dark gray       pink            dark cyan       cyan             "dark" cyan
-             * \034 red         red             red             red             green            red
-             * \201 -           orange          orange          dark purple     dark gray        medium gray
-             * \225 -           brown           brown           dark yellow     light blue       brown
-             * \233 -           light gray      light green     light gray      white            light gray
-             * \230 -           medium gray     blue-green      medium gray     light red        "dark" purple
-             * \232 -           light blue      dark blue       light blue      yellow           light blue
-             * \231 -           light green     light blue      light green     light magenta    light green
-             * \237 cyan        cyan            cyan            cyan            dark cyan        cyan
-             * \226 -           light red       yellow-green    light red       light green      light red
-             * \234 purple      purple          purple          purple          red              purple
-             * \236 yellow      yellow          yellow          yellow          light gray       yellow
-             * \005 white       white           white           white           blue             white
+             * \220 black       black           black           black           black            black            -
+             * \037 blue        blue            blue            blue            brown            blue             blue
+             * \036 green       green           green           green           dark magenta     green            green
+             * \227 -           dark gray       pink            dark cyan       cyan             "dark" cyan      dark gray/black
+             * \034 red         red             red             red             green            red              red
+             * \201 -           orange          orange          dark purple     dark gray        medium gray      light purple/purple
+             * \225 -           brown           brown           dark yellow     light blue       brown            brown
+             * \233 -           light gray      light green     light gray      white            light gray       light gray
+             * \230 -           medium gray     blue-green      medium gray     light red        "dark" purple    light cyan/cyan
+             * \232 -           light blue      dark blue       light blue      yellow           light blue       light blue/blue
+             * \231 -           light green     light blue      light green     light magenta    light green      light green/green
+             * \237 cyan        cyan            cyan            cyan            dark cyan        cyan             cyan
+             * \226 -           light red       yellow-green    light red       light green      light red        light red/red
+             * \234 purple      purple          purple          purple          red              purple           purple
+             * \236 yellow      yellow          yellow          yellow          light gray       yellow           yellow/brown
+             * \005 white       white           white           white           blue             white            white/light gray
              */
 
-            static const char petscii_palette[16][7] = {
-                { 0220, 0220, 0220, 0220, 0220, 0220, 0 }, /* black */
-                { 0037, 0037, 0232, 0037, 0005, 0037, 0 }, /* blue */
-                { 0036, 0036, 0036, 0036, 0034, 0036, 0 }, /* green */
-                { 0237, 0237, 0230, 0227, 0237, 0237, 0 }, /* cyan */
-                { 0034, 0034, 0034, 0034, 0234, 0034, 0 }, /* red */
-                { 0234, 0234, 0234, 0201, 0036, 0230, 0 }, /* magenta */
-                { 0236, 0225, 0225, 0225, 0037, 0225, 0 }, /* brown */
-                { 0005, 0233, 0005, 0233, 0236, 0233, 0 }, /* light gray */
-                { 0005, 0230, 0005, 0230, 0201, 0201, 0 }, /* dark gray */
-                { 0037, 0232, 0037, 0232, 0225, 0232, 0 }, /* light blue */
-                { 0036, 0231, 0233, 0231, 0226, 0231, 0 }, /* light green */
-                { 0237, 0237, 0237, 0237, 0227, 0227, 0 }, /* light cyan */
-                { 0034, 0226, 0201, 0226, 0230, 0226, 0 }, /* light red */
-                { 0234, 0234, 0227, 0234, 0231, 0234, 0 }, /* light magenta */
-                { 0236, 0236, 0236, 0236, 0232, 0236, 0 }, /* yellow */
-                { 0005, 0005, 0005, 0005, 0233, 0005, 0 }  /* white */
+            static const char petscii_palette[16][8] = {
+                { 0220, 0220, 0220, 0220, 0220, 0220, 0227, 0 }, /* black */
+                { 0037, 0037, 0232, 0037, 0005, 0037, 0037, 0 }, /* blue */
+                { 0036, 0036, 0036, 0036, 0034, 0036, 0036, 0 }, /* green */
+                { 0237, 0237, 0230, 0227, 0237, 0237, 0237, 0 }, /* cyan */
+                { 0034, 0034, 0034, 0034, 0234, 0034, 0034, 0 }, /* red */
+                { 0234, 0234, 0234, 0201, 0036, 0230, 0234, 0 }, /* magenta */
+                { 0236, 0225, 0225, 0225, 0037, 0225, 0225, 0 }, /* brown */
+                { 0005, 0233, 0005, 0233, 0236, 0233, 0233, 0 }, /* light gray */
+                { 0005, 0230, 0005, 0230, 0201, 0201, 0227, 0 }, /* dark gray */
+                { 0037, 0232, 0037, 0232, 0225, 0232, 0232, 0 }, /* light blue */
+                { 0036, 0231, 0233, 0231, 0226, 0231, 0231, 0 }, /* light green */
+                { 0237, 0237, 0237, 0237, 0227, 0227, 0230, 0 }, /* light cyan */
+                { 0034, 0226, 0201, 0226, 0230, 0226, 0226, 0 }, /* light red */
+                { 0234, 0234, 0227, 0234, 0231, 0234, 0201, 0 }, /* light magenta */
+                { 0236, 0236, 0236, 0236, 0232, 0236, 0236, 0 }, /* yellow */
+                { 0005, 0005, 0005, 0005, 0233, 0005, 0005, 0 }  /* white */
             };
 
 #define RAWCURSES__PETSCII_PALETTE_ENTRY(s) (*((s) + (((rawcurses_stdio_petscii_palette >= 0) && (rawcurses_stdio_petscii_palette < (int) strlen(s))) ? rawcurses_stdio_petscii_palette : 0)))
@@ -8798,7 +8799,9 @@ static int initscrWithHints(int h, int w, const char *title, const char *shortna
             ||
             (RAWCURSES__HASFLAG(termType, "rc")
              &&
-             ((! RAWCURSES__HASFLAG(termType, "80"))
+             (((! RAWCURSES__HASFLAG(termType, "80"))
+               &&
+               (!RAWCURSES__HASBASE(termType, "c64term")))
               ||
               RAWCURSES__HASFLAG(termType, "rgb")))
             ||
@@ -8875,6 +8878,10 @@ static int initscrWithHints(int h, int w, const char *title, const char *shortna
         else if (RAWCURSES__HASFLAG(termType, "nt10"))
         {
             rawcurses_stdio_petscii_palette = 5;
+        }
+        else if (RAWCURSES__HASBASE(termType, "c64term"))
+        {
+            rawcurses_stdio_petscii_palette = 6;
         }
         else if (RAWCURSES__HASBASE(termType, "c64"))
         {

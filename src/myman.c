@@ -413,6 +413,24 @@
 #include <curses.h>
 #endif
 
+#ifdef NCURSES_VERSION
+#ifndef USE_TERM_H
+#define USE_TERM_H 1
+#endif
+#endif
+
+#ifndef USE_TERM_H
+#define USE_TERM_H 0
+#endif
+
+#if USE_TERM_H
+#ifdef MY_TERM_H
+#include MY_TERM_H
+#else
+#include <term.h>
+#endif
+#endif
+
 #ifdef OPTCURSES
 #include "optcurs.h"
 #endif
@@ -2484,6 +2502,10 @@ static int use_bgspace = 1;
 static int use_fgblock = 0;
 
 static int use_fixedpal = 0;
+
+static int fold_lower_case_to_upper_case = 0;
+
+static int fold_upper_case_to_lower_case = 0;
 
 static int use_debug_input = 0;
 
@@ -6047,6 +6069,14 @@ my_addch(my_ulong b, int p)
     int old_y, old_x;
     int new_y, new_x;
 
+    if ((fold_upper_case_to_lower_case == 1) && (b >= 'A') && (b <= 'Z'))
+    {
+        b = (b - 'A') + 'a';
+    }
+    else if ((fold_lower_case_to_upper_case == 1) && (b >= 'a') && (b <= 'z'))
+    {
+        b = (b - 'a') + 'A';
+    }
     if (use_bgspace && use_color)
     {
         if (b == (my_ulong) 219)
@@ -8157,6 +8187,16 @@ myman(void)
 #endif
 #endif /* defined(PDC_BUILD) */
 
+#if USE_TERM_H
+            if (fold_upper_case_to_lower_case == -1)
+            {
+                fold_upper_case_to_lower_case = tigetflag("OTLC");
+            }
+            if (fold_lower_case_to_upper_case == -1)
+            {
+                fold_lower_case_to_upper_case = tigetflag("OTUC");
+            }
+#endif
             if (use_transparency)
             {
                 use_default_colors();
@@ -8752,6 +8792,27 @@ parse_myman_args(int argc, char **argv)
     if (myman_getenv("MYMAN_FIXEDPAL") && *(myman_getenv("MYMAN_FIXEDPAL")) && atoi(myman_getenv("MYMAN_FIXEDPAL")))
     {
         use_fixedpal = 1;
+    }
+    fold_lower_case_to_upper_case = -1;
+    if (myman_getenv("MYMAN_UC") && *(myman_getenv("MYMAN_UC")))
+    {
+        fold_lower_case_to_upper_case = !!atoi(myman_getenv("MYMAN_UC"));
+    }
+    fold_upper_case_to_lower_case = -1;
+    if (myman_getenv("MYMAN_LC") && *(myman_getenv("MYMAN_LC")))
+    {
+        fold_upper_case_to_lower_case = !!atoi(myman_getenv("MYMAN_LC"));
+    }
+    if (myman_getenv("MYMAN_XCASE") && *(myman_getenv("MYMAN_XCASE")))
+    {
+        if (fold_upper_case_to_lower_case == -1)
+        {
+            fold_upper_case_to_lower_case = !!atoi(myman_getenv("MYMAN_XCASE"));
+        }
+        if (fold_lower_case_to_upper_case == -1)
+        {
+            fold_lower_case_to_upper_case = !!atoi(myman_getenv("MYMAN_XCASE"));
+        }
     }
 #if USE_COLOR
     terminal_color_scale = 1000;

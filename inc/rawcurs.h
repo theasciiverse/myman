@@ -11858,7 +11858,7 @@ static int rawcurses_getch(void)
         }
         if (rawcurses_stdio_petscii)
         {
-            if ((ret == 0x08) || (ret == 0x8e))
+            if ((ret == 0x08) || (ret == 0x8e) || (ret == 0x14))
             {
                 if (rawcurses_stdio_petscii_shifted)
                 {

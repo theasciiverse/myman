@@ -5203,33 +5203,34 @@ static int rawcurses_fput_sgr(FILE *fh, attr_t a, attr_t a_rgb)
              */
 
             /*
-             *      VIC+        C64/C128 (40)   264 series      C128 (80)       RGB (80)         C64 Novaterm 10  C64TERM normal[/reversed]
+             *      VIC+        C64/C128 (40)   264 series      C128 (80)       RGB (80)         C64 Novaterm 10   C64TERM normal[/reversed]
              *
-             * \220 black       black           black           black           black            black            -
-             * \037 blue        blue            blue            blue            brown            blue             blue
-             * \036 green       green           green           green           dark magenta     green            green
-             * \227 -           dark gray       pink            dark cyan       cyan             (light) cyan     dark gray/black
-             * \034 red         red             red             red             green            red              red
-             * \201 -           orange          orange          dark purple     dark gray        medium gray      light purple/purple
-             * \225 -           brown           brown           dark yellow     light blue       brown            brown
-             * \233 -           light gray      light green     light gray      white            light gray       light gray
-             * \230 -           medium gray     blue-green      medium gray     light red        (light) purple   light cyan/cyan
-             * \232 -           light blue      dark blue       light blue      yellow           light blue       light blue/blue
-             * \231 -           light green     light blue      light green     light magenta    light green      light green/green
-             * \237 cyan        cyan            cyan            cyan            dark cyan        cyan             cyan
-             * \226 -           light red       yellow-green    light red       light green      light red        light red/red
-             * \234 purple      purple          purple          purple          red              purple           purple
-             * \236 yellow      yellow          yellow          yellow          light gray       yellow           yellow/brown
-             * \005 white       white           white           white           blue             white            white/light gray
+             * \220 black       black           black           black           black            black             -
+             * \037 blue        blue            blue            blue            brown            blue              blue
+             * \036 green       green           green           green           dark magenta     green             green
+             * \227 -           dark gray       pink            dark cyan       cyan             (light) cyan      dark gray/black
+             * \034 red         red             red             red             green            red               red
+             * \201 -           orange          orange          dark purple     dark gray        medium gray       light purple/purple
+             * \225 -           brown           brown           dark yellow     light blue       brown             brown
+             * \233 -           light gray      light green     light gray      white            light gray        light gray
+             * \230 -           medium gray     blue-green      medium gray     light red        (light) purple    light cyan/cyan
+             * \232 -           light blue      dark blue       light blue      yellow           light blue        light blue/blue
+             * \231 -           light green     light blue      light green     light magenta    light green       light green/green
+             * \237 cyan        cyan            cyan            cyan            dark cyan        cyan              cyan
+             * \226 -           light red       yellow-green    light red       light green      light red/orange  light red/red
+             * \234 purple      purple          purple          purple          red              purple            purple
+             * \236 yellow      yellow          yellow          yellow          light gray       yellow            yellow/brown
+             * \005 white       white           white           white           blue             white             white/light gray
              *
              * (light) - color is not bright on the C64/C128 VIC-II screen, but is bright on the C128 VDC screen.
+             * light red/orange - orange on C128 VDC, light red on C64/C128 VIC-II.
              */
 
             static const char petscii_palette[16][8] = {
                 { 0220, 0220, 0220, 0220, 0220, 0220, 0227, 0 }, /* black */
                 { 0037, 0037, 0232, 0037, 0005, 0037, 0037, 0 }, /* blue */
                 { 0036, 0036, 0036, 0036, 0034, 0036, 0036, 0 }, /* green */
-                { 0237, 0237, 0230, 0227, 0237, 0227, 0237, 0 }, /* cyan */
+                { 0237, 0237, 0230, 0227, 0237, 0237, 0237, 0 }, /* cyan */
                 { 0034, 0034, 0034, 0034, 0234, 0034, 0034, 0 }, /* red */
                 { 0234, 0234, 0234, 0201, 0036, 0234, 0234, 0 }, /* magenta */
                 { 0236, 0225, 0225, 0225, 0037, 0225, 0225, 0 }, /* brown */
@@ -5237,7 +5238,7 @@ static int rawcurses_fput_sgr(FILE *fh, attr_t a, attr_t a_rgb)
                 { 0005, 0230, 0005, 0230, 0201, 0201, 0227, 0 }, /* dark gray */
                 { 0037, 0232, 0037, 0232, 0225, 0232, 0232, 0 }, /* light blue */
                 { 0036, 0231, 0233, 0231, 0226, 0231, 0231, 0 }, /* light green */
-                { 0237, 0237, 0237, 0237, 0227, 0237, 0230, 0 }, /* light cyan */
+                { 0237, 0237, 0237, 0237, 0227, 0227, 0230, 0 }, /* light cyan */
                 { 0034, 0226, 0201, 0226, 0230, 0226, 0226, 0 }, /* light red */
                 { 0234, 0234, 0227, 0234, 0231, 0230, 0201, 0 }, /* light magenta */
                 { 0236, 0236, 0236, 0236, 0232, 0236, 0236, 0 }, /* yellow */

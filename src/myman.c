@@ -8400,8 +8400,37 @@ myman(void)
             }
         }
     } while (reinit_requested);
-    fprintf(stderr, "%s: scored %d points\n",
-            progname, score);
+    {
+        char score_buf[1024];
+
+        sprintf(score_buf,
+                "%s%s: scored %d points\n",
+                (strlen(progname) > 987) ? "..." : "",
+                (strlen(progname) > 987) ? (progname + strlen(progname) - 987) : progname,
+                score);
+        score_buf[1023] = '\0';
+        if ((fold_lower_case_to_upper_case == 1) || (fold_upper_case_to_lower_case == 1))
+        {
+            int score_idx;
+
+            for (score_idx = 0; score_buf[score_idx] != '\0'; ++score_idx)
+            {
+                char score_ch;
+
+                score_ch = score_buf[score_idx];
+                if ((fold_upper_case_to_lower_case == 1) && (score_ch >= 'A') && (score_ch <= 'Z'))
+                {
+                    score_ch = (score_ch - 'A') + 'a';
+                }
+                else if ((fold_lower_case_to_upper_case == 1) && (score_ch >= 'a') && (score_ch <= 'z'))
+                {
+                    score_ch = (score_ch - 'a') + 'A';
+                }
+                score_buf[score_idx] = score_ch;
+            }
+        }
+        fputs(score_buf, stderr);
+    }
 #ifdef XCURSES
     XCursesExit();
 #endif

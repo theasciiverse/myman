@@ -435,6 +435,14 @@
 #include "optcurs.h"
 #endif
 
+#ifndef USE_TIGETFLAG
+#ifdef NCURSES_VERSION
+#define USE_TIGETFLAG 1
+#else
+#define USE_TIGETFLAG 0
+#endif
+#endif
+
 #if defined(__NetBSD__) && defined(_CURSES_H_) && (! defined(MY_CURSES_H)) && (! defined(NCURSES_VERSION))
 #ifndef USE_NETBSD_CURSES
 #define USE_NETBSD_CURSES 1
@@ -8187,16 +8195,6 @@ myman(void)
 #endif
 #endif /* defined(PDC_BUILD) */
 
-#if USE_TERM_H
-            if (fold_upper_case_to_lower_case == -1)
-            {
-                fold_upper_case_to_lower_case = tigetflag("OTLC");
-            }
-            if (fold_lower_case_to_upper_case == -1)
-            {
-                fold_lower_case_to_upper_case = tigetflag("OTUC");
-            }
-#endif
             if (use_transparency)
             {
                 use_default_colors();
@@ -8213,6 +8211,16 @@ myman(void)
         }
 #endif /* ! defined(INITSCR_WITH_HINTS_AND_ARGS) */
 #endif /* ! defined(INITSCR_WITH_HINTS) */
+#if USE_TIGETFLAG
+        if (fold_upper_case_to_lower_case == -1)
+        {
+            fold_upper_case_to_lower_case = tigetflag("OTLC");
+        }
+        if (fold_lower_case_to_upper_case == -1)
+        {
+            fold_lower_case_to_upper_case = tigetflag("OTUC");
+        }
+#endif /* USE_TIGETFLAG */
         my_clear();
         cbreak();
         noecho();

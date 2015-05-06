@@ -2358,7 +2358,8 @@ smwoman \
 tinywomn \
 qwoman \
 avrpac4 \
-cpm86
+cpm86 \
+bas256
 
 all_sizes = \
 small \
@@ -4019,6 +4020,8 @@ lvl/babynes.asc \
 lvl/babynes.txt \
 lvl/babypac.asc \
 lvl/babypac.txt \
+lvl/bas256.asc \
+lvl/bas256.txt \
 lvl/bb.asc \
 lvl/bb.txt \
 lvl/big.asc \

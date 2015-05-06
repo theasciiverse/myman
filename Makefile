@@ -2357,7 +2357,8 @@ mywoman \
 smwoman \
 tinywomn \
 qwoman \
-avrpac4
+avrpac4 \
+cpm86
 
 all_sizes = \
 small \
@@ -4086,6 +4087,8 @@ lvl/cookie.asc \
 lvl/cookie.txt \
 lvl/cpcpac.asc \
 lvl/cpcpac.txt \
+lvl/cpm86.asc \
+lvl/cpm86.txt \
 lvl/crazyg.asc \
 lvl/crazyg.txt \
 lvl/crocky.asc \

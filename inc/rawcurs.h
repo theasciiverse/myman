@@ -1550,7 +1550,7 @@ static int rawcurses__wdefwin_getch(void)
 #endif
 
 #ifndef SWAPDOTS
-#define SWAPDOTS (! (rawcurses_stdio && rawcurses_stdio_acs && (rawcurses_stdio_atascii || (rawcurses_stdio_petscii && ! rawcurses_stdio_petscii_shifted) || (rawcurses_stdio_petscii_shifted && ((rawcurses_stdio_acs_c128 && rawcurses_w == 80) || (rawcurses_stdio_acs_c128 == 2)) && rawcurses_stdio_petscii_shifted) || rawcurses_stdio_acs_h19 || rawcurses_stdio_acs_wy60 || rawcurses_stdio_cp437 || rawcurses_stdio_cp850 || rawcurses_stdio_koi8r || rawcurses_stdio_koi8u || rawcurses_stdio_noswapdots)))
+#define SWAPDOTS (! (rawcurses_stdio && rawcurses_stdio_acs && (rawcurses_stdio_atascii || (rawcurses_stdio_petscii && ! rawcurses_stdio_petscii_shifted) || (rawcurses_stdio_petscii_shifted && ((rawcurses_stdio_acs_c128 && rawcurses_w == 80) || (rawcurses_stdio_acs_c128 == 2) || (rawcurses_stdio_acs_c128 == 3)) && rawcurses_stdio_petscii_shifted) || rawcurses_stdio_acs_h19 || rawcurses_stdio_acs_wy60 || rawcurses_stdio_cp437 || rawcurses_stdio_cp850 || rawcurses_stdio_koi8r || rawcurses_stdio_koi8u || rawcurses_stdio_noswapdots)))
 #endif
 
 #ifndef USE_RAW_UCS
@@ -2507,7 +2507,9 @@ RAWCURSES_GLOBAL(int rawcurses_stdio_nocuf, = 0);
 RAWCURSES_GLOBAL(int rawcurses_stdio_atascii, = 0);
 RAWCURSES_GLOBAL(int rawcurses_stdio_petscii, = 0);
 RAWCURSES_GLOBAL(int rawcurses_stdio_petscii_shifted, = 1);
+RAWCURSES_GLOBAL(int rawcurses_stdio_petscii_underlined, = -1);
 RAWCURSES_GLOBAL(int rawcurses_stdio_petscii_ac, = 0);
+RAWCURSES_GLOBAL(int rawcurses_stdio_petscii_ascii, = 0);
 RAWCURSES_GLOBAL(int rawcurses_stdio_petscii_shift_toggled, = 0);
 RAWCURSES_GLOBAL(int rawcurses_stdio_petscii_palette, = -1);
 RAWCURSES_GLOBAL(int rawcurses_stdio_petscii_bgcolor, = 0);
@@ -5273,10 +5275,12 @@ static int rawcurses_fput_sgr(FILE *fh, attr_t a, attr_t a_rgb)
             if (a & A_UNDERLINE)
             {
                 if (fputs("\002", fh) == EOF) return 0;
+                rawcurses_stdio_petscii_underlined = 1;
             }
-            else
+            else if (rawcurses_stdio_petscii_underlined)
             {
                 if (fputs("\202", fh) == EOF) return 0;
+                rawcurses_stdio_petscii_underlined = 0;
             }
         }
         return 1;
@@ -5950,6 +5954,36 @@ static chtype rawcurses_map_acs(chtype ch)
         case RAWCURSES__ACS_BHALF:
         case RAWCURSES__ACS_LHALF:
             return ch;
+        case ACS_BBDD:
+        case ACS_BBDS:
+        case ACS_BBSD:
+        case ACS_BDBD:
+        case ACS_BDDB:
+        case ACS_BDDD:
+        case ACS_BDSB:
+        case ACS_BDSD:
+        case ACS_BSDB:
+        case ACS_BSDS:
+        case ACS_DBBD:
+        case ACS_DBBS:
+        case ACS_DBDB:
+        case ACS_DBDD:
+        case ACS_DBDS:
+        case ACS_DDBB:
+        case ACS_DDBD:
+        case ACS_DDDB:
+        case ACS_DDDD:
+        case ACS_DSBB:
+        case ACS_DSBS:
+        case ACS_DSDB:
+        case ACS_DSDS:
+        case ACS_SBBD:
+        case ACS_SBSD:
+        case ACS_SDBB:
+        case ACS_SDBD:
+        case ACS_SDSB:
+        case ACS_SDSD:
+            return (rawcurses_stdio_acs_c128 == 3) ? ch : ERR;
         default:
             if ((ch == (chtype) ACS_ULCORNER) ||
                 (ch == (chtype) ACS_URCORNER) ||
@@ -5972,6 +6006,14 @@ static chtype rawcurses_map_acs(chtype ch)
             {
                 return ch;
             }
+#ifndef UNICODE
+            if ((rawcurses_stdio_acs_c128 == 3)
+                &&
+                ((ch == 0x7f) || ((ch >= 0xa0) && (ch <= 0xff))))
+            {
+                return ch;
+            }
+#endif
             return ERR;
         }
     }
@@ -8797,6 +8839,7 @@ static int initscrWithHints(int h, int w, const char *title, const char *shortna
             rawcurses_stdio_petscii = 1;
         }
     }
+    rawcurses_stdio_petscii_underlined = -1;
     if (rawcurses_getenv_boolean("RAWCURSES_PETSCII_SHIFTED"))
     {
         rawcurses_stdio_petscii_shifted = *(rawcurses_getenv_boolean("RAWCURSES_PETSCII_SHIFTED")) ? 1 : 0;
@@ -8833,6 +8876,30 @@ static int initscrWithHints(int h, int w, const char *title, const char *shortna
             rawcurses_stdio_petscii_ac = 1;
         }
     }
+    if (rawcurses_getenv_boolean("RAWCURSES_PETSCII_ASCII"))
+    {
+        rawcurses_stdio_petscii_ascii = *(rawcurses_getenv_boolean("RAWCURSES_PETSCII_ASCII")) ? 1 : 0;
+        if (myman_getenv("RAWCURSES_PETSCII_ASCII") && (atoi(myman_getenv("RAWCURSES_PETSCII_ASCII")) > 0))
+        {
+            rawcurses_stdio_petscii_ascii = atoi(myman_getenv("RAWCURSES_PETSCII_ASCII"));
+        }
+    }
+    else
+    {
+        /* 1: Striketerm 2014 VIC-II 80col, 2: Striketerm 2014 VDC */
+        rawcurses_stdio_petscii_ascii = 0;
+        if (RAWCURSES__HASFLAG(termType, "st2014"))
+        {
+            if (RAWCURSES__HASBASE(termType, "c64"))
+            {
+                rawcurses_stdio_petscii_ascii = 1;
+            }
+            else if (RAWCURSES__HASBASE(termType, "c128"))
+            {
+                rawcurses_stdio_petscii_ascii = 2;
+            }
+        }
+    }
     if (rawcurses_stdio_petscii_shift_toggled)
     {
         rawcurses_stdio_petscii_shifted = ! rawcurses_stdio_petscii_shifted;
@@ -8847,18 +8914,17 @@ static int initscrWithHints(int h, int w, const char *title, const char *shortna
     }
     else
     {
+        /* 0: no shifting, 1: VDC-if-80col, 2: C64TERM, 3: Novaterm 10 8033 */
         rawcurses_stdio_acs_c128 = 0;
-        if ((RAWCURSES__HASBASE(termType, "c128")
-             ||
-             RAWCURSES__EQ(termType, "commodore")
-             ||
-             RAWCURSES__EQ(termType, "b-128"))
+        if (RAWCURSES__HASBASE(termType, "c128")
             &&
             (! (RAWCURSES__HASFLAG(termType, "lc")
                 ||
                 RAWCURSES__HASFLAG(termType, "uc")
                 ||
                 RAWCURSES__HASFLAG(termType, "rgb")
+                ||
+                RAWCURSES__HASFLAG(termType, "st2014")
                 ||
                 RAWCURSES__HASFLAG(termType, "ruc"))))
         {
@@ -8867,6 +8933,14 @@ static int initscrWithHints(int h, int w, const char *title, const char *shortna
         else if (RAWCURSES__HASBASE(termType, "c64term"))
         {
             rawcurses_stdio_acs_c128 = 2;
+        }
+        else if (RAWCURSES__HASBASE(termType, "c64")
+                 &&
+                 RAWCURSES__HASFLAG(termType, "nt10")
+                 &&
+                 RAWCURSES__HASFLAG(termType, "80x32"))
+        {
+            rawcurses_stdio_acs_c128 = 3;
         }
     }
     if (myman_getenv("RAWCURSES_PETSCII_PALETTE") && *(myman_getenv("RAWCURSES_PETSCII_PALETTE")))
@@ -8886,7 +8960,7 @@ static int initscrWithHints(int h, int w, const char *title, const char *shortna
         {
             rawcurses_stdio_petscii_palette = 4;
         }
-        else if (RAWCURSES__HASFLAG(termType, "nt10"))
+        else if (RAWCURSES__HASFLAG(termType, "nt10") || RAWCURSES__HASFLAG(termType, "st2014"))
         {
             rawcurses_stdio_petscii_palette = 5;
         }
@@ -12986,6 +13060,16 @@ static int wctoa(chtype ch)
             {
                 return ch;
             }
+#ifndef UNICODE
+            if (rawcurses_stdio_petscii
+                &&
+                (rawcurses_stdio_acs_c128 == 3)
+                &&
+                ((ch == 0x7f) || ((ch >= 0xa0) && (ch <= 0xff))))
+            {
+                return ch;
+            }
+#endif /* ! defined(UNICODE) */
         }
     }
 #ifdef UNICODE
@@ -13228,7 +13312,7 @@ static int rawcurses_wcwidth(wchar_t wc)
     {
         defwidth = 1;
     }
-#endif /* UNICODE */
+#endif /* ! defined(UNICODE) */
     if (((chtype) wc) == (chtype) ACS_BULLET)
     {
         defwidth = 1;
@@ -13710,14 +13794,6 @@ static int addch(chtype ch)
                     switch_to_reverse = (acsch & A_REVERSE) ? 1 : 0;
                 }
             }
-            if (switch_to_reverse)
-            {
-                attrset(oattr ^ A_REVERSE);
-            }
-            if (switch_to_acs)
-            {
-                rawcurses_fput_smacs(stdout);
-            }
             if (rawcurses_stdio_petscii)
             {
                 if (((ch >= 'A') && ch <= 'Z')
@@ -13741,9 +13817,7 @@ static int addch(chtype ch)
                     int acs_shifted;
 
                     acs_shifted = rawcurses_stdio_petscii_shifted;
-                    if (rawcurses_stdio_petscii
-                        &&
-                        ((rawcurses_stdio_acs_c128
+                    if (((rawcurses_stdio_acs_c128
                           &&
                           (rawcurses_w == 80))
                          ||
@@ -13756,84 +13830,621 @@ static int addch(chtype ch)
                     switch (ch)
                     {
                     case '{':
-                        ch = '[';
+                        if (! rawcurses_stdio_petscii_ascii)
+                        {
+                            if (rawcurses_stdio_acs_c128 == 3)
+                            {
+                                switch_to_acs = rawcurses_stdio_petscii_shifted;
+                                ch = ((int) (unsigned) (my_uchar) '\251');
+                            }
+                            else
+                            {
+                                ch = '[';
+                            }
+                        }
                         break;
                     case '~':
-                        ch = (int) (unsigned) (my_uchar) (rawcurses_stdio_petscii_shifted ? '\243' : '\176');
+                        if (! rawcurses_stdio_petscii_ascii)
+                        {
+                            if (rawcurses_stdio_acs_c128 == 3)
+                            {
+                                switch_to_acs = rawcurses_stdio_petscii_shifted;
+                                ch = ((int) (unsigned) (my_uchar) '\372');
+                            }
+                            else
+                            {
+                                ch = (int) (unsigned) (my_uchar) (rawcurses_stdio_petscii_shifted ? '\243' : '\336');
+                            }
+                        }
                         break;
                     case '^':
-                        ch = ((int) (unsigned) (my_uchar) '\243');
+                        if (! (rawcurses_stdio_petscii_ascii || (rawcurses_stdio_acs_c128 == 3)))
+                        {
+                            ch = ((int) (unsigned) (my_uchar) '\243');
+                        }
                         break;
                     case '_':
-                        ch = ((int) (unsigned) (my_uchar) '\244');
+                        if (! (rawcurses_stdio_petscii_ascii || (rawcurses_stdio_acs_c128 == 3)))
+                        {
+                            ch = ((int) (unsigned) (my_uchar) '\244');
+                        }
                         break;
                     case '}':
-                        ch = ']';
+                        if (! rawcurses_stdio_petscii_ascii)
+                        {
+                            if (rawcurses_stdio_acs_c128 == 3)
+                            {
+                                switch_to_acs = rawcurses_stdio_petscii_shifted;
+                                ch = ((int) (unsigned) (my_uchar) '\377');
+                            }
+                            else
+                            {
+                                ch = ']';
+                            }
+                        }
                         break;
                     case '`':
-                        ch = rawcurses_stdio_petscii_shifted ? '\'' : '\152';
+                        if (! (rawcurses_stdio_petscii_ascii || (rawcurses_stdio_acs_c128 == 3)))
+                        {
+                            ch = rawcurses_stdio_petscii_shifted ? '\'' : (int) (unsigned) (my_uchar) '\312';
+                        }
                         break;
                     case '|':
+                        if (! rawcurses_stdio_petscii_ascii)
+                        {
+                            if (rawcurses_stdio_acs_c128 == 3)
+                            {
+                                switch_to_acs = rawcurses_stdio_petscii_shifted;
+                                ch = ((int) (unsigned) (my_uchar) '\337');
+                            }
+                            else
+                            {
+                                ch = (int) (unsigned) (my_uchar) '\335';
+                            }
+                        }
+                        break;
                     case ACS_VLINE:
-                        ch = '\175';
+                        if (rawcurses_stdio_acs_c128 == 3)
+                        {
+                            ch = ((int) (unsigned) (my_uchar) '\263');
+                        }
+                        else if (rawcurses_stdio_petscii_ascii == 2)
+                        {
+                            ch = '|';
+                        }
+                        else
+                        {
+                            ch = (int) (unsigned) (my_uchar) '\335';
+                        }
                         break;
                     case '\\':
-                        ch = (int) (unsigned) (my_uchar) (rawcurses_stdio_petscii_shifted ? '\277' : '\155');
+                        if (! (rawcurses_stdio_petscii_ascii || (rawcurses_stdio_acs_c128 == 3)))
+                        {
+                            ch = (int) (unsigned) (my_uchar) (rawcurses_stdio_petscii_shifted ? '\277' : '\315');
+                        }
                         break;
                     case ACS_BTEE:
-                        ch = ((int) (unsigned) (my_uchar) '\261');
+                        if (rawcurses_stdio_acs_c128 == 3)
+                        {
+                            switch_to_acs = rawcurses_stdio_petscii_shifted;
+                            ch = ((int) (unsigned) (my_uchar) '\301');
+                        }
+                        else
+                        {
+                            ch = ((int) (unsigned) (my_uchar) '\261');
+                        }
                         break;
                     case ACS_HLINE:
-                        ch = '\140';
+                        if (rawcurses_stdio_acs_c128 == 3)
+                        {
+                            switch_to_acs = rawcurses_stdio_petscii_shifted;
+                            ch = ((int) (unsigned) (my_uchar) '\304');
+                        }
+                        else if (rawcurses_stdio_petscii_ascii == 2)
+                        {
+                            ch = '-';
+                        }
+                        else
+                        {
+                            ch = (int) (unsigned) (my_uchar) '\300';
+                        }
                         break;
                     case ACS_LTEE:
-                        ch = ((int) (unsigned) (my_uchar) '\253');
+                        if (rawcurses_stdio_acs_c128 == 3)
+                        {
+                            switch_to_acs = rawcurses_stdio_petscii_shifted;
+                            ch = ((int) (unsigned) (my_uchar) '\303');
+                        }
+                        else
+                        {
+                            ch = ((int) (unsigned) (my_uchar) '\253');
+                        }
                         break;
                     case ACS_PLUS:
-                        ch = '\173';
+                        if (rawcurses_stdio_acs_c128 == 3)
+                        {
+                            switch_to_acs = rawcurses_stdio_petscii_shifted;
+                            ch = ((int) (unsigned) (my_uchar) '\305');
+                        }
+                        else if (rawcurses_stdio_petscii_ascii == 2)
+                        {
+                            ch = '+';
+                        }
+                        else
+                        {
+                            ch = (int) (unsigned) (my_uchar) '\333';
+                        }
                         break;
                     case ACS_RTEE:
-                        ch = ((int) (unsigned) (my_uchar) '\263');
+                        if (rawcurses_stdio_acs_c128 == 3)
+                        {
+                            switch_to_acs = rawcurses_stdio_petscii_shifted;
+                            ch = ((int) (unsigned) (my_uchar) '\264');
+                        }
+                        else
+                        {
+                            ch = ((int) (unsigned) (my_uchar) '\263');
+                        }
                         break;
                     case ACS_TTEE:
-                        ch = ((int) (unsigned) (my_uchar) '\262');
+                        if (rawcurses_stdio_acs_c128 == 3)
+                        {
+                            switch_to_acs = rawcurses_stdio_petscii_shifted;
+                            ch = ((int) (unsigned) (my_uchar) '\302');
+                        }
+                        else
+                        {
+                            ch = ((int) (unsigned) (my_uchar) '\262');
+                        }
                         break;
                     case RAWCURSES__ACS_BHALF:
-                        ch = ((int) (unsigned) (my_uchar) '\242');
+                        if (rawcurses_stdio_acs_c128 == 3)
+                        {
+                            ch = ((int) (unsigned) (my_uchar) '\334');
+                        }
+                        else
+                        {
+                            ch = ((int) (unsigned) (my_uchar) '\242');
+                        }
                         break;
                     case RAWCURSES__ACS_LHALF:
-                        ch = ((int) (unsigned) (my_uchar) '\241');
+                        if (rawcurses_stdio_acs_c128 == 3)
+                        {
+                            ch = ((int) (unsigned) (my_uchar) '\335');
+                        }
+                        else
+                        {
+                            ch = ((int) (unsigned) (my_uchar) '\241');
+                        }
                         break;
                     case ACS_CKBOARD:
-                        ch = ((int) (unsigned) (my_uchar) (acs_shifted ? '\176' : '\246'));
+                        if (rawcurses_stdio_acs_c128 == 3)
+                        {
+                            ch = ((int) (unsigned) (my_uchar) '\261');
+                        }
+                        else
+                        {
+                            ch = ((int) (unsigned) (my_uchar) (acs_shifted ? '\336' : '\246'));
+                        }
+                        break;
+                    case ACS_BBDD:
+                        if (rawcurses_stdio_acs_c128 == 3)
+                        {
+                            switch_to_acs = rawcurses_stdio_petscii_shifted;
+                            ch = 187;
+                        }
+                        else
+                        {
+                            ch = (int) (unsigned) (my_uchar) '\256';
+                        }
+                        break;
+                    case ACS_BBDS:
+                        if (rawcurses_stdio_acs_c128 == 3)
+                        {
+                            switch_to_acs = rawcurses_stdio_petscii_shifted;
+                            ch = 183;
+                        }
+                        else
+                        {
+                            ch = (int) (unsigned) (my_uchar) '\256';
+                        }
+                        break;
+                    case ACS_BBSD:
+                        if (rawcurses_stdio_acs_c128 == 3)
+                        {
+                            switch_to_acs = rawcurses_stdio_petscii_shifted;
+                            ch = 184;
+                        }
+                        else
+                        {
+                            ch = (int) (unsigned) (my_uchar) '\256';
+                        }
+                        break;
+                    case ACS_BDBD:
+                        if (rawcurses_stdio_acs_c128 == 3)
+                        {
+                            switch_to_acs = rawcurses_stdio_petscii_shifted;
+                            ch = 205;
+                        }
+                        else if (rawcurses_stdio_petscii_ascii == 2)
+                        {
+                            ch = '-';
+                        }
+                        else
+                        {
+                            ch = (int) (unsigned) (my_uchar) '\300';
+                        }
+                        break;
+                    case ACS_BDDB:
+                        if (rawcurses_stdio_acs_c128 == 3)
+                        {
+                            switch_to_acs = rawcurses_stdio_petscii_shifted;
+                            ch = 201;
+                        }
+                        else
+                        {
+                            ch = (int) (unsigned) (my_uchar) '\260';
+                        }
+                        break;
+                    case ACS_BDDD:
+                        if (rawcurses_stdio_acs_c128 == 3)
+                        {
+                            switch_to_acs = rawcurses_stdio_petscii_shifted;
+                            ch = 203;
+                        }
+                        else
+                        {
+                            ch = (int) (unsigned) (my_uchar) '\262';
+                        }
+                        break;
+                    case ACS_BDSB:
+                        if (rawcurses_stdio_acs_c128 == 3)
+                        {
+                            switch_to_acs = rawcurses_stdio_petscii_shifted;
+                            ch = 213;
+                        }
+                        else
+                        {
+                            ch = (int) (unsigned) (my_uchar) '\260';
+                        }
+                        break;
+                    case ACS_BDSD:
+                        if (rawcurses_stdio_acs_c128 == 3)
+                        {
+                            switch_to_acs = rawcurses_stdio_petscii_shifted;
+                            ch = 209;
+                        }
+                        else
+                        {
+                            ch = (int) (unsigned) (my_uchar) '\262';
+                        }
+                        break;
+                    case ACS_BSDB:
+                        if (rawcurses_stdio_acs_c128 == 3)
+                        {
+                            switch_to_acs = rawcurses_stdio_petscii_shifted;
+                            ch = 214;
+                        }
+                        else
+                        {
+                            ch = (int) (unsigned) (my_uchar) '\260';
+                        }
+                        break;
+                    case ACS_BSDS:
+                        if (rawcurses_stdio_acs_c128 == 3)
+                        {
+                            switch_to_acs = rawcurses_stdio_petscii_shifted;
+                            ch = 210;
+                        }
+                        else
+                        {
+                            ch = (int) (unsigned) (my_uchar) '\262';
+                        }
+                        break;
+                    case ACS_DBBD:
+                        if (rawcurses_stdio_acs_c128 == 3)
+                        {
+                            switch_to_acs = rawcurses_stdio_petscii_shifted;
+                            ch = 188;
+                        }
+                        else
+                        {
+                            ch = (int) (unsigned) (my_uchar) '\275';
+                        }
+                        break;
+                    case ACS_DBBS:
+                        if (rawcurses_stdio_acs_c128 == 3)
+                        {
+                            switch_to_acs = rawcurses_stdio_petscii_shifted;
+                            ch = 189;
+                        }
+                        else
+                        {
+                            ch = (int) (unsigned) (my_uchar) '\275';
+                        }
+                        break;
+                    case ACS_DBDB:
+                        if (rawcurses_stdio_acs_c128 == 3)
+                        {
+                            switch_to_acs = ! rawcurses_stdio_petscii_shifted;
+                            ch = 186;
+                        }
+                        else if (rawcurses_stdio_petscii_ascii == 2)
+                        {
+                            return '|';
+                        }
+                        else
+                        {
+                            ch = (int) (unsigned) (my_uchar) '\335';
+                        }
+                        break;
+                    case ACS_DBDD:
+                        if (rawcurses_stdio_acs_c128 == 3)
+                        {
+                            switch_to_acs = rawcurses_stdio_petscii_shifted;
+                            ch = 185;
+                        }
+                        else
+                        {
+                            ch = (int) (unsigned) (my_uchar) '\263';
+                        }
+                        break;
+                    case ACS_DBDS:
+                        if (rawcurses_stdio_acs_c128 == 3)
+                        {
+                            switch_to_acs = rawcurses_stdio_petscii_shifted;
+                            ch = 182;
+                        }
+                        else
+                        {
+                            ch = (int) (unsigned) (my_uchar) '\263';
+                        }
+                        break;
+                    case ACS_DDBB:
+                        if (rawcurses_stdio_acs_c128 == 3)
+                        {
+                            switch_to_acs = rawcurses_stdio_petscii_shifted;
+                            ch = 200;
+                        }
+                        else
+                        {
+                            ch = (int) (unsigned) (my_uchar) '\255';
+                        }
+                        break;
+                    case ACS_DDBD:
+                        if (rawcurses_stdio_acs_c128 == 3)
+                        {
+                            switch_to_acs = rawcurses_stdio_petscii_shifted;
+                            ch = 202;
+                        }
+                        else
+                        {
+                            ch = (int) (unsigned) (my_uchar) '\261';
+                        }
+                        break;
+                    case ACS_DDDB:
+                        if (rawcurses_stdio_acs_c128 == 3)
+                        {
+                            switch_to_acs = rawcurses_stdio_petscii_shifted;
+                            ch = 204;
+                        }
+                        else
+                        {
+                            ch = (int) (unsigned) (my_uchar) '\253';
+                        }
+                        break;
+                    case ACS_DDDD:
+                        if (rawcurses_stdio_acs_c128 == 3)
+                        {
+                            switch_to_acs = rawcurses_stdio_petscii_shifted;
+                            ch = 206;
+                        }
+                        else if (rawcurses_stdio_petscii_ascii == 2)
+                        {
+                            ch = '+';
+                        }
+                        else
+                        {
+                            ch = (int) (unsigned) (my_uchar) '\333';
+                        }
+                        break;
+                    case ACS_DSBB:
+                        if (rawcurses_stdio_acs_c128 == 3)
+                        {
+                            switch_to_acs = rawcurses_stdio_petscii_shifted;
+                            ch = 211;
+                        }
+                        else
+                        {
+                            ch = (int) (unsigned) (my_uchar) '\255';
+                        }
+                        break;
+                    case ACS_DSBS:
+                        if (rawcurses_stdio_acs_c128 == 3)
+                        {
+                            switch_to_acs = rawcurses_stdio_petscii_shifted;
+                            ch = 208;
+                        }
+                        else
+                        {
+                            ch = (int) (unsigned) (my_uchar) '\261';
+                        }
+                        break;
+                    case ACS_DSDB:
+                        if (rawcurses_stdio_acs_c128 == 3)
+                        {
+                            switch_to_acs = rawcurses_stdio_petscii_shifted;
+                            ch = 199;
+                        }
+                        else
+                        {
+                            ch = (int) (unsigned) (my_uchar) '\253';
+                        }
+                        break;
+                    case ACS_DSDS:
+                        if (rawcurses_stdio_acs_c128 == 3)
+                        {
+                            switch_to_acs = rawcurses_stdio_petscii_shifted;
+                            ch = 215;
+                        }
+                        else if (rawcurses_stdio_petscii_ascii == 2)
+                        {
+                            ch = '+';
+                        }
+                        else
+                        {
+                            ch = (int) (unsigned) (my_uchar) '\333';
+                        }
+                        break;
+                    case ACS_SBBD:
+                        if (rawcurses_stdio_acs_c128 == 3)
+                        {
+                            switch_to_acs = rawcurses_stdio_petscii_shifted;
+                            ch = 190;
+                        }
+                        else
+                        {
+                            ch = (int) (unsigned) (my_uchar) '\275';
+                        }
+                        break;
+                    case ACS_SBSD:
+                        if (rawcurses_stdio_acs_c128 == 3)
+                        {
+                            switch_to_acs = rawcurses_stdio_petscii_shifted;
+                            ch = 181;
+                        }
+                        else
+                        {
+                            ch = (int) (unsigned) (my_uchar) '\263';
+                        }
+                        break;
+                    case ACS_SDBB:
+                        if (rawcurses_stdio_acs_c128 == 3)
+                        {
+                            switch_to_acs = rawcurses_stdio_petscii_shifted;
+                            ch = 212;
+                        }
+                        else
+                        {
+                            ch = (int) (unsigned) (my_uchar) '\255';
+                        }
+                        break;
+                    case ACS_SDBD:
+                        if (rawcurses_stdio_acs_c128 == 3)
+                        {
+                            switch_to_acs = rawcurses_stdio_petscii_shifted;
+                            ch = 207;
+                        }
+                        else
+                        {
+                            ch = (int) (unsigned) (my_uchar) '\261';
+                        }
+                        break;
+                    case ACS_SDSB:
+                        if (rawcurses_stdio_acs_c128 == 3)
+                        {
+                            switch_to_acs = rawcurses_stdio_petscii_shifted;
+                            ch = 198;
+                        }
+                        else
+                        {
+                            ch = (int) (unsigned) (my_uchar) '\253';
+                        }
+                        break;
+                    case ACS_SDSD:
+                        if (rawcurses_stdio_acs_c128 == 3)
+                        {
+                            switch_to_acs = rawcurses_stdio_petscii_shifted;
+                            ch = 216;
+                        }
+                        else if (rawcurses_stdio_petscii_ascii == 2)
+                        {
+                            ch = '+';
+                        }
+                        else
+                        {
+                            ch = (int) (unsigned) (my_uchar) '\333';
+                        }
                         break;
                     default:
                         if (ch == (chtype) ACS_LLCORNER)
                         {
-                            ch = (int) (unsigned) (my_uchar) (acs_shifted ? '\255' : '\152');
+                            if (rawcurses_stdio_acs_c128 == 3)
+                            {
+                                ch = ((int) (unsigned) (my_uchar) '\300');
+                            }
+                            else
+                            {
+                                ch = (int) (unsigned) (my_uchar) (acs_shifted ? '\255' : '\312');
+                            }
                             break;
                         }
-                        if (ch == (chtype) ACS_LRCORNER)
+                        else if (ch == (chtype) ACS_LRCORNER)
                         {
-                            ch = (int) (unsigned) (my_uchar) (acs_shifted ? '\275' : '\153');
+                            if (rawcurses_stdio_acs_c128 == 3)
+                            {
+                                switch_to_acs = rawcurses_stdio_petscii_shifted;
+                                ch = ((int) (unsigned) (my_uchar) '\331');
+                            }
+                            else
+                            {
+                                ch = (int) (unsigned) (my_uchar) (acs_shifted ? '\275' : '\313');
+                            }
                             break;
                         }
-                        if (ch == (chtype) ACS_ULCORNER)
+                        else if (ch == (chtype) ACS_ULCORNER)
                         {
-                            ch = (int) (unsigned) (my_uchar) (acs_shifted ? '\260' : '\165');
+                            if (rawcurses_stdio_acs_c128 == 3)
+                            {
+                                switch_to_acs = rawcurses_stdio_petscii_shifted;
+                                ch = ((int) (unsigned) (my_uchar) '\332');
+                            }
+                            else
+                            {
+                                ch = (int) (unsigned) (my_uchar) (acs_shifted ? '\260' : '\325');
+                            }
                             break;
                         }
-                        if (ch == (chtype) ACS_URCORNER)
+                        else if (ch == (chtype) ACS_URCORNER)
                         {
-                            ch = (int) (unsigned) (my_uchar) (acs_shifted ? '\256' : '\151');
+                            if (rawcurses_stdio_acs_c128 == 3)
+                            {
+                                ch = ((int) (unsigned) (my_uchar) '\277');
+                            }
+                            else
+                            {
+                                ch = (int) (unsigned) (my_uchar) (acs_shifted ? '\256' : '\311');
+                            }
                             break;
                         }
-                        if ((! acs_shifted)
-                            &&
-                            (ch == (chtype) ACS_BULLET))
+                        else if (ch == (chtype) ACS_BULLET)
                         {
-                            ch = '\161';
+                            if (rawcurses_stdio_acs_c128 == 3)
+                            {
+                                ch = (int) (unsigned) (my_uchar) ((SWAPDOTS) ? '\371' : '\376');
+                            }
+                            else if ((! acs_shifted)
+                                     &&
+                                     (ch == (chtype) ACS_BULLET))
+                            {
+                                ch = (int) (unsigned) (my_uchar) '\321';
+                            }
+                            break;
                         }
+#ifndef UNICODE
+                        else if ((((ch >= 0xa0) && (ch <= 0xff)) || (ch == 0x7f)) && (rawcurses_stdio_acs_c128 == 3))
+                        {
+                            if ((ch == 0x7f) || (ch == 0xa9) || (ch == 0xe9) || (ch == 0xdf) || (ch == 0xde) || (ch == 0xff) || (ch == 0xba) || (ch == 0xfa))
+                            {
+                                switch_to_acs = ! rawcurses_stdio_petscii_shifted;
+                            }
+                            else
+                            {
+                                switch_to_acs = rawcurses_stdio_petscii_shifted;
+                            }
+                            break;
+                        }
+#endif
                     }
                 }
             }
@@ -13927,6 +14538,14 @@ static int addch(chtype ch)
                 {
                     ch ^= 0x80;
                 }
+            }
+            if (switch_to_reverse)
+            {
+                attrset(oattr ^ A_REVERSE);
+            }
+            if (switch_to_acs)
+            {
+                rawcurses_fput_smacs(stdout);
             }
 #if USE_CONIO
             if (rawcurses_stdio_conio)

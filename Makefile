@@ -2359,7 +2359,8 @@ tinywomn \
 qwoman \
 avrpac4 \
 cpm86 \
-bas256
+bas256 \
+msquik
 
 all_sizes = \
 small \
@@ -4385,6 +4386,8 @@ lvl/mspwlnx.asc \
 lvl/mspwlnx.txt \
 lvl/mspwlnx2.asc \
 lvl/mspwlnx2.txt \
+lvl/msquik.asc \
+lvl/msquik.txt \
 lvl/msreturn.asc \
 lvl/msreturn.txt \
 lvl/mssmall.asc \

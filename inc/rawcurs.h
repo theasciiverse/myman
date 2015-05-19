@@ -13811,6 +13811,10 @@ static int addch(chtype ch)
                     {
                         ch &= ~0x20;
                     }
+                    if ((ch >= 'a') && (ch <= 'z'))
+                    {
+                        ch = ch - 0x60 + 0xc0;
+                    }
                 }
                 else
                 {
@@ -15055,6 +15059,28 @@ static int clear(void)
         }
     }
     return erase();
+}
+
+#ifdef tigetflag
+#undef tigetflag
+#endif
+
+#define tigetflag(capname) rawcurses_tigetflag(capname)
+
+int rawcurses_tigetflag(const char *capname)
+{
+    if (RAWCURSES__EQ(capname, "OTLC"))
+    {
+        return rawcurses_stdio && rawcurses_stdio_petscii && rawcurses_stdio_petscii_shifted && ! rawcurses_stdio_petscii_ac;
+    }
+    else if (RAWCURSES__EQ(capname, "OTUC"))
+    {
+        return rawcurses_stdio && rawcurses_stdio_petscii && ! rawcurses_stdio_petscii_ac;
+    }
+    else
+    {
+        return -1;
+    }
 }
 
 #endif /* MYMAN_RAWCURS_H_INCLUDED */

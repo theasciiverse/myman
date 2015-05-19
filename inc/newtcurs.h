@@ -118,8 +118,8 @@ typedef unsigned long int chtype;
 
 typedef chtype attr_t;
 
-static unsigned long newtcurses_x = 0, newtcurses_y = 0, newtcurses_w = 0, newtcurses_h = 0;
-static unsigned long newtcurses_maxw = 0, newtcurses_maxh = 0;
+static long newtcurses_x = 0, newtcurses_y = 0, newtcurses_w = 0, newtcurses_h = 0;
+static long newtcurses_maxw = 0, newtcurses_maxh = 0;
 
 static attr_t newtcurses_attr = 0;
 

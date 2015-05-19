@@ -436,6 +436,12 @@
 #endif
 
 #ifndef USE_TIGETFLAG
+#ifdef tigetflag
+#define USE_TIGETFLAG 1
+#endif
+#endif
+
+#ifndef USE_TIGETFLAG
 #ifdef NCURSES_VERSION
 #define USE_TIGETFLAG 1
 #else

@@ -5800,6 +5800,14 @@ my_inner_addch(chtype c, int p)
         effective_c &= ~translated_attrs;
     }
 
+    if ((fold_upper_case_to_lower_case == 1) && (effective_c >= 'A') && (effective_c <= 'Z'))
+    {
+        effective_c = (effective_c - 'A') + 'a';
+    }
+    else if ((fold_lower_case_to_upper_case == 1) && (effective_c >= 'a') && (effective_c <= 'z'))
+    {
+        effective_c = (effective_c - 'a') + 'A';
+    }
     ret = addch(effective_c);
 
     if (effective_pen != p)
@@ -6083,14 +6091,6 @@ my_addch(my_ulong b, int p)
     int old_y, old_x;
     int new_y, new_x;
 
-    if ((fold_upper_case_to_lower_case == 1) && (b >= 'A') && (b <= 'Z'))
-    {
-        b = (b - 'A') + 'a';
-    }
-    else if ((fold_lower_case_to_upper_case == 1) && (b >= 'a') && (b <= 'z'))
-    {
-        b = (b - 'a') + 'A';
-    }
     if (use_bgspace && use_color)
     {
         if (b == (my_ulong) 219)
@@ -6209,6 +6209,14 @@ my_addch(my_ulong b, int p)
         {
             char buf[2];
             buf[0] = (char) (my_uchar) (b & 0xFF);
+            if ((fold_upper_case_to_lower_case == 1) && (buf[0] >= 'A') && (buf[0] <= 'Z'))
+            {
+                buf[0] = (buf[0] - 'A') + 'a';
+            }
+            else if ((fold_lower_case_to_upper_case == 1) && (buf[0] >= 'a') && (buf[0] <= 'z'))
+            {
+                buf[0] = (buf[0] - 'a') + 'A';
+            }
             buf[1] = '\0';
             ret = my_addstr_cp437(buf, CJK_MODE ? 2 : 1);
             getyx(stdscr, new_y, new_x);
@@ -6233,6 +6241,14 @@ my_addch(my_ulong b, int p)
                         my_real_attrset(my_attrs);
 #endif
 #endif /* USE_ATTR || USE_COLOR */
+                        if ((fold_upper_case_to_lower_case == 1) && (buf[0] >= 'A') && (buf[0] <= 'Z'))
+                        {
+                            buf[0] = (buf[0] - 'A') + 'a';
+                        }
+                        else if ((fold_lower_case_to_upper_case == 1) && (buf[0] >= 'a') && (buf[0] <= 'z'))
+                        {
+                            buf[0] = (buf[0] - 'a') + 'A';
+                        }
                         my_addstr_cp437(buf, 1);
                         move(old_y, old_x + 2);
                     }
@@ -6291,6 +6307,14 @@ my_addch(my_ulong b, int p)
                     }
                     else
                     {
+                        if ((fold_upper_case_to_lower_case == 1) && (my_wch >= 'A') && (my_wch <= 'Z'))
+                        {
+                            my_wch = (my_wch - 'A') + 'a';
+                        }
+                        else if ((fold_lower_case_to_upper_case == 1) && (my_wch >= 'a') && (my_wch <= 'z'))
+                        {
+                            my_wch = (my_wch - 'a') + 'A';
+                        }
                         ret = addnwstr(&my_wch, 1);
                         getyx(stdscr, new_y, new_x);
                         if ((old_x != new_x) || (old_y != new_y))
@@ -6314,6 +6338,14 @@ my_addch(my_ulong b, int p)
                                 if ((my_wcw + wcwrhs) == 2)
                                 {
                                     my_wcw += wcwrhs;
+                                    if ((fold_upper_case_to_lower_case == 1) && (wrhs >= 'A') && (wrhs <= 'Z'))
+                                    {
+                                        wrhs = (wrhs - 'A') + 'a';
+                                    }
+                                    else if ((fold_lower_case_to_upper_case == 1) && (wrhs >= 'a') && (wrhs <= 'z'))
+                                    {
+                                        wrhs = (wrhs - 'a') + 'A';
+                                    }
                                     addnwstr(&wrhs, 1);
                                 }
                                 else
@@ -6407,6 +6439,14 @@ my_addch(my_ulong b, int p)
 #endif
                         attr_set(my_current_attrs | my_acs_attrs);
 #endif
+                        if ((fold_upper_case_to_lower_case == 1) && (my_wchbuf[0] >= 'A') && (my_wchbuf[0] <= 'Z'))
+                        {
+                            my_wchbuf[0] = (my_wchbuf[0] - 'A') + 'a';
+                        }
+                        else if ((fold_lower_case_to_upper_case == 1) && (my_wchbuf[0] >= 'a') && (my_wchbuf[0] <= 'z'))
+                        {
+                            my_wchbuf[0] = (my_wchbuf[0] - 'a') + 'A';
+                        }
                         ret = addnwstr(
                             my_wchbuf,
                             my_len);
@@ -6456,6 +6496,14 @@ my_addch(my_ulong b, int p)
 #else
                                         attr_set(my_current_attrs | my_acs_attrs);
 #endif
+                                        if ((fold_upper_case_to_lower_case == 1) && (my_wchbuf[0] >= 'A') && (my_wchbuf[0] <= 'Z'))
+                                        {
+                                            my_wchbuf[0] = (my_wchbuf[0] - 'A') + 'a';
+                                        }
+                                        else if ((fold_lower_case_to_upper_case == 1) && (my_wchbuf[0] >= 'a') && (my_wchbuf[0] <= 'z'))
+                                        {
+                                            my_wchbuf[0] = (my_wchbuf[0] - 'a') + 'A';
+                                        }
                                         addnwstr(
                                             my_wchbuf,
                                             my_len);

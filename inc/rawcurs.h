@@ -5988,20 +5988,7 @@ static chtype rawcurses_map_acs(chtype ch)
             if ((ch == (chtype) ACS_ULCORNER) ||
                 (ch == (chtype) ACS_URCORNER) ||
                 (ch == (chtype) ACS_LLCORNER) ||
-                (ch == (chtype) ACS_LRCORNER))
-            {
-                return ch;
-            }
-            if (((((rawcurses_stdio_acs_c128
-                    &&
-                    (rawcurses_w == 80))
-                   ||
-                   (rawcurses_stdio_acs_c128 == 2))
-                  &&
-                  rawcurses_stdio_petscii_shifted)
-                 ||
-                 (! rawcurses_stdio_petscii_shifted))
-                &&
+                (ch == (chtype) ACS_LRCORNER) ||
                 (ch == (chtype) ACS_BULLET))
             {
                 return ch;
@@ -13159,7 +13146,11 @@ static int wctoa(chtype ch)
             return wctoa(ACS_BULLET);
         }
     case (chtype) 0x2022U:
-        ch = 'o';
+        ch = '1';//'o';
+        if (rawcurses_stdio && rawcurses_stdio_petscii && ! rawcurses_stdio_petscii_ac)
+        {
+            ch = '2';//'O';
+        }
         break;
     case (chtype) 0x30fbU:
         if (SWAPDOTS) {
@@ -13191,7 +13182,14 @@ static int wctoa(chtype ch)
         }
         if (ch == (chtype) ACS_BULLET)
         {
-            ch = ((SWAPDOTS) ? '.' : 'o');
+            ch = ((SWAPDOTS) ? '.' : '3');//'o');
+            if (ch == '3')//'o')
+            {
+                if (rawcurses_stdio && rawcurses_stdio_petscii && ! rawcurses_stdio_petscii_ac)
+                {
+                    ch = '4';//'O';
+                }
+            }
         }
 #ifdef UNICODE
         else if ((ch >= 0xff01)
@@ -13800,18 +13798,11 @@ static int addch(chtype ch)
                     ||
                     ((ch >= 'a') && ch <= 'z'))
                 {
-                    if (rawcurses_stdio_petscii_shifted)
-                    {
-                        if (! rawcurses_stdio_petscii_ac)
-                        {
-                            ch ^= 0x20;
-                        }
-                    }
-                    else
+                    if (! rawcurses_stdio_petscii_shifted)
                     {
                         ch &= ~0x20;
                     }
-                    if ((ch >= 'a') && (ch <= 'z'))
+                    else if ((ch >= 'a') && (ch <= 'z'))
                     {
                         ch = ch - 0x60 + 0xc0;
                     }
@@ -14427,11 +14418,13 @@ static int addch(chtype ch)
                             {
                                 ch = (int) (unsigned) (my_uchar) ((SWAPDOTS) ? '\371' : '\376');
                             }
-                            else if ((! acs_shifted)
-                                     &&
-                                     (ch == (chtype) ACS_BULLET))
+                            else if (! acs_shifted)
                             {
                                 ch = (int) (unsigned) (my_uchar) '\321';
+                            }
+                            else
+                            {
+                                ch = (int) (unsigned) (my_uchar) ((SWAPDOTS) ? '.' : ((rawcurses_stdio_petscii_ac ? '\317' : '5')));//'O')));
                             }
                             break;
                         }

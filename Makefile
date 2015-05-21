@@ -2360,7 +2360,9 @@ qwoman \
 avrpac4 \
 cpm86 \
 bas256 \
-msquik
+msquik \
+daiman \
+daiman2
 
 all_sizes = \
 small \
@@ -4111,6 +4113,10 @@ lvl/cupcake.asc \
 lvl/cupcake.txt \
 lvl/dacman.asc \
 lvl/dacman.txt \
+lvl/daiman.asc \
+lvl/daiman.txt \
+lvl/daiman2.asc \
+lvl/daiman2.txt \
 lvl/deluxe.asc \
 lvl/deluxe.txt \
 lvl/deluxe2.asc \

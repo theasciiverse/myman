@@ -1,10 +1,9 @@
-﻿1 19x27 \
+﻿1 19x27 ABOUT="Inspired by Dialog Informatique's 'Daiman' for the DAI personal computer (maze rotated)" \
  CHERO=9.5  RHERO=19.5 DIRHERO=DOWN \
 CFRUIT=9.5 RFRUIT=17.5 \
 CGHOST=9.5 RGHOST=13.5 COGHOST=2 ROGHOST=2 RTOP=12.5 \
   CMSG=4     RMSG=26 \
- CMSG2=4    RMSG2=0 \
-ABOUT="Inspired by Dialog Informatique's 'Daiman' for the DAI personal computer (maze rotated)"
+ CMSG2=4    RMSG2=0
 ╔═══════╗ ╔═══════╗
 ║· · · ·║ ║· · · ·║
 ║■╞═══╗ ╚═╝ ╔═══╡■║

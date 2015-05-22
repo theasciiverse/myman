@@ -12,7 +12,7 @@
 # alias myman='~/path/to/myman-sources/smallman -DRAWCURSES_{UTF8,WCWIDTH=-1}'
 
 rm -f smallman
-CC=gcc
+CC=gcc\ -v
 
 # This works around some oddness on i686.
 if [[ :"$NACL_ARCH" = :i686 && ${#LIBRARY_PATH32} != 0 ]]; then

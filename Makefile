@@ -2362,7 +2362,8 @@ cpm86 \
 bas256 \
 msquik \
 daiman \
-daiman2
+daiman2 \
+chomp2
 
 all_sizes = \
 small \
@@ -4067,6 +4068,8 @@ lvl/chicky.asc \
 lvl/chicky.txt \
 lvl/chomp.asc \
 lvl/chomp.txt \
+lvl/chomp2.asc \
+lvl/chomp2.txt \
 lvl/chomper.asc \
 lvl/chomper.txt \
 lvl/chomper2.asc \

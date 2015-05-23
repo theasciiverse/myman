@@ -13146,10 +13146,10 @@ static int wctoa(chtype ch)
             return wctoa(ACS_BULLET);
         }
     case (chtype) 0x2022U:
-        ch = '1';//'o';
+        ch = 'o';
         if (rawcurses_stdio && rawcurses_stdio_petscii && ! rawcurses_stdio_petscii_ac)
         {
-            ch = '2';//'O';
+            ch = 'O';
         }
         break;
     case (chtype) 0x30fbU:
@@ -13182,12 +13182,12 @@ static int wctoa(chtype ch)
         }
         if (ch == (chtype) ACS_BULLET)
         {
-            ch = ((SWAPDOTS) ? '.' : '3');//'o');
-            if (ch == '3')//'o')
+            ch = ((SWAPDOTS) ? '.' : 'o');
+            if (ch == 'o')
             {
                 if (rawcurses_stdio && rawcurses_stdio_petscii && ! rawcurses_stdio_petscii_ac)
                 {
-                    ch = '4';//'O';
+                    ch = 'O';
                 }
             }
         }
@@ -14424,7 +14424,7 @@ static int addch(chtype ch)
                             }
                             else
                             {
-                                ch = (int) (unsigned) (my_uchar) ((SWAPDOTS) ? '.' : ((rawcurses_stdio_petscii_ac ? '\317' : '5')));//'O')));
+                                ch = (int) (unsigned) (my_uchar) ((SWAPDOTS) ? '.' : ((rawcurses_stdio_petscii_ac ? '\317' : 'O')));
                             }
                             break;
                         }

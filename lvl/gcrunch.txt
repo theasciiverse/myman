@@ -1,4 +1,4 @@
-﻿1 61x62~8 ABOUT="Inspired by 'Ghost Cruncher' for the Compucolor II" \
+﻿1 61x62~8 ABOUT="Inspired by Guy Larri's 'Ghost Cruncher' for the Compucolor II" \
   RTOP=26.5 \
 RGHOST=28.5 CGHOST=30 ROGHOST=2 COGHOST=2.5 \
 RFRUIT=34.5 CFRUIT=30 \

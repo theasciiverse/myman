@@ -2364,7 +2364,8 @@ msquik \
 daiman \
 daiman2 \
 chomp2 \
-gcrunch
+gcrunch \
+gcrunch2
 
 all_sizes = \
 small \
@@ -4155,6 +4156,8 @@ lvl/gbapac.asc \
 lvl/gbapac.txt \
 lvl/gcrunch.asc \
 lvl/gcrunch.txt \
+lvl/gcrunch2.asc \
+lvl/gcrunch2.txt \
 lvl/ghost.asc \
 lvl/ghost.txt \
 lvl/ghost2.asc \

@@ -6116,7 +6116,7 @@ my_addch(my_ulong b, int p)
     {
         if (b == (my_ulong) 219)
         {
-            if (((p / 16) != (p % 16)) ? (p % 16) : (p & MY_PEN_REVERSE))
+            if (((p / 16) != (p % 16)) ? (p % 16) : ! (p & MY_PEN_REVERSE))
             {
                 p = ((p / 16) != (p % 16)) ? ((p % 16) * 16) : MY_PEN_REVERSE;
             }

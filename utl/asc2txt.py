@@ -596,14 +596,14 @@ def main(argv, envp, stdin, stdout, stderr):
             ch1 = rows[h - 1][col]
             ch2 = rows[0][col]
             if (col in xrange(1, w - 1)) and (ch1 in u' ' and ch2 in u' '):
-                northwest = rows[h - 1][col - 1] in u'+|l'
-                northeast = rows[h - 1][col + 1] in u'+|l'
-                southwest = rows[0][col - 1] in u'+|l'
-                southeast = rows[0][col + 1] in u'+|l'
+                northwest = rows[h - 1][col - 1] in u'+|l$'
+                northeast = rows[h - 1][col + 1] in u'+|l$'
+                southwest = rows[0][col - 1] in u'+|l$'
+                southeast = rows[0][col + 1] in u'+|l$'
                 if northeast and northwest and southeast and southwest:
                     if find_dots(dots, h - 1, col) and find_dots(dots, 0, col):
                         rows[h] = rows[h][:col][:-1] + u'| |' + rows[h][(col + 2):]
-            elif ch1 in u'|l' or ch2 in u'|l':
+            elif ch1 in u'|l$' or ch2 in u'|l$':
                 rows[h] = rows[h][:col] + u'|' + rows[h][col + 1:]
         tritmap = []
         orows = []
@@ -621,8 +621,8 @@ def main(argv, envp, stdin, stdout, stderr):
                 ch = rows[row][col]
                 trits = [ [ -1, -1, -1 ], [ -1, -1, -1 ], [ -1, -1, -1 ] ]
                 if ch in u'+':
-                    north = rows[(row - 1 + len(rows)) % len(rows)][col] in u'|l+'
-                    south = rows[(row + 1) % len(rows)][col] in u'|l+'
+                    north = rows[(row - 1 + len(rows)) % len(rows)][col] in u'|l$+'
+                    south = rows[(row + 1) % len(rows)][col] in u'|l$+'
                     east = rows[row][(col + 1) % len(rows[row])] in u'-~=+'
                     west = rows[row][(col - 1 + len(rows[row])) % len(rows[row])] in u'-~=+'
                     trits = [ [ 0, north, 0 ], [ west, 1, east ], [ 0, south, 0 ] ]
@@ -636,13 +636,13 @@ def main(argv, envp, stdin, stdout, stderr):
                 elif ch in u' ' or (ch >= u'A' and ch <= u'Z'):
                     trits = [ [ 0, 0, 0 ], [ 0, 0, 0 ], [ 0, 0, 0 ] ]
                 elif ch in u'-':
-                    north = rows[(row - 1 + len(rows)) % len(rows)][col] in u'|l'
-                    south = rows[(row + 1) % len(rows)][col] in u'|l'
+                    north = rows[(row - 1 + len(rows)) % len(rows)][col] in u'|l$'
+                    south = rows[(row + 1) % len(rows)][col] in u'|l$'
                     ch = boxmap[thickness][16 + 2 * north + south]
                     trits = [ [ 0, north, 0 ], [ 1, 1, 1 ], [ 0, south, 0 ] ]
                 elif ch in u'~':
-                    north = rows[(row - 1 + len(rows)) % len(rows)][col] in u'|l'
-                    south = rows[(row + 1) % len(rows)][col] in u'|l'
+                    north = rows[(row - 1 + len(rows)) % len(rows)][col] in u'|l$'
+                    south = rows[(row + 1) % len(rows)][col] in u'|l$'
                     trits = [ [ 0, north, 0 ], [ 1, 1, 1 ], [ 0, south, 0 ] ]
                 elif ch in u'|':
                     east = rows[row][(col + 1) % len(rows[row])] in u'-~='
@@ -655,6 +655,8 @@ def main(argv, envp, stdin, stdout, stderr):
                     trits = [ [ 0, 1, 0 ], [ west, 1, east ], [ 0, 1, 0 ] ]
                 elif ch in u'=':
                     ch = u'\u2261'
+                elif ch in u'$':
+                    ch = u'\u203C'
                 elif ch in u':':
                     ch = u'\u00A0'
                 elif ch in u'.':
@@ -700,8 +702,8 @@ def main(argv, envp, stdin, stdout, stderr):
                 code = 27 * tritmap[row * 3][col * 3] + 9 * tritmap[row * 3][col * 3 + 2] + 3 * tritmap[row * 3 + 2][col * 3] + tritmap[row * 3 + 2][col * 3 + 2]
                 ch = rewrite_ternary[thickness].get(code, {}).get(ch, ch)
                 mask, och = fixup[thickness].get(ich, {}).get(ch, (0, ch))
-                north = orows[(row - 1 + len(orows)) % len(orows)][col] in u'|l'
-                south = orows[(row + 1) % len(orows)][col] in u'|l'
+                north = orows[(row - 1 + len(orows)) % len(orows)][col] in u'|l$'
+                south = orows[(row + 1) % len(orows)][col] in u'|l$'
                 east = orows[row][(col + 1) % len(orows[row])] in u'-~='
                 west = orows[row][(col - 1 + len(orows[row])) % len(orows[row])] in u'-~='
                 if (mask & (8 * north + 4 * south + 2 * east + west)) == mask:

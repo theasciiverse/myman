@@ -27,8 +27,14 @@
 # CP437 repertoire with a few modifications for maze file
 # transformation
 
-exec sed '
-s/¡\|‼/!/g;
+export LC_ALL=C
+sed=sed
+if type -p gsed >/dev/null 2>&1; then
+    sed=gsed
+fi
+exec $sed '
+s/¡/!/g;
+s/‼/$/g;
 s/▀/"/g;
 s/█\|▌\|▐\|░\|▒/#/g;
 s/¼\|½/%/g;

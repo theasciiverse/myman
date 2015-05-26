@@ -1,4 +1,11 @@
-﻿1 32x22 READY="READY!!" GAMEOVER="THE END" PLAYER1="PLAYER1" PLAYER2="PLAYER2" RGHOST=11.5 ROGHOST=1 RFRUIT=13.5 RHERO=16.5 RMSG=10 CMSG=25 RMSG2=10 CMSG2=0 ABOUT="Inspired by Abersoft's 'Mazeman' ZX Spectrum game"
+﻿1 32x22 ABOUT="Inspired by Abersoft's 'Mazeman' ZX Spectrum game" \
+  RTOP=9.5 \
+RGHOST=11.5 CGHOST=16 ROGHOST=1 COGHOST=2.5 \
+RFRUIT=13.5 CFRUIT=16 \
+ RHERO=16.5  CHERO=16 \
+  RMSG=10     CMSG=25 \
+ RMSG2=10    CMSG2=0 \
+READY="READY!!" GAMEOVER="THE END" PLAYER1="PLAYER1" PLAYER2="PLAYER2"
 ╔══════════════╗╔══════════════╗
 ║··············║║··············║
 ║·╔═══╗·╔════╗·║║·╔════╗·╔═══╗·║
@@ -7,11 +14,11 @@
 ║·╞═══╡·╥·╞════╗╔════╡·╥·╞═══╡·║
 ║·······║······║║······║·······║
 ╚═════╗·╠════╡·╚╝·╞════╣·╔═════╝
-      ║·║··············║·║      
+      ║·║···· ·········║·║      
 ══════╝·╨·╔═≡≡≡≡≡≡≡≡═╗·╨·╚══════
        ···║          ║···       
 ══════╗·╥·║          ║·╥·╔══════
-      ║·║·╚══════════╝·║·║      
+      ║·║·╚══════════╝·║·║      
 ╔═════╝·║··············║·╚═════╗
 ║·······║╔═╡·╞═╗╔═╡·╞═╗║·······║
 ║·╞╗·╞╡·╚╝·····╚╝·····╚╝·╞╡·╔╡·║

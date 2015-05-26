@@ -2365,7 +2365,8 @@ daiman \
 daiman2 \
 chomp2 \
 gcrunch \
-gcrunch2
+gcrunch2 \
+chomp3
 
 all_sizes = \
 small \
@@ -4072,6 +4073,8 @@ lvl/chomp.asc \
 lvl/chomp.txt \
 lvl/chomp2.asc \
 lvl/chomp2.txt \
+lvl/chomp3.asc \
+lvl/chomp3.txt \
 lvl/chomper.asc \
 lvl/chomper.txt \
 lvl/chomper2.asc \

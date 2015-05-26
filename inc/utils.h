@@ -109,7 +109,7 @@ extern const char *DONEMESSAGE;
 #define ISZAPUP(c) ((c) == '^')
 #define ISZAPDOWN(c) ((c) == 'v')
 #define ISOPEN(c) (((c) == ' ') || ISDOT(c) || ISPELLET(c) || ((c) == '!') || (((c) >= 'A') && ((c) <= 'Z')) || ((c) == 'l') || ((c) == '~') || ISZAPRIGHT(c) || ISZAPLEFT(c) || ISZAPUP(c) || ISZAPDOWN(c))
-#define ISDOOR(c) (((c) == '=') || (c == ':') || ((c) == 240) || (c == 255))
+#define ISDOOR(c) (((c) == 19) || ((c) == '$') || ((c) == '=') || (c == ':') || ((c) == 240) || (c == 255))
 
 #define ISWALLCENTER(c) ((((unsigned) (my_uchar) (char) (c)) == 0x07) || (((unsigned) (my_uchar) (char) (c)) == 0x12) || (((unsigned) (my_uchar) (char) (c)) == 0x1d) || (((unsigned) (my_uchar) (char) (c)) == 0x3c) || (((unsigned) (my_uchar) (char) (c)) == 0x3e) || (((unsigned) (my_uchar) (char) (c)) == 0x5e) || (((unsigned) (my_uchar) (char) (c)) == 0x76) || (((unsigned) (my_uchar) (char) (c)) == 0xae) || (((unsigned) (my_uchar) (char) (c)) == 0xaf))
 #define ISWALLUP(c) (((unsigned) udlr[(my_uint) (my_uchar) (c)]) & 0xc0)

@@ -2366,7 +2366,8 @@ daiman2 \
 chomp2 \
 gcrunch \
 gcrunch2 \
-chomp3
+chomp3 \
+pac4k
 
 all_sizes = \
 small \
@@ -4479,6 +4480,8 @@ lvl/pac49.asc \
 lvl/pac49.txt \
 lvl/pac4a.asc \
 lvl/pac4a.txt \
+lvl/pac4k.asc \
+lvl/pac4k.txt \
 lvl/pac6001.asc \
 lvl/pac6001.txt \
 lvl/pac64.asc \

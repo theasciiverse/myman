@@ -2367,7 +2367,8 @@ chomp2 \
 gcrunch \
 gcrunch2 \
 chomp3 \
-pac4k
+pac4k \
+funzy
 
 all_sizes = \
 small \
@@ -4154,6 +4155,8 @@ lvl/fhmcpac.asc \
 lvl/fhmcpac.txt \
 lvl/full188.asc \
 lvl/full188.txt \
+lvl/funzy.asc \
+lvl/funzy.txt \
 lvl/gag.asc \
 lvl/gag.txt \
 lvl/gbapac.asc \

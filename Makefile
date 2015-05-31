@@ -2368,7 +2368,9 @@ gcrunch \
 gcrunch2 \
 chomp3 \
 pac4k \
-funzy
+funzy \
+msintv \
+msintv2
 
 all_sizes = \
 small \
@@ -4359,6 +4361,10 @@ lvl/mscrozza.asc \
 lvl/mscrozza.txt \
 lvl/mshack.asc \
 lvl/mshack.txt \
+lvl/msintv.asc \
+lvl/msintv.txt \
+lvl/msintv2.asc \
+lvl/msintv2.txt \
 lvl/mslim.asc \
 lvl/mslim.txt \
 lvl/mspac20.asc \

@@ -2377,7 +2377,9 @@ pac8001b \
 pac8001c \
 pac8001d \
 pac8001e \
-pc88
+pc88 \
+pc88b \
+pac68
 
 all_sizes = \
 small \
@@ -4506,6 +4508,8 @@ lvl/pac6001.asc \
 lvl/pac6001.txt \
 lvl/pac64.asc \
 lvl/pac64.txt \
+lvl/pac68.asc \
+lvl/pac68.txt \
 lvl/pac700.asc \
 lvl/pac700.txt \
 lvl/pac78.asc \
@@ -4646,6 +4650,8 @@ lvl/pc8001.asc \
 lvl/pc8001.txt \
 lvl/pc88.asc \
 lvl/pc88.txt \
+lvl/pc88b.asc \
+lvl/pc88b.txt \
 lvl/pcman.asc \
 lvl/pcman.txt \
 lvl/pcman2.asc \

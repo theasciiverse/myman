@@ -2376,7 +2376,8 @@ bubcom80 \
 pac8001b \
 pac8001c \
 pac8001d \
-pac8001e
+pac8001e \
+pc88
 
 all_sizes = \
 small \
@@ -4643,6 +4644,8 @@ lvl/patuman.asc \
 lvl/patuman.txt \
 lvl/pc8001.asc \
 lvl/pc8001.txt \
+lvl/pc88.asc \
+lvl/pc88.txt \
 lvl/pcman.asc \
 lvl/pcman.txt \
 lvl/pcman2.asc \

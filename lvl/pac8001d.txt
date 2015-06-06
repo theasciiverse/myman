@@ -4,7 +4,11 @@ RGHOST=15.5 CGHOST=11.5 ROGHOST=0 COGHOST=0 \
 RFRUIT=18.5 CFRUIT=11.5 \
  RHERO=24.5  CHERO=11.5 \
   RMSG=19     CMSG=8 \
- RMSG2=12    CMSG2=8
+ RMSG2=12    CMSG2=8 \
+   READY="  READY! " \
+ PLAYER1=" PLAYER 1" \
+ PLAYER2=" PLAYER 2" \
+GAMEOVER="GAME OVER"
 ╔═══════════╦═══════════╗
 ║           ║           ║
 ║·········· ║·········· ║

@@ -2370,7 +2370,8 @@ chomp3 \
 pac4k \
 funzy \
 msintv \
-msintv2
+msintv2 \
+gobbleds
 
 all_sizes = \
 small \
@@ -4189,6 +4190,8 @@ lvl/gobble2.asc \
 lvl/gobble2.txt \
 lvl/gobbleag.asc \
 lvl/gobbleag.txt \
+lvl/gobbleds.asc \
+lvl/gobbleds.txt \
 lvl/gobblemn.asc \
 lvl/gobblemn.txt \
 lvl/gobbler.asc \

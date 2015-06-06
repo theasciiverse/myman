@@ -486,9 +486,15 @@ monsterscared(int s, int blue, int dir0, int *dirp1, int dir2)
             sprite_register_x[blue] = XPIXWRAP(x + XDIR((*dirp1)));
         if ((gfx_reflect && ! MYMANSQUARE) ? 1 : (cycles & 2))
             sprite_register_y[blue] = YPIXWRAP(y + YDIR((*dirp1)));
-        k = (s % ghosts*maze_h[maze_level]+YTILE(sprite_register_y[blue]))*(maze_w[maze_level]+1)+XTILE(sprite_register_x[blue]);
-        if (! (unsigned) home_dir[k])
-            home_dir[k] = DIRWRAP((*dirp1) + 2);
+        for (qx = 0; qx < (QUAD_DOTS ? 2 : 1); qx ++)
+        {
+            for (qy = 0; qy < (QUAD_DOTS ? 2 : 1); qy ++)
+            {
+                k = (s % ghosts*maze_h[maze_level]+YTILE(sprite_register_y[blue] + qy))*(maze_w[maze_level]+1)+XTILE(sprite_register_x[blue] + qx);
+                if (! (unsigned) home_dir[k])
+                    home_dir[k] = DIRWRAP((*dirp1) + 2);
+            }
+        }
     }
 }
 
@@ -652,9 +658,15 @@ monsterhunting(int s, int eyes, int mean, int dir0, int *dirp1, int dir2)
         sprite_register_x[mean] = (sprite_register_x[eyes] = XPIXWRAP(x + XDIR((*dirp1))));
     if ((gfx_reflect && ! MYMANSQUARE) ? 1 : (cycles & 1))
         sprite_register_y[mean] = (sprite_register_y[eyes] = YPIXWRAP(y + YDIR((*dirp1))));
-    k = (s % ghosts*maze_h[maze_level]+YTILE(sprite_register_y[mean]))*(maze_w[maze_level]+1)+XTILE(sprite_register_x[mean]);
-    if (! (unsigned) home_dir[k])
-        home_dir[k] = DIRWRAP((*dirp1) + 2);
+    for (qx = 0; qx < (QUAD_DOTS ? 2 : 1); qx ++)
+    {
+        for (qy = 0; qy < (QUAD_DOTS ? 2 : 1); qy ++)
+        {
+            k = (s % ghosts*maze_h[maze_level]+YTILE(sprite_register_y[mean] + qy))*(maze_w[maze_level]+1)+XTILE(sprite_register_x[mean] + qx);
+            if (! (unsigned) home_dir[k])
+                home_dir[k] = DIRWRAP((*dirp1) + 2);
+        }
+    }
 }
 
 static int
@@ -757,9 +769,15 @@ monsterhome(int s, int eyes, int mean, int dir0, int *dirp1, int dir2)
     sprite_register_x[mean] = (sprite_register_x[eyes] = XPIXWRAP(x + XDIR((*dirp1))));
     sprite_register_x[eyes] = XPIXWRAP(x + XDIR((*dirp1)));
     sprite_register_y[eyes] = YPIXWRAP(y + YDIR((*dirp1)));
-    k = (s % ghosts*maze_h[maze_level]+YTILE(sprite_register_y[eyes]))*(maze_w[maze_level]+1)+XTILE(sprite_register_x[eyes]);
-    if (! (unsigned) home_dir[k])
-        home_dir[k] = DIRWRAP((*dirp1) + 2);
+    for (qx = 0; qx < (QUAD_DOTS ? 2 : 1); qx ++)
+    {
+        for (qy = 0; qy < (QUAD_DOTS ? 2 : 1); qy ++)
+        {
+            k = (s % ghosts*maze_h[maze_level]+YTILE(sprite_register_y[eyes] + qy))*(maze_w[maze_level]+1)+XTILE(sprite_register_x[eyes] + qx);
+            if (! (unsigned) home_dir[k])
+                home_dir[k] = DIRWRAP((*dirp1) + 2);
+        }
+    }
     return 0;
 }
 

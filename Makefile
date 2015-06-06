@@ -2372,7 +2372,11 @@ funzy \
 msintv \
 msintv2 \
 gobbleds \
-bubcom80
+bubcom80 \
+pac8001b \
+pac8001c \
+pac8001d \
+pac8001e
 
 all_sizes = \
 small \
@@ -4507,6 +4511,14 @@ lvl/pac78.asc \
 lvl/pac78.txt \
 lvl/pac8001.asc \
 lvl/pac8001.txt \
+lvl/pac8001b.asc \
+lvl/pac8001b.txt \
+lvl/pac8001c.asc \
+lvl/pac8001c.txt \
+lvl/pac8001d.asc \
+lvl/pac8001d.txt \
+lvl/pac8001e.asc \
+lvl/pac8001e.txt \
 lvl/pac8bit.asc \
 lvl/pac8bit.txt \
 lvl/pac98.asc \

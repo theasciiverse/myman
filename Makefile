@@ -2371,7 +2371,8 @@ pac4k \
 funzy \
 msintv \
 msintv2 \
-gobbleds
+gobbleds \
+bubcom80
 
 all_sizes = \
 small \
@@ -4050,6 +4051,8 @@ lvl/blobbo.asc \
 lvl/blobbo.txt \
 lvl/board.asc \
 lvl/board.txt \
+lvl/bubcom80.asc \
+lvl/bubcom80.txt \
 lvl/bugman.asc \
 lvl/bugman.txt \
 lvl/byh.asc \

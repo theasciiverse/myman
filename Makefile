@@ -2379,7 +2379,8 @@ pac8001d \
 pac8001e \
 pc88 \
 pc88b \
-pac68
+pac68 \
+pacrt11b
 
 all_sizes = \
 small \
@@ -4614,6 +4615,8 @@ lvl/pacrat.asc \
 lvl/pacrat.txt \
 lvl/pacrt11.asc \
 lvl/pacrt11.txt \
+lvl/pacrt11b.asc \
+lvl/pacrt11b.txt \
 lvl/pacst.asc \
 lvl/pacst.txt \
 lvl/pactac.asc \

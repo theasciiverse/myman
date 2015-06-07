@@ -992,14 +992,15 @@ gamelogic(void)
                 (hero_dir == MYMAN_LEFT)) {
                 int ii;
 
-                for (ii = 1; ii < maze_w[maze_level]; ii ++)
+                for (ii = 1; ii < maze_w[maze_level] * maze_h[maze_level]; ii ++)
                 {
-                    if (ISZAPRIGHT((unsigned) (my_uchar) mazes[maze_level][ytile * (maze_w[maze_level] + 1)+XWRAP(xtile - ii)]))
+                    if (ISZAPRIGHT((unsigned) (my_uchar) mazes[maze_level][YWRAP(ytile - ii / maze_w[maze_level]) * (maze_w[maze_level] + 1)+XWRAP(xtile - ii % maze_w[maze_level])]))
                     {
                         break;
                     }
                 }
-                sprite_register_x[HERO] = (1 + 2 * XWRAP(xtile - ii)) * gfx_w / 2;
+                sprite_register_x[HERO] = (1 + 2 * XWRAP(xtile - ii % maze_w[maze_level])) * gfx_w / 2;
+                sprite_register_y[HERO] = (1 + 2 * YWRAP(ytile - ii / maze_w[maze_level])) * gfx_h / 2;
             }
             else if (ISZAPRIGHT((unsigned) (my_uchar) mazes[maze_level][ytile * (maze_w[maze_level] + 1)+xtile])
                      &&
@@ -1008,14 +1009,15 @@ gamelogic(void)
                      (hero_dir == MYMAN_RIGHT)) {
                 int ii;
 
-                for (ii = 1; ii < maze_w[maze_level]; ii ++)
+                for (ii = 1; ii < maze_w[maze_level] * maze_h[maze_level]; ii ++)
                 {
-                    if (ISZAPLEFT((unsigned) (my_uchar) mazes[maze_level][ytile * (maze_w[maze_level] + 1)+XWRAP(xtile + ii)]))
+                    if (ISZAPLEFT((unsigned) (my_uchar) mazes[maze_level][YWRAP(ytile + ii / maze_w[maze_level]) * (maze_w[maze_level] + 1)+XWRAP(xtile + ii % maze_w[maze_level])]))
                     {
                         break;
                     }
                 }
-                sprite_register_x[HERO] = (1 + 2 * XWRAP(xtile + ii)) * gfx_w / 2;
+                sprite_register_x[HERO] = (1 + 2 * XWRAP(xtile + ii % maze_w[maze_level])) * gfx_w / 2;
+                sprite_register_y[HERO] = (1 + 2 * YWRAP(ytile + ii / maze_w[maze_level])) * gfx_h / 2;
             }
             else if (ISZAPUP((unsigned) (my_uchar) mazes[maze_level][ytile * (maze_w[maze_level] + 1)+xtile])
                      &&
@@ -1024,14 +1026,15 @@ gamelogic(void)
                      (hero_dir == MYMAN_UP)) {
                 int ii;
 
-                for (ii = 1; ii < maze_h[maze_level]; ii ++)
+                for (ii = 1; ii < maze_h[maze_level] * maze_w[maze_level]; ii ++)
                 {
-                    if (ISZAPDOWN((unsigned) (my_uchar) mazes[maze_level][YWRAP(ytile - ii) * (maze_w[maze_level] + 1)+xtile]))
+                    if (ISZAPDOWN((unsigned) (my_uchar) mazes[maze_level][YWRAP(ytile - ii % maze_h[maze_level]) * (maze_w[maze_level] + 1)+XWRAP(xtile - ii / maze_h[maze_level])]))
                     {
                         break;
                     }
                 }
-                sprite_register_y[HERO] = (1 + 2 * YWRAP(ytile - ii)) * gfx_h / 2;
+                sprite_register_x[HERO] = (1 + 2 * XWRAP(xtile - ii / maze_h[maze_level])) * gfx_w / 2;
+                sprite_register_y[HERO] = (1 + 2 * YWRAP(ytile - ii % maze_h[maze_level])) * gfx_h / 2;
             }
             else if (ISZAPDOWN((unsigned) (my_uchar) mazes[maze_level][ytile * (maze_w[maze_level] + 1)+xtile])
                      &&
@@ -1040,14 +1043,15 @@ gamelogic(void)
                      (hero_dir == MYMAN_DOWN)) {
                 int ii;
 
-                for (ii = 1; ii < maze_h[maze_level]; ii ++)
+                for (ii = 1; ii < maze_h[maze_level] * maze_w[maze_level]; ii ++)
                 {
-                    if (ISZAPUP((unsigned) (my_uchar) mazes[maze_level][YWRAP(ytile + ii) * (maze_w[maze_level] + 1)+xtile]))
+                    if (ISZAPUP((unsigned) (my_uchar) mazes[maze_level][YWRAP(ytile + ii % maze_h[maze_level]) * (maze_w[maze_level] + 1)+XWRAP(xtile + ii / maze_h[maze_level])]))
                     {
                         break;
                     }
                 }
-                sprite_register_y[HERO] = (1 + 2 * YWRAP(ytile + ii)) * gfx_h / 2;
+                sprite_register_x[HERO] = (1 + 2 * XWRAP(xtile + ii / maze_h[maze_level])) * gfx_w / 2;
+                sprite_register_y[HERO] = (1 + 2 * YWRAP(ytile + ii % maze_h[maze_level])) * gfx_h / 2;
             }
             else
             {

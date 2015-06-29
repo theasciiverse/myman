@@ -2381,7 +2381,8 @@ pc88 \
 pc88b \
 pac68 \
 pacrt11b \
-pacrt11c
+pacrt11c \
+msxl
 
 all_sizes = \
 small \
@@ -4437,6 +4438,8 @@ lvl/mssmall.asc \
 lvl/mssmall.txt \
 lvl/mstiny.asc \
 lvl/mstiny.txt \
+lvl/msxl.asc \
+lvl/msxl.txt \
 lvl/muncher.asc \
 lvl/muncher.txt \
 lvl/muncher2.asc \

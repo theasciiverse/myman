@@ -2382,7 +2382,8 @@ pc88b \
 pac68 \
 pacrt11b \
 pacrt11c \
-msxl
+msxl \
+puck20
 
 all_sizes = \
 small \
@@ -4713,6 +4714,8 @@ lvl/ptmx.asc \
 lvl/ptmx.txt \
 lvl/puck.asc \
 lvl/puck.txt \
+lvl/puck20.asc \
+lvl/puck20.txt \
 lvl/puckman3.asc \
 lvl/puckman3.txt \
 lvl/puckmn3x.asc \

@@ -2390,7 +2390,8 @@ blobbo2 \
 pac6001b \
 pac6001c \
 pac6001d \
-pac6001e
+pac6001e \
+bugbugmn
 
 all_sizes = \
 small \
@@ -4075,6 +4076,8 @@ lvl/bubcom80.asc \
 lvl/bubcom80.txt \
 lvl/bugman.asc \
 lvl/bugman.txt \
+lvl/bugbugmn.asc \
+lvl/bugbugmn.txt \
 lvl/byh.asc \
 lvl/byh.txt \
 lvl/capman.asc \

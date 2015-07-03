@@ -2385,7 +2385,8 @@ pacrt11c \
 msxl \
 puck20 \
 hearts \
-mssnapmn
+mssnapmn \
+blobbo2
 
 all_sizes = \
 small \
@@ -4062,6 +4063,8 @@ lvl/blinky.asc \
 lvl/blinky.txt \
 lvl/blobbo.asc \
 lvl/blobbo.txt \
+lvl/blobbo2.asc \
+lvl/blobbo2.txt \
 lvl/board.asc \
 lvl/board.txt \
 lvl/bubcom80.asc \

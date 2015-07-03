@@ -2384,7 +2384,8 @@ pacrt11b \
 pacrt11c \
 msxl \
 puck20 \
-hearts
+hearts \
+mssnapmn
 
 all_sizes = \
 small \
@@ -4439,6 +4440,8 @@ lvl/msreturn.asc \
 lvl/msreturn.txt \
 lvl/mssmall.asc \
 lvl/mssmall.txt \
+lvl/mssnapmn.asc \
+lvl/mssnapmn.txt \
 lvl/mstiny.asc \
 lvl/mstiny.txt \
 lvl/msxl.asc \

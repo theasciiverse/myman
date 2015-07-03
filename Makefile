@@ -2388,7 +2388,9 @@ hearts \
 mssnapmn \
 blobbo2 \
 pac6001b \
-pac6001c
+pac6001c \
+pac6001d \
+pac6001e
 
 all_sizes = \
 small \
@@ -4526,6 +4528,10 @@ lvl/pac6001b.asc \
 lvl/pac6001b.txt \
 lvl/pac6001c.asc \
 lvl/pac6001c.txt \
+lvl/pac6001d.asc \
+lvl/pac6001d.txt \
+lvl/pac6001e.asc \
+lvl/pac6001e.txt \
 lvl/pac64.asc \
 lvl/pac64.txt \
 lvl/pac68.asc \

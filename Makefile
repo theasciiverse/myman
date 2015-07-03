@@ -2383,7 +2383,8 @@ pac68 \
 pacrt11b \
 pacrt11c \
 msxl \
-puck20
+puck20 \
+hearts
 
 all_sizes = \
 small \
@@ -4250,6 +4251,7 @@ lvl/hatman.asc \
 lvl/hatman.txt \
 lvl/haunted.asc \
 lvl/haunted.txt \
+lvl/hearts.txt \
 lvl/hedges.asc \
 lvl/hedges.txt \
 lvl/human.asc \

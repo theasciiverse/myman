@@ -102,7 +102,7 @@ extern const char *MOREMESSAGE;
 extern const char *DONEMESSAGE;
 
 #define ISTEXT(c) (((c) == '!') || (((c) >= '0') && ((c) <= '9')) || ((c) == '@') || (((c) >= 'A') && ((c) <= 'Z')))
-#define ISDOT(c) (((c) == 249) || ((c) == '.'))
+#define ISDOT(c) (((c) == 3) || ((c) == 249) || ((c) == '.'))
 #define ISPELLET(c) (((c) == 254) || ((c) == 'o'))
 #define ISZAPLEFT(c) (((c) == '<') || (c == 174))
 #define ISZAPRIGHT(c) (((c) == '>') || (c == 175))

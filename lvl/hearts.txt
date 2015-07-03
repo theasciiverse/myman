@@ -1,4 +1,8 @@
-﻿1 28x31 ABOUT="Inspired by Kamiya's 'Scandal Man'/'Newpuc1', an early hack of the original Puckman (hearts variant)"
+﻿1 28x31 ABOUT="Inspired by Kamiya's 'Scandal Man'/'Newpuc1', an early hack of the original Puckman (hearts variant by Unibox)" \
+ PLAYER1=" JOUEUR 1 " \
+ PLAYER2=" JOUEUR 2 " \
+   READY="   PRET!  " \
+GAMEOVER="FIN DE JEU"
 ╔════════════╕╒════════════╗
 ║♥♥♥♥♥♥♥♥♥♥♥♥││♥♥♥♥♥♥♥♥♥♥♥♥║
 ║♥┌──┐♥┌───┐♥││♥┌───┐♥┌──┐♥║

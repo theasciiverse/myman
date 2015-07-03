@@ -2391,7 +2391,8 @@ pac6001b \
 pac6001c \
 pac6001d \
 pac6001e \
-bugbugmn
+bugbugmn \
+cmspac
 
 all_sizes = \
 small \
@@ -4124,6 +4125,8 @@ lvl/clone64.asc \
 lvl/clone64.txt \
 lvl/clsweep.asc \
 lvl/clsweep.txt \
+lvl/cmspac.asc \
+lvl/cmspac.txt \
 lvl/compo.asc \
 lvl/compo.txt \
 lvl/comx.asc \

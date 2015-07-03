@@ -2392,7 +2392,8 @@ pac6001c \
 pac6001d \
 pac6001e \
 bugbugmn \
-cmspac
+cmspac \
+cocoloco
 
 all_sizes = \
 small \
@@ -4127,6 +4128,8 @@ lvl/clsweep.asc \
 lvl/clsweep.txt \
 lvl/cmspac.asc \
 lvl/cmspac.txt \
+lvl/cocoloco.asc \
+lvl/cocoloco.txt \
 lvl/compo.asc \
 lvl/compo.txt \
 lvl/comx.asc \

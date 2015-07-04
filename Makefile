@@ -2395,7 +2395,8 @@ bugbugmn \
 cmspac \
 cocoloco \
 pac8001f \
-pac8001g
+pac8001g \
+panicman
 
 all_sizes = \
 small \
@@ -4687,6 +4688,8 @@ lvl/pakpak.asc \
 lvl/pakpak.txt \
 lvl/pakus.asc \
 lvl/pakus.txt \
+lvl/panicman.asc \
+lvl/panicman.txt \
 lvl/paques.asc \
 lvl/paques.txt \
 lvl/patuman.asc \

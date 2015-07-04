@@ -2397,7 +2397,8 @@ cocoloco \
 pac8001f \
 pac8001g \
 panicman \
-blitz
+blitz \
+zx81b
 
 all_sizes = \
 small \
@@ -4965,6 +4966,8 @@ lvl/zuckman.asc \
 lvl/zuckman.txt \
 lvl/zx81.asc \
 lvl/zx81.txt \
+lvl/zx81b.asc \
+lvl/zx81b.txt \
 mygetopt/ChangeLog \
 mygetopt/getopt.3 \
 mygetopt/getopt.h \

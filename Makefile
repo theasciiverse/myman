@@ -2396,7 +2396,8 @@ cmspac \
 cocoloco \
 pac8001f \
 pac8001g \
-panicman
+panicman \
+blitz
 
 all_sizes = \
 small \
@@ -4071,6 +4072,8 @@ lvl/bk.asc \
 lvl/bk.txt \
 lvl/blinky.asc \
 lvl/blinky.txt \
+lvl/blitz.asc \
+lvl/blitz.txt \
 lvl/blobbo.asc \
 lvl/blobbo.txt \
 lvl/blobbo2.asc \

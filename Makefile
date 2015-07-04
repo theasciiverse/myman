@@ -2394,7 +2394,8 @@ pac6001e \
 bugbugmn \
 cmspac \
 cocoloco \
-pac8001f
+pac8001f \
+pac8001g
 
 all_sizes = \
 small \
@@ -4562,6 +4563,8 @@ lvl/pac8001e.asc \
 lvl/pac8001e.txt \
 lvl/pac8001f.asc \
 lvl/pac8001f.txt \
+lvl/pac8001g.asc \
+lvl/pac8001g.txt \
 lvl/pac8bit.asc \
 lvl/pac8bit.txt \
 lvl/pac98.asc \

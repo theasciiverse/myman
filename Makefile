@@ -2398,7 +2398,9 @@ pac8001f \
 pac8001g \
 panicman \
 blitz \
-zx81b
+zx81b \
+ezpac \
+ezpac2
 
 all_sizes = \
 small \
@@ -4193,6 +4195,10 @@ lvl/ebipac.asc \
 lvl/ebipac.txt \
 lvl/epochman.asc \
 lvl/epochman.txt \
+lvl/ezpac.asc \
+lvl/ezpac.txt \
+lvl/ezpac2.asc \
+lvl/ezpac2.txt \
 lvl/fhmcpac.asc \
 lvl/fhmcpac.txt \
 lvl/full188.asc \

@@ -2400,7 +2400,8 @@ panicman \
 blitz \
 zx81b \
 ezpac \
-ezpac2
+ezpac2 \
+paczx4
 
 all_sizes = \
 small \
@@ -4690,6 +4691,8 @@ lvl/paczx2.asc \
 lvl/paczx2.txt \
 lvl/paczx3.asc \
 lvl/paczx3.txt \
+lvl/paczx4.asc \
+lvl/paczx4.txt \
 lvl/pakacuda.asc \
 lvl/pakacuda.txt \
 lvl/pakkman.asc \

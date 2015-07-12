@@ -2401,7 +2401,8 @@ blitz \
 zx81b \
 ezpac \
 ezpac2 \
-paczx4
+paczx4 \
+mmania
 
 all_sizes = \
 small \
@@ -4387,6 +4388,8 @@ lvl/mlb.asc \
 lvl/mlb.txt \
 lvl/mlb2.asc \
 lvl/mlb2.txt \
+lvl/mmania.asc \
+lvl/mmania.txt \
 lvl/mmpalm.asc \
 lvl/mmpalm.txt \
 lvl/mmproto.asc \

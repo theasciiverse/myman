@@ -2402,7 +2402,8 @@ zx81b \
 ezpac \
 ezpac2 \
 paczx4 \
-mmania
+mmania \
+3d
 
 all_sizes = \
 small \
@@ -4011,6 +4012,8 @@ inc/twcurses.h \
 inc/utils.h \
 lvl/3b1.asc \
 lvl/3b1.txt \
+lvl/3d.asc \
+lvl/3d.txt \
 lvl/3demon.asc \
 lvl/3demon.txt \
 lvl/3dpac.asc \

@@ -1207,6 +1207,9 @@ endif
 ifeq ($(subst default,undefined,$(origin SYMLINK)),undefined)
 SYMLINK = ${LN} ${LNFLAGS} ${EXTRALNFLAGS} -s
 endif
+ifeq ($(subst default,undefined,$(origin SYMLINK_FORCE)),undefined)
+SYMLINK_FORCE = ${SYMLINK} -f
+endif
 
 # utility to create a .zip distribution file
 ifeq ($(subst default,undefined,$(origin ZIP)),undefined)
@@ -5994,114 +5997,114 @@ endif
              data_file=${MYMAN}${man6ext}
 	@-${MAKE} ${MAKELOOP} \
              install-manlink-xq-$(call qxq,${DESTDIR}${man6dir}/${MYMAN_EXE}${man6ext}) \
-             manlink_file=$(call qmqs,$(call xq,${mandir}/)%,%,${man6dir}/${DIST}${man6ext})
+             manlink_file=$(call qmqs,$(call xq,${mandir}/)%,%,${man6dir}/${DIST_EXE}${man6ext})
 ifneq ($x,)
 	@-${MAKE} ${MAKELOOP} \
              install-manlink-xq-$(call qxq,${DESTDIR}${man6dir}/${MYMAN_EXE}$x${man6ext}) \
-             manlink_file=$(call qmqs,$(call xq,${mandir}/)%,%,${man6dir}/${DIST}${man6ext})
+             manlink_file=$(call qmqs,$(call xq,${mandir}/)%,%,${man6dir}/${DIST_EXE}${man6ext})
 	@-${MAKE} ${MAKELOOP} \
              install-manlink-xq-$(call qxq,${DESTDIR}${man6dir}/${DIST_EXE}$x${man6ext}) \
-             manlink_file=$(call qmqs,$(call xq,${mandir}/)%,%,${man6dir}/${DIST}${man6ext})
+             manlink_file=$(call qmqs,$(call xq,${mandir}/)%,%,${man6dir}/${DIST_EXE}${man6ext})
 endif
 ifeq (yes,${with_rxvt})
 	@-${MAKE} ${MAKELOOP} \
              install-manlink-xq-$(call qxq,${DESTDIR}${man6dir}/${XMYMAN2_EXE}${man6ext}) \
-             manlink_file=$(call qmqs,$(call xq,${mandir}/)%,%,${man6dir}/${DIST}${man6ext})
+             manlink_file=$(call qmqs,$(call xq,${mandir}/)%,%,${man6dir}/${DIST_EXE}${man6ext})
 endif
 ifeq (yes,${with_kterm})
 	@-${MAKE} ${MAKELOOP} \
              install-manlink-xq-$(call qxq,${DESTDIR}${man6dir}/${XMYMAN4_EXE}${man6ext}) \
-             manlink_file=$(call qmqs,$(call xq,${mandir}/)%,%,${man6dir}/${DIST}${man6ext})
+             manlink_file=$(call qmqs,$(call xq,${mandir}/)%,%,${man6dir}/${DIST_EXE}${man6ext})
 endif
 ifeq (yes,${with_xterm})
 	@-${MAKE} ${MAKELOOP} \
              install-manlink-xq-$(call qxq,${DESTDIR}${man6dir}/${XMYMAN_EXE}${man6ext}) \
-             manlink_file=$(call qmqs,$(call xq,${mandir}/)%,%,${man6dir}/${DIST}${man6ext})
+             manlink_file=$(call qmqs,$(call xq,${mandir}/)%,%,${man6dir}/${DIST_EXE}${man6ext})
 	@-${MAKE} ${MAKELOOP} \
              install-manlink-xq-$(call qxq,${DESTDIR}${man6dir}/${XMYMAN3_EXE}${man6ext}) \
-             manlink_file=$(call qmqs,$(call xq,${mandir}/)%,%,${man6dir}/${DIST}${man6ext})
+             manlink_file=$(call qmqs,$(call xq,${mandir}/)%,%,${man6dir}/${DIST_EXE}${man6ext})
 	@-${MAKE} ${MAKELOOP} \
              install-manlink-xq-$(call qxq,${DESTDIR}${man6dir}/${XBIGMAN_EXE}${man6ext}) \
-             manlink_file=$(call qmqs,$(call xq,${mandir}/)%,%,${man6dir}/${DIST}${man6ext})
+             manlink_file=$(call qmqs,$(call xq,${mandir}/)%,%,${man6dir}/${DIST_EXE}${man6ext})
 	@-${MAKE} ${MAKELOOP} \
              install-manlink-xq-$(call qxq,${DESTDIR}${man6dir}/${XHUGEMAN_EXE}${man6ext}) \
-             manlink_file=$(call qmqs,$(call xq,${mandir}/)%,%,${man6dir}/${DIST}${man6ext})
+             manlink_file=$(call qmqs,$(call xq,${mandir}/)%,%,${man6dir}/${DIST_EXE}${man6ext})
 	@-${MAKE} ${MAKELOOP} \
              install-manlink-xq-$(call qxq,${DESTDIR}${man6dir}/${XBITMAN_EXE}${man6ext}) \
-             manlink_file=$(call qmqs,$(call xq,${mandir}/)%,%,${man6dir}/${DIST}${man6ext})
+             manlink_file=$(call qmqs,$(call xq,${mandir}/)%,%,${man6dir}/${DIST_EXE}${man6ext})
 	@-${MAKE} ${MAKELOOP} \
              install-manlink-xq-$(call qxq,${DESTDIR}${man6dir}/${XBITMAN2_EXE}${man6ext}) \
-             manlink_file=$(call qmqs,$(call xq,${mandir}/)%,%,${man6dir}/${DIST}${man6ext})
+             manlink_file=$(call qmqs,$(call xq,${mandir}/)%,%,${man6dir}/${DIST_EXE}${man6ext})
 	@-${MAKE} ${MAKELOOP} \
              install-manlink-xq-$(call qxq,${DESTDIR}${man6dir}/${XBITMAN3_EXE}${man6ext}) \
-             manlink_file=$(call qmqs,$(call xq,${mandir}/)%,%,${man6dir}/${DIST}${man6ext})
+             manlink_file=$(call qmqs,$(call xq,${mandir}/)%,%,${man6dir}/${DIST_EXE}${man6ext})
 	@-${MAKE} ${MAKELOOP} \
              install-manlink-xq-$(call qxq,${DESTDIR}${man6dir}/${XBITMAN4_EXE}${man6ext}) \
-             manlink_file=$(call qmqs,$(call xq,${mandir}/)%,%,${man6dir}/${DIST}${man6ext})
+             manlink_file=$(call qmqs,$(call xq,${mandir}/)%,%,${man6dir}/${DIST_EXE}${man6ext})
 	@-${MAKE} ${MAKELOOP} \
              install-manlink-xq-$(call qxq,${DESTDIR}${man6dir}/${XBITMAN5_EXE}${man6ext}) \
-             manlink_file=$(call qmqs,$(call xq,${mandir}/)%,%,${man6dir}/${DIST}${man6ext})
+             manlink_file=$(call qmqs,$(call xq,${mandir}/)%,%,${man6dir}/${DIST_EXE}${man6ext})
 	@-${MAKE} ${MAKELOOP} \
              install-manlink-xq-$(call qxq,${DESTDIR}${man6dir}/${XBITMAN6_EXE}${man6ext}) \
-             manlink_file=$(call qmqs,$(call xq,${mandir}/)%,%,${man6dir}/${DIST}${man6ext})
+             manlink_file=$(call qmqs,$(call xq,${mandir}/)%,%,${man6dir}/${DIST_EXE}${man6ext})
 	@-${MAKE} ${MAKELOOP} \
              install-manlink-xq-$(call qxq,${DESTDIR}${man6dir}/${XQUACKMAN_EXE}${man6ext}) \
-             manlink_file=$(call qmqs,$(call xq,${mandir}/)%,%,${man6dir}/${DIST}${man6ext})
+             manlink_file=$(call qmqs,$(call xq,${mandir}/)%,%,${man6dir}/${DIST_EXE}${man6ext})
 endif
 	@-${MAKE} ${MAKELOOP} \
              install-manlink-xq-$(call qxq,${DESTDIR}${man6dir}/${MYMANCOMMAND_EXE}${cmd}${man6ext}) \
-             manlink_file=$(call qmqs,$(call xq,${mandir}/)%,%,${man6dir}/${DIST}${man6ext})
+             manlink_file=$(call qmqs,$(call xq,${mandir}/)%,%,${man6dir}/${DIST_EXE}${man6ext})
 ifneq (${sh},)
 ifeq (yes,${with_rxvt})
 	@-${MAKE} ${MAKELOOP} \
              install-manlink-xq-$(call qxq,${DESTDIR}${man6dir}/${XMYMAN2_EXE}${sh}${man6ext}) \
-             manlink_file=$(call qmqs,$(call xq,${mandir}/)%,%,${man6dir}/${DIST}${man6ext})
+             manlink_file=$(call qmqs,$(call xq,${mandir}/)%,%,${man6dir}/${DIST_EXE}${man6ext})
 endif
 ifeq (yes,${with_kterm})
 	@-${MAKE} ${MAKELOOP} \
              install-manlink-xq-$(call qxq,${DESTDIR}${man6dir}/${XMYMAN4_EXE}${sh}${man6ext}) \
-             manlink_file=$(call qmqs,$(call xq,${mandir}/)%,%,${man6dir}/${DIST}${man6ext})
+             manlink_file=$(call qmqs,$(call xq,${mandir}/)%,%,${man6dir}/${DIST_EXE}${man6ext})
 endif
 ifeq (yes,${with_xterm})
 	@-${MAKE} ${MAKELOOP} \
              install-manlink-xq-$(call qxq,${DESTDIR}${man6dir}/${XMYMAN_EXE}${sh}${man6ext}) \
-             manlink_file=$(call qmqs,$(call xq,${mandir}/)%,%,${man6dir}/${DIST}${man6ext})
+             manlink_file=$(call qmqs,$(call xq,${mandir}/)%,%,${man6dir}/${DIST_EXE}${man6ext})
 	@-${MAKE} ${MAKELOOP} \
              install-manlink-xq-$(call qxq,${DESTDIR}${man6dir}/${XMYMAN3_EXE}${sh}${man6ext}) \
-             manlink_file=$(call qmqs,$(call xq,${mandir}/)%,%,${man6dir}/${DIST}${man6ext})
+             manlink_file=$(call qmqs,$(call xq,${mandir}/)%,%,${man6dir}/${DIST_EXE}${man6ext})
 	@-${MAKE} ${MAKELOOP} \
              install-manlink-xq-$(call qxq,${DESTDIR}${man6dir}/${XBIGMAN_EXE}${sh}${man6ext}) \
-             manlink_file=$(call qmqs,$(call xq,${mandir}/)%,%,${man6dir}/${DIST}${man6ext})
+             manlink_file=$(call qmqs,$(call xq,${mandir}/)%,%,${man6dir}/${DIST_EXE}${man6ext})
 	@-${MAKE} ${MAKELOOP} \
              install-manlink-xq-$(call qxq,${DESTDIR}${man6dir}/${XHUGEMAN_EXE}${sh}${man6ext}) \
-             manlink_file=$(call qmqs,$(call xq,${mandir}/)%,%,${man6dir}/${DIST}${man6ext})
+             manlink_file=$(call qmqs,$(call xq,${mandir}/)%,%,${man6dir}/${DIST_EXE}${man6ext})
 	@-${MAKE} ${MAKELOOP} \
              install-manlink-xq-$(call qxq,${DESTDIR}${man6dir}/${XBITMAN_EXE}${sh}${man6ext}) \
-             manlink_file=$(call qmqs,$(call xq,${mandir}/)%,%,${man6dir}/${DIST}${man6ext})
+             manlink_file=$(call qmqs,$(call xq,${mandir}/)%,%,${man6dir}/${DIST_EXE}${man6ext})
 	@-${MAKE} ${MAKELOOP} \
              install-manlink-xq-$(call qxq,${DESTDIR}${man6dir}/${XBITMAN2_EXE}${sh}${man6ext}) \
-             manlink_file=$(call qmqs,$(call xq,${mandir}/)%,%,${man6dir}/${DIST}${man6ext})
+             manlink_file=$(call qmqs,$(call xq,${mandir}/)%,%,${man6dir}/${DIST_EXE}${man6ext})
 	@-${MAKE} ${MAKELOOP} \
              install-manlink-xq-$(call qxq,${DESTDIR}${man6dir}/${XBITMAN3_EXE}${sh}${man6ext}) \
-             manlink_file=$(call qmqs,$(call xq,${mandir}/)%,%,${man6dir}/${DIST}${man6ext})
+             manlink_file=$(call qmqs,$(call xq,${mandir}/)%,%,${man6dir}/${DIST_EXE}${man6ext})
 	@-${MAKE} ${MAKELOOP} \
              install-manlink-xq-$(call qxq,${DESTDIR}${man6dir}/${XBITMAN4_EXE}${sh}${man6ext}) \
-             manlink_file=$(call qmqs,$(call xq,${mandir}/)%,%,${man6dir}/${DIST}${man6ext})
+             manlink_file=$(call qmqs,$(call xq,${mandir}/)%,%,${man6dir}/${DIST_EXE}${man6ext})
 	@-${MAKE} ${MAKELOOP} \
              install-manlink-xq-$(call qxq,${DESTDIR}${man6dir}/${XBITMAN5_EXE}${sh}${man6ext}) \
-             manlink_file=$(call qmqs,$(call xq,${mandir}/)%,%,${man6dir}/${DIST}${man6ext})
+             manlink_file=$(call qmqs,$(call xq,${mandir}/)%,%,${man6dir}/${DIST_EXE}${man6ext})
 	@-${MAKE} ${MAKELOOP} \
              install-manlink-xq-$(call qxq,${DESTDIR}${man6dir}/${XBITMAN6_EXE}${sh}${man6ext}) \
-             manlink_file=$(call qmqs,$(call xq,${mandir}/)%,%,${man6dir}/${DIST}${man6ext})
+             manlink_file=$(call qmqs,$(call xq,${mandir}/)%,%,${man6dir}/${DIST_EXE}${man6ext})
 	@-${MAKE} ${MAKELOOP} \
              install-manlink-xq-$(call qxq,${DESTDIR}${man6dir}/${XQUACKMAN_EXE}${sh}${man6ext}) \
-             manlink_file=$(call qmqs,$(call xq,${mandir}/)%,%,${man6dir}/${DIST}${man6ext})
+             manlink_file=$(call qmqs,$(call xq,${mandir}/)%,%,${man6dir}/${DIST_EXE}${man6ext})
 endif
 endif
 ifeq (yes,${with_xtheme})
 	@-${MAKE} ${MAKELOOP} \
              install-manlink-xq-$(call qxq,${DESTDIR}${man6dir}/${MYMAN_CT_EXE}${man6ext}) \
-             manlink_file=$(call qmqs,$(call xq,${mandir}/)%,%,${man6dir}/${DIST}${man6ext})
+             manlink_file=$(call qmqs,$(call xq,${mandir}/)%,%,${man6dir}/${DIST_EXE}${man6ext})
 endif
 	${POST_UNPACK}
 	@($(foreach file,$(foreach variant,${MYMANVARIANTS},$(call mazefile,${variant})), \
@@ -6179,9 +6182,16 @@ ifneq (${manlink_file},)
 
 install-manlink-xq-%:
 	${POST_UNPACK}
+ifeq (yes,${with_symlinks})
+	@${SYMLINK_FORCE} $(call q,../${manlink_file}) $(call qsxu,install-manlink-xq-%,%,$@) \
+             || ${MAKE} ${MAKELOOP} \
+             install-data-xq-$(call s,$(call xq,install-manlink-xq-)%,%,$@) \
+             data_file=$(call qmq,${DESTDIR}${mandir}/${manlink_file})
+else
 	@install_manlink() { ${ECHOLINE} .so "$$1" > "$$2" || ( ${REMOVE} "$$2"; exit 1 ); return $?; }; \
             ${ECHOLINEX} installing link to manpage $(call q,${manlink_file}) as $(call qsxu,install-manlink-xq-%,%,$@); \
                 ${INSTALL_MANLINK} $(call q,${manlink_file}) $(call qsxu,install-manlink-xq-%,%,$@)
+endif
 	${NORMAL_UNPACK}
 
 endif

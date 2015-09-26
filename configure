@@ -408,6 +408,7 @@ do
           echoline "--with-win-icon    "include program icon and version information for Win32
           echoline "--with-imagemagick "use ImageMagick convert\(1\) for PNG to ICO conversion \(rather than netpbm\)
           echoline "--with-printf      "use printf\(1\) in shell scripts
+          echoline "--with-symlinks    "use symbolic links for manpage aliases
           echoline
           echoline Output drivers \(select at most one\):
           echoline "--with-curses      "use system curses library \(SysV-curses or ncurses\)

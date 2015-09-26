@@ -3749,7 +3749,7 @@ endif
 .PHONY: install-strip
 
 install-strip: $(call mw,${MAKEFILE})
-	${MAKE} ${MAKELOOP} \
+	@${MAKE} ${MAKELOOP} \
             STRIPINSTALLFLAGS=$(call qmq,${STRIPINSTALLFLAGS} -s) \
             install
 
@@ -5312,7 +5312,6 @@ ifneq ($script_stage,)
 genscript-${script_stage}_${script_target}: $(call mw,${src})configure $(call mw,${MAKEFILE})
 	@echo $(call q,${POST_UNPACK})
 	@echo "## ${script_stage}_${script_target} start"
-	@${ECHOLINE} $(call q,$(firstword ${MAKE}))'() { : ; }'
 	@${SED} ${SEDFLAGS} -n -e '/START_ECHOLINE_LIBRARY/,/END_ECHOLINE_LIBRARY/ p' < \
             $(call q,$<)
 	@echo $(call q,${NORMAL_UNPACK})
@@ -5532,23 +5531,23 @@ fill-dir-xq-${BINDIST}:: $(call mw,${MAKEFILE}) all $(addprefix $(call mw,${src}
                 || exit $$?; \
         ))
 	${NORMAL_UNPACK}
-	${MAKE} ${MAKELOOP} \
+	@${MAKE} ${MAKELOOP} \
             genscript-clean \
             script_target=clean \
             > ${BINDIST}/$(call q,clean.sh)
 	-chmod 755 ${BINDIST}/$(call q,clean.sh)
-	${MAKE} ${MAKELOOP} \
+	@${MAKE} ${MAKELOOP} \
             genscript-uninstall \
             script_target=uninstall \
             > ${BINDIST}/$(call q,uninstall.sh)
 	-chmod 755 ${BINDIST}/$(call q,uninstall.sh)
-	${MAKE} ${MAKELOOP} \
+	@${MAKE} ${MAKELOOP} \
             genscript-normal_install \
             script_stage=normal \
             script_target=install \
             DESTDIR=./${BINDIST}/${distroot} \
             | ${SHELL}
-	${MAKE} ${MAKELOOP} \
+	@${MAKE} ${MAKELOOP} \
             genscript-install \
             script_target=install \
             > ${BINDIST}/$(call q,install.sh)

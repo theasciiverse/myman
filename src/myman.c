@@ -3501,6 +3501,7 @@ static int use_idlok = 1;
 static int use_ioctl = USE_IOCTL;
 static int use_resize = 1;
 static int use_transparency = 1;
+static int use_inverted_colors = 0;
 
 static int use_acs = 1;
 static int use_acs_p = 0;
@@ -6112,6 +6113,25 @@ my_addch(my_ulong b, int p)
     int old_y, old_x;
     int new_y, new_x;
 
+    if (use_color && (! use_transparency) && ((p / 16) == (p % 16)))
+    {
+        p = pen_to_color_pen(p);
+    }
+    if (use_color && use_inverted_colors && ((p / 16) != (p % 16)))
+    {
+        if (((p & 0x0f) == 0x0f)
+            ||
+            ((p & 0x0f) == 0))
+        {
+            p ^= 0x0f;
+        }
+        if (((p & 0xf0) == 0xf0)
+            ||
+            ((p & 0xf0) == 0))
+        {
+            p ^= 0xf0;
+        }
+    }
     if (use_bgspace && use_color)
     {
         if (b == (my_ulong) 219)
@@ -9052,6 +9072,10 @@ parse_myman_args(int argc, char **argv)
     if (myman_getenv("MYMAN_TRANSPARENT") && *(myman_getenv("MYMAN_TRANSPARENT")))
     {
         use_transparency = atoi(myman_getenv("MYMAN_TRANSPARENT"));
+    }
+    if (myman_getenv("MYMAN_REVERSE") && *(myman_getenv("MYMAN_REVERSE")))
+    {
+        use_inverted_colors = atoi(myman_getenv("MYMAN_REVERSE"));
     }
     if (myman_getenv("MYMAN_LEGAL_NOTICE") && *(myman_getenv("MYMAN_LEGAL_NOTICE")))
     {

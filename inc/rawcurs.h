@@ -8266,7 +8266,13 @@ static int initscrWithHints(int h, int w, const char *title, const char *shortna
                  ||
                  RAWCURSES__STARTSWITH(termType, "darwin")
                  ||
-                 RAWCURSES__STARTSWITH(termType, "xnuppc"))
+                 RAWCURSES__STARTSWITH(termType, "xnuppc")
+                 ||
+                 RAWCURSES__HASBASE(termType, "ibm-3278")
+                 ||
+                 RAWCURSES__HASBASE(termType, "ibm-3279")
+                 ||
+                 RAWCURSES__HASBASE(termType, "ibm-dynamic"))
         {
             rawcurses_16color = 0;
         }
@@ -9128,6 +9134,12 @@ static int initscrWithHints(int h, int w, const char *title, const char *shortna
              ||
              RAWCURSES__STARTSWITH(termType, "wsvt")
              ||
+             RAWCURSES__HASBASE(termType, "ibm-3278")
+             ||
+             RAWCURSES__HASBASE(termType, "ibm-3279")
+             ||
+             RAWCURSES__HASBASE(termType, "ibm-dynamic")
+             ||
              RAWCURSES__HASFLAG(termType, "acs"))
             &&
             (! RAWCURSES__HASFLAG(termType, "noacs"))
@@ -9258,7 +9270,13 @@ static int initscrWithHints(int h, int w, const char *title, const char *shortna
     else
     {
         rawcurses_stdio_revbg = 0;
-        if (RAWCURSES__EQ(termType, "putty-vt52"))
+        if (RAWCURSES__EQ(termType, "putty-vt52")
+            ||
+            RAWCURSES__HASBASE(termType, "ibm-3278")
+            ||
+            RAWCURSES__HASBASE(termType, "ibm-3279")
+            ||
+            RAWCURSES__HASBASE(termType, "ibm-dynamic"))
         {
             rawcurses_stdio_revbg = 1;
         }

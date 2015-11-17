@@ -5800,7 +5800,9 @@ static int rawcurses_fput_sgr(FILE *fh, attr_t a, attr_t a_rgb)
                   ((a_rgb & BACKGROUND_INTENSITY) ? 8 : 0));
         if ((ansibg & 8) && rawcurses_stdio_putty && ! rawcurses_stdio_scocolor_bright)
         {
+            fputs("m", fh);
             fputs(CSI("=E"), fh);
+            fputs(CSI(""), fh);
             rawcurses_stdio_scocolor_bright = 1;
         }
         if ((rawcurses_stdio_truecolor || rawcurses_stdio_256color || rawcurses_stdio_88color)

@@ -2461,6 +2461,7 @@ RAWCURSES_GLOBAL(int rawcurses_stdio_tekansi, = 0);
 RAWCURSES_GLOBAL(int rawcurses_stdio_ansicolor, = 0);
 RAWCURSES_GLOBAL(int rawcurses_stdio_scocolor, = 0);
 RAWCURSES_GLOBAL(int rawcurses_stdio_scocolor_bright, = 0);
+RAWCURSES_GLOBAL(int rawcurses_stdio_putty, = 0);
 RAWCURSES_GLOBAL(int rawcurses_stdio_kaypro2x, = 0);
 RAWCURSES_GLOBAL(int rawcurses_stdio_noswapdots, = 0);
 RAWCURSES_GLOBAL(int rawcurses_stdio_cp437, = 0);
@@ -5797,6 +5798,11 @@ static int rawcurses_fput_sgr(FILE *fh, attr_t a, attr_t a_rgb)
                   ((a_rgb & BACKGROUND_BLUE) ? 4 : 0)
                   |
                   ((a_rgb & BACKGROUND_INTENSITY) ? 8 : 0));
+        if ((ansibg & 8) && rawcurses_stdio_putty && ! rawcurses_stdio_scocolor_bright)
+        {
+            fputs(CSI("=E"), fh);
+            rawcurses_stdio_scocolor_bright = 1;
+        }
         if ((rawcurses_stdio_truecolor || rawcurses_stdio_256color || rawcurses_stdio_88color)
             &&
             (! (rawcurses_stdio_ccc || rawcurses_stdio_ccc_linux)))
@@ -10762,6 +10768,18 @@ static int initscrWithHints(int h, int w, const char *title, const char *shortna
         if (RAWCURSES__STARTSWITH(termType, "scoansi"))
         {
             rawcurses_stdio_scocolor = 1;
+        }
+    }
+    if (rawcurses_getenv_boolean("RAWCURSES_PUTTY"))
+    {
+        rawcurses_stdio_putty = *(rawcurses_getenv_boolean("RAWCURSES_PUTTY")) ? 1 : 0;
+    }
+    else
+    {
+        rawcurses_stdio_putty = 0;
+        if (RAWCURSES__HASBASE(termType, "putty"))
+        {
+            rawcurses_stdio_putty = 1;
         }
     }
     if (rawcurses_getenv_boolean("RAWCURSES_ANSICOLOR"))

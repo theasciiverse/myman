@@ -1434,8 +1434,8 @@ endif
 
 ifeq ($(subst default,undefined,$(origin HOSTLINK)),undefined)
 HOSTLINK = hostlink() { \
-	${HOSTLD} ${HOSTLDFLAGS} ${EXTRAHOSTLDFLAGS} -o $(call q,${objdir}/$(call s,%$(call xq,$x),%,$@).so) $(call q,$<) "$$@" ${HOSTLIBS} ${EXTRAHOSTLIBS} && \
-	${HOSTOBJCOPY} ${HOSTOBJCOPYFLAGS} ${EXTRAHOSTOBJCOPYFLAGS} $(call q,${objdir}/$(call s,%$(call xq,$x),%,$@).so) $(call q,$@); \
+	${HOSTLD} ${HOSTLDFLAGS} ${EXTRAHOSTLDFLAGS} -o $(call q,${obj}$(call s,%$(call xq,$x),%,$@).so) $(call q,$<) "$$@" ${HOSTLIBS} ${EXTRAHOSTLIBS} && \
+	${HOSTOBJCOPY} ${HOSTOBJCOPYFLAGS} ${EXTRAHOSTOBJCOPYFLAGS} $(call q,${obj}$(call s,%$(call xq,$x),%,$@).so) $(call q,$@); \
 	}; hostlink
 endif
 
@@ -2490,7 +2490,7 @@ endif
 # bootstrap version basename as it is passed to the shell as an argument to ${RUN}
 ifeq ($(subst default,undefined,$(origin XBOOTSTRAP)),undefined)
 ifeq (,${obj})
-XBOOTSTRAP = ${objdir}/${BOOTSTRAP}
+XBOOTSTRAP = ${obj}${BOOTSTRAP}
 else
 XBOOTSTRAP = ${BOOTSTRAP}
 endif
@@ -5817,10 +5817,10 @@ ifeq (yes,${with_dmg})
 	-${REMOVE} ${BINDIST}.dmg
 endif
 ifeq (yes,${with_efi})
-	-${REMOVE} $(call q,${objdir})/${MYMAN}.so
+	-${REMOVE} $(call q,${obj})${MYMAN}.so
 endif
-	-${REMOVE} ${MYMAN}${htm}${tmp} $(call q,${objdir})/*$o ${MYMAN}$x ${MYMAN}.rex TAGS
-	-${REMOVE} $(call q,${objdir})/*$O
+	-${REMOVE} ${MYMAN}${htm}${tmp} $(call q,${obj})*$o ${MYMAN}$x ${MYMAN}.rex ${MYMAN}.map TAGS
+	-${REMOVE} $(call q,${obj})*$O
 	-${REMOVE} _sanity?$X $(call q,${obj}_sanity)?.c
 	-${REMOVE} ${MYMAN}${man6ext} ${MYMAN}${txt} ${MYMAN}.ps ${MYMAN}.dvi ${MYMAN}${htm}
 	-${REMOVE} ${XMYMAN}${sh} ${XMYMAN2}${sh} ${XMYMAN3}${sh} ${XMYMAN4}${sh} ${XBIGMAN}${sh} ${XHUGEMAN}${sh} ${XBITMAN}${sh} ${XBITMAN2}${sh} ${XBITMAN3}${sh} ${XBITMAN4}${sh} ${XBITMAN5}${sh} ${XBITMAN6}${sh} ${XQUACKMAN}${sh} ${MYMANCOMMAND}${cmd}

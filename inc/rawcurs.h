@@ -2592,6 +2592,8 @@ RAWCURSES_GLOBAL(char *rawcurses_stdio_new_shortname, = NULL);
 RAWCURSES_GLOBAL(char *rawcurses_stdio_new_title, = NULL);
 
 #if USE_WINCONSOLE
+RAWCURSES_GLOBAL0(HWND rawcurses_win32_console_window);
+RAWCURSES_GLOBAL(int rawcurses_win32_got_console_window, = 0);
 RAWCURSES_GLOBAL0(HANDLE rawcurses_stdin);
 RAWCURSES_GLOBAL0(HANDLE rawcurses_stdout);
 RAWCURSES_GLOBAL0(HANDLE rawcurses_stderr);
@@ -6753,6 +6755,10 @@ static HWND rawcurses_win32_get_console_window(void)
     HWND ret = 0;
     HMODULE kernel32;
 
+    if (rawcurses_win32_got_console_window)
+    {
+        return rawcurses_win32_console_window;
+    }
     kernel32 = LoadLibraryA("kernel32");
     if (kernel32)
     {
@@ -6788,6 +6794,8 @@ static HWND rawcurses_win32_get_console_window(void)
         }
     }
     if (kernel32) FreeLibrary(kernel32);
+    rawcurses_win32_console_window = ret;
+    rawcurses_win32_got_console_window = 1;
     return ret;
 }
 
@@ -7139,12 +7147,6 @@ static int rawcurses_win32_console_reg_copy(const WCHAR *name, DWORD type, void 
     for (i = 0; i < sizeof(keys) / sizeof(*keys); i ++)
     {
         if (keys[i] != (HKEY) INVALID_HANDLE_VALUE) RegCloseKey(keys[i]);
-    }
-    if ((hConsoleWindow != (HKEY) INVALID_HANDLE_VALUE)
-        &&
-        hConsoleWindow)
-    {
-        CloseHandle(hConsoleWindow);
     }
     if (shlwapi)
     {
@@ -7509,7 +7511,6 @@ static int rawcurses_win32_set_palette(rawcurses_rgb_t *palette)
                         CloseHandle(hConsoleProcess);
                     }
                 }
-                CloseHandle(cc.hConsoleWindow);
             }
         }
     }
@@ -11176,6 +11177,16 @@ static void endwin(void)
     if (rawcurses_old_mode_valid)
     {
         SetConsoleMode(rawcurses_stdin, rawcurses_old_mode);
+    }
+    if (rawcurses_win32_got_console_window)
+    {
+        if ((rawcurses_win32_console_window != (HKEY) INVALID_HANDLE_VALUE)
+            &&
+            rawcurses_win32_console_window)
+        {
+            CloseHandle(rawcurses_win32_console_window);
+        }
+        rawcurses_win32_got_console_window = 0;
     }
 #endif /* USE_WINCONSOLE */
 #if USE_SYSTEM_STTY

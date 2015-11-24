@@ -2592,6 +2592,7 @@ RAWCURSES_GLOBAL(char *rawcurses_stdio_new_shortname, = NULL);
 RAWCURSES_GLOBAL(char *rawcurses_stdio_new_title, = NULL);
 
 #if USE_WINCONSOLE
+RAWCURSES_GLOBAL(UINT rawcurses_win32_oldcp, = 0);
 RAWCURSES_GLOBAL0(HWND rawcurses_win32_console_window);
 RAWCURSES_GLOBAL(int rawcurses_win32_got_console_window, = 0);
 RAWCURSES_GLOBAL0(HANDLE rawcurses_stdin);
@@ -9751,6 +9752,7 @@ static int initscrWithHints(int h, int w, const char *title, const char *shortna
         free((void *) rawcurses_old_screen);
         rawcurses_old_screen = NULL;
     }
+    rawcurses_win32_oldcp = 0;
     if (rawcurses_stdio != 1)
     {
         SMALL_RECT newsize;
@@ -9763,6 +9765,79 @@ static int initscrWithHints(int h, int w, const char *title, const char *shortna
         {
             rawcurses_old_mode_valid = 1;
             SetConsoleMode(rawcurses_stdin, ENABLE_WINDOW_INPUT);
+        }
+        if (myman_getenv("RAWCURSES_CODEPAGE") && *myman_getenv("RAWCURSES_CODEPAGE"))
+        {
+            char garbage;
+            unsigned long uli = 0;
+            const char *codepage;
+
+            codepage = myman_getenv("RAWCURSES_CODEPAGE");
+            if (((! mystrcasecmp(codepage, "Unix")) && ((uli = 65010)))
+                ||
+                ((! mystrcasecmp(codepage, "ANSI")) && (((uli = CP_ACP)) || 1))
+                ||
+                ((! mystrcasecmp(codepage, "OEM")) && ((uli = CP_OEMCP)))
+                ||
+                ((! mystrcasecmp(codepage, "Mac")) && ((uli = CP_MACCP)))
+                ||
+                ((! mystrcasecmp(codepage, "UTF8")) && ((uli = CP_UTF8)))
+                ||
+                ((! mystrcasecmp(codepage, "UTF-8")) && ((uli = CP_UTF8)))
+                ||
+                ((! mystrcasecmp(codepage, "ISO88591")) && ((uli = 28591)))
+                ||
+                ((! mystrcasecmp(codepage, "ISO-8859-1")) && ((uli = 28591)))
+                ||
+                ((! mystrcasecmp(codepage, "ISO_8859-1")) && ((uli = 28591)))
+                ||
+                ((! mystrcasecmp(codepage, "ISO 8859-1")) && ((uli = 28591)))
+                ||
+                ((! mystrcasecmp(codepage, "Latin1")) && ((uli = 28591)))
+                ||
+                ((! mystrcasecmp(codepage, "Latin-1")) && ((uli = 28591)))
+                ||
+                ((RAWCURSES__STARTSWITH(codepage, "cp")
+                  ||
+                  RAWCURSES__STARTSWITH(codepage, "CP"))
+                 &&
+                 sscanf(codepage + strlen("CP"), "%lu%c", &uli, &garbage) == 1)
+                ||
+                ((RAWCURSES__STARTSWITH(codepage, "ibm")
+                  ||
+                  RAWCURSES__STARTSWITH(codepage, "IBM"))
+                 &&
+                 sscanf(codepage + strlen("CP"), "%lu%c", &uli, &garbage) == 1)
+                ||
+                ((RAWCURSES__STARTSWITH(codepage, "windows-")
+                  ||
+                  RAWCURSES__STARTSWITH(codepage, "WINDOWS-"))
+                 &&
+                 sscanf(codepage + strlen("WINDOWS-"), "%lu%c", &uli, &garbage) == 1)
+                ||
+                (sscanf(codepage, "%lu%c", &uli, &garbage) == 1))
+            {
+                UINT newcp;
+
+                newcp = (UINT) uli;
+                if (newcp == CP_ACP)
+                {
+                    newcp = GetACP();
+                }
+                if (newcp == CP_OEMCP)
+                {
+                    newcp = GetOEMCP();
+                    if (newcp == CP_ACP)
+                    {
+                        newcp = GetACP();
+                    }
+                }
+                if (IsValidCodePage(newcp))
+                {
+                    rawcurses_win32_oldcp = GetConsoleOutputCP();
+                    SetConsoleOutputCP(newcp);
+                }
+            }
         }
         rawcurses_cursorinfo.bVisible = rawcurses_cursor_visibility ? TRUE : FALSE;
         rawcurses_cursorinfo.dwSize = 25;
@@ -11138,6 +11213,10 @@ static void endwin(void)
 #if USE_WINCONSOLE
     if (! rawcurses_stdio)
     {
+        if (rawcurses_win32_oldcp)
+        {
+            SetConsoleOutputCP(rawcurses_win32_oldcp);
+        }
         SetConsoleWindowInfo(rawcurses_stdout, TRUE, &rawcurses_old_size);
         if (rawcurses_civis) SetConsoleCursorInfo(rawcurses_stdout, &rawcurses_old_cursorinfo);
         SetConsoleTitle(rawcurses_old_title);
@@ -11180,7 +11259,7 @@ static void endwin(void)
     }
     if (rawcurses_win32_got_console_window)
     {
-        if ((rawcurses_win32_console_window != (HKEY) INVALID_HANDLE_VALUE)
+        if ((rawcurses_win32_console_window != (HWND) INVALID_HANDLE_VALUE)
             &&
             rawcurses_win32_console_window)
         {

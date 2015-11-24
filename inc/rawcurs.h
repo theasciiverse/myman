@@ -8945,6 +8945,12 @@ static int initscrWithHints(int h, int w, const char *title, const char *shortna
         {
             rawcurses_stdio_acs_c128 = 3;
         }
+        else if (RAWCURSES__HASBASE(termType, "c64")
+                 &&
+                 RAWCURSES__HASFLAG(termType, "nt10"))
+        {
+            rawcurses_stdio_acs_c128 = 1;
+        }
     }
     if (myman_getenv("RAWCURSES_PETSCII_PALETTE") && *(myman_getenv("RAWCURSES_PETSCII_PALETTE")))
     {

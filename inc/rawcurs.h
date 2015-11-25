@@ -6517,6 +6517,18 @@ static chtype rawcurses_map_acs(chtype ch)
 
 #if USE_WINCONSOLE
 
+#ifndef CP_UTF7
+#define CP_UTF7 65000
+#endif
+
+#ifndef CP_UTF8
+#define CP_UTF8 65001
+#endif
+
+#ifndef CP_UNIXCP
+#define CP_UNIXCP 65010
+#endif
+
 /* Information on this undocumented console configuration message is
  * from http://www.catch22.net/source/files/setconsoleinfo.c */
 
@@ -9789,7 +9801,7 @@ static int initscrWithHints(int h, int w, const char *title, const char *shortna
                 ||
                 (! mystrcasecmp(codepage, "UTF-8"))
                 ||
-                ((! mystrcasecmp(codepage, "Unix")) && (sscanf("65010", "%lu%c", &uli) == 1))
+                (! mystrcasecmp(codepage, "Unix"))
                 ||
                 ((! mystrcasecmp(codepage, "ISO88591")) && (sscanf("28591", "%lu%c", &uli) == 1))
                 ||
@@ -9838,6 +9850,10 @@ static int initscrWithHints(int h, int w, const char *title, const char *shortna
                          (! mystrcasecmp(codepage, "UTF-8")))
                 {
                     uli = CP_UTF8;
+                }
+                else if (! mystrcasecmp(codepage, "Unix"))
+                {
+                    uli = CP_UNIXCP;
                 }
                 newcp = (UINT) uli;
                 if (newcp == CP_ACP)

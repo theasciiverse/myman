@@ -9803,17 +9803,17 @@ static int initscrWithHints(int h, int w, const char *title, const char *shortna
                 ||
                 (! mystrcasecmp(codepage, "Unix"))
                 ||
-                ((! mystrcasecmp(codepage, "ISO88591")) && (sscanf("28591", "%lu%c", &uli) == 1))
+                ((! mystrcasecmp(codepage, "ISO88591")) && (sscanf("28591", "%lu%c", &uli, &garbage) == 1))
                 ||
-                ((! mystrcasecmp(codepage, "ISO-8859-1")) && (sscanf("28591", "%lu%c", &uli) == 1))
+                ((! mystrcasecmp(codepage, "ISO-8859-1")) && (sscanf("28591", "%lu%c", &uli, &garbage) == 1))
                 ||
-                ((! mystrcasecmp(codepage, "ISO_8859-1")) && (sscanf("28591", "%lu%c", &uli) == 1))
+                ((! mystrcasecmp(codepage, "ISO_8859-1")) && (sscanf("28591", "%lu%c", &uli, &garbage) == 1))
                 ||
-                ((! mystrcasecmp(codepage, "ISO 88591-1")) && (sscanf("28591", "%lu%c", &uli) == 1))
+                ((! mystrcasecmp(codepage, "ISO 88591-1")) && (sscanf("28591", "%lu%c", &uli, &garbage) == 1))
                 ||
-                ((! mystrcasecmp(codepage, "Latin1")) && (sscanf("28591", "%lu%c", &uli) == 1))
+                ((! mystrcasecmp(codepage, "Latin1")) && (sscanf("28591", "%lu%c", &uli, &garbage) == 1))
                 ||
-                ((! mystrcasecmp(codepage, "Latin-1")) && (sscanf("28591", "%lu%c", &uli) == 1))
+                ((! mystrcasecmp(codepage, "Latin-1")) && (sscanf("28591", "%lu%c", &uli, &garbage) == 1))
                 ||
                 ((RAWCURSES__STARTSWITH(codepage, "cp")
                   ||

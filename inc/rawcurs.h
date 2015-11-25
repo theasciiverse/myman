@@ -9775,13 +9775,15 @@ static int initscrWithHints(int h, int w, const char *title, const char *shortna
         if (myman_getenv("RAWCURSES_CODEPAGE") && *myman_getenv("RAWCURSES_CODEPAGE"))
         {
             char garbage;
-            unsigned long uli = 0;
+            unsigned long uli = CP_ACP;
             const char *codepage;
 
             codepage = myman_getenv("RAWCURSES_CODEPAGE");
-            if (((! mystrcasecmp(codepage, "Unix")) && ((uli = 65010)))
+            if ((! mystrcasecmp(codepage, "A"))
                 ||
-                ((! mystrcasecmp(codepage, "ANSI")) && (((uli = CP_ACP)) || 1))
+                (! mystrcasecmp(codepage, "ANSI"))
+                ||
+                ((! mystrcasecmp(codepage, "Unix")) && ((uli = 65010)))
                 ||
                 ((! mystrcasecmp(codepage, "OEM")) && ((uli = CP_OEMCP)))
                 ||

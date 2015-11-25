@@ -7132,8 +7132,6 @@ static int rawcurses_win32_console_reg_copy(const WCHAR *name, DWORD type, void 
                 &&
                 (otype == type)
                 &&
-                (osize >= 0)
-                &&
                 (osize <= *size)
                 &&
                 /* FIXME: race condition: if type changes here, we lose a bit... oh well! */
@@ -9783,27 +9781,27 @@ static int initscrWithHints(int h, int w, const char *title, const char *shortna
                 ||
                 (! mystrcasecmp(codepage, "ANSI"))
                 ||
-                ((! mystrcasecmp(codepage, "Unix")) && ((uli = 65010)))
+                (! mystrcasecmp(codepage, "OEM"))
                 ||
-                ((! mystrcasecmp(codepage, "OEM")) && ((uli = CP_OEMCP)))
+                (! mystrcasecmp(codepage, "Mac"))
                 ||
-                ((! mystrcasecmp(codepage, "Mac")) && ((uli = CP_MACCP)))
+                (! mystrcasecmp(codepage, "UTF8"))
                 ||
-                ((! mystrcasecmp(codepage, "UTF8")) && ((uli = CP_UTF8)))
+                (! mystrcasecmp(codepage, "UTF-8"))
                 ||
-                ((! mystrcasecmp(codepage, "UTF-8")) && ((uli = CP_UTF8)))
+                ((! mystrcasecmp(codepage, "Unix")) && (sscanf("65010", "%lu%c", &uli) == 1))
                 ||
-                ((! mystrcasecmp(codepage, "ISO88591")) && ((uli = 28591)))
+                ((! mystrcasecmp(codepage, "ISO88591")) && (sscanf("28591", "%lu%c", &uli) == 1))
                 ||
-                ((! mystrcasecmp(codepage, "ISO-8859-1")) && ((uli = 28591)))
+                ((! mystrcasecmp(codepage, "ISO-8859-1")) && (sscanf("28591", "%lu%c", &uli) == 1))
                 ||
-                ((! mystrcasecmp(codepage, "ISO_8859-1")) && ((uli = 28591)))
+                ((! mystrcasecmp(codepage, "ISO_8859-1")) && (sscanf("28591", "%lu%c", &uli) == 1))
                 ||
-                ((! mystrcasecmp(codepage, "ISO 8859-1")) && ((uli = 28591)))
+                ((! mystrcasecmp(codepage, "ISO 88591-1")) && (sscanf("28591", "%lu%c", &uli) == 1))
                 ||
-                ((! mystrcasecmp(codepage, "Latin1")) && ((uli = 28591)))
+                ((! mystrcasecmp(codepage, "Latin1")) && (sscanf("28591", "%lu%c", &uli) == 1))
                 ||
-                ((! mystrcasecmp(codepage, "Latin-1")) && ((uli = 28591)))
+                ((! mystrcasecmp(codepage, "Latin-1")) && (sscanf("28591", "%lu%c", &uli) == 1))
                 ||
                 ((RAWCURSES__STARTSWITH(codepage, "cp")
                   ||
@@ -9827,6 +9825,20 @@ static int initscrWithHints(int h, int w, const char *title, const char *shortna
             {
                 UINT newcp;
 
+                if (! mystrcasecmp(codepage, "OEM"))
+                {
+                    uli = CP_OEMCP;
+                }
+                else if (! mystrcasecmp(codepage, "Mac"))
+                {
+                    uli = CP_MACCP;
+                }
+                else if ((! mystrcasecmp(codepage, "UTF8"))
+                         ||
+                         (! mystrcasecmp(codepage, "UTF-8")))
+                {
+                    uli = CP_UTF8;
+                }
                 newcp = (UINT) uli;
                 if (newcp == CP_ACP)
                 {

@@ -1964,8 +1964,9 @@ readfont(const char *fontfile,
     *h = rh;
     for (i = 0; i <256; i ++)
     {
-        font[i] = NULL;
+        font_dynamic[i] = NULL;
     }
+    memcpy((void *) font, (void *) font_dynamic, sizeof(font_dynamic));
     for (i = 0; i <256; i ++)
     {
         font_dynamic[i] = (char *) malloc(rh * rw);

@@ -2693,6 +2693,10 @@ init_trans(int use_bullet_for_dots)
     ascii_cp437[188] =
         ascii_cp437[217] =
         '+';
+    ascii_cp437[181] =
+        ascii_cp437[182] =
+        ascii_cp437[180] =
+        '+';
     altcharset_cp437[183] =
         altcharset_cp437[189] =
         altcharset_cp437[185] =
@@ -2705,9 +2709,11 @@ init_trans(int use_bullet_for_dots)
     ascii_cp437[189] =
         ascii_cp437[183] =
         ascii_cp437[185] =
-        ascii_cp437[181] =
-        ascii_cp437[182] =
-        ascii_cp437[180] =
+        ascii_cp437[181];
+    ascii_cp437[204] =
+        ascii_cp437[198] =
+        ascii_cp437[199] =
+        ascii_cp437[195] =
         '+';
     altcharset_cp437[214] =
         altcharset_cp437[211] =
@@ -2720,10 +2726,11 @@ init_trans(int use_bullet_for_dots)
 #endif
     ascii_cp437[211] =
         ascii_cp437[214] =
-        ascii_cp437[204] =
-        ascii_cp437[198] =
-        ascii_cp437[199] =
-        ascii_cp437[195] =
+        ascii_cp437[204];
+    ascii_cp437[202] =
+        ascii_cp437[207] =
+        ascii_cp437[208] =
+        ascii_cp437[193] =
         '+';
     altcharset_cp437[212] =
         altcharset_cp437[190] =
@@ -2736,10 +2743,11 @@ init_trans(int use_bullet_for_dots)
 #endif
     ascii_cp437[190] =
         ascii_cp437[212] =
-        ascii_cp437[202] =
-        ascii_cp437[207] =
-        ascii_cp437[208] =
-        ascii_cp437[193] =
+        ascii_cp437[202];
+    ascii_cp437[203] =
+        ascii_cp437[209] =
+        ascii_cp437[210] =
+        ascii_cp437[194] =
         '+';
     altcharset_cp437[213] =
         altcharset_cp437[184] =
@@ -2752,11 +2760,7 @@ init_trans(int use_bullet_for_dots)
 #endif
     ascii_cp437[184] =
         ascii_cp437[213] =
-        ascii_cp437[203] =
-        ascii_cp437[209] =
-        ascii_cp437[210] =
-        ascii_cp437[194] =
-        '+';
+        ascii_cp437[203];
     altcharset_cp437[205] =
         altcharset_cp437[196] =
 #if USE_WIDEC_SUPPORT
@@ -2773,6 +2777,9 @@ init_trans(int use_bullet_for_dots)
     ascii_cp437[186] =
         ascii_cp437[179] =
         '|';
+    ascii_cp437[197] =
+        ascii_cp437[4] =
+        '+';
     altcharset_cp437[215] =
         altcharset_cp437[216] =
         altcharset_cp437[206] =
@@ -2784,9 +2791,7 @@ init_trans(int use_bullet_for_dots)
     ascii_cp437[206] =
         ascii_cp437[215] =
         ascii_cp437[216] =
-        ascii_cp437[197] =
-        ascii_cp437[4] =
-        '+';
+        ascii_cp437[197];
     altcharset_cp437[248] =
 #if USE_WIDEC_SUPPORT
         altcharset_cp437[0] = MY_NULL_ACS;
@@ -2835,6 +2840,9 @@ init_trans(int use_bullet_for_dots)
 #endif
     ascii_cp437[15] =
         '#';
+    ascii_cp437[10] =
+        ascii_cp437[219] =
+        '#';
     altcharset_cp437[176] =
         altcharset_cp437[177] =
         altcharset_cp437[178] =
@@ -2846,9 +2854,7 @@ init_trans(int use_bullet_for_dots)
     ascii_cp437[176] =
         ascii_cp437[177] =
         ascii_cp437[178] =
-        ascii_cp437[10] =
-        ascii_cp437[219] =
-        '#';
+        ascii_cp437[10];
 #if USE_ATTR
 #ifdef MY_A_REVERSE
     if (use_revblock ? MY_A_REVERSE : 0)
@@ -3609,12 +3615,16 @@ static int use_revbg = 0;
 
 static int use_altcolor = 0;
 
+/* On a scale of 0x00 ... 0xbd */
+static const char vga_brown[3] = { 0x7e, 0x3f, 0x00 };
+static const char level_scale[4] = { 0x00, 0x3f, 0x7e, 0xbd };
+
 #define PEN_PAL(i,c) \
     ((use_vga_palette || use_ansi_palette) ? \
      (1000L * (long) (unsigned) (my_uchar) ( \
          (use_vga_palette && ((i) == 6)) ? \
-         ("\x7e\x3f\x00")[c] : \
-         ("\x00\x3f\x7e\xbd")[ \
+         vga_brown[c] : \
+         level_scale[ \
              2 * (!!((4 >> (c)) & (i))) \
              + \
              (!!((i) & 8))]) / 0xbd) : \

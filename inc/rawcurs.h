@@ -13115,6 +13115,17 @@ static int move(int y, int x)
 #define RAWCURSES_ASCII_REPLACEMENT_CHARACTER '*'
 #endif
 
+/* SoftIntegration Ch does not like casts in case labels */
+#ifdef _CH_
+#ifndef RAWCURSES_CHTYPE_CASE
+#define RAWCURSES_CHTYPE_CASE(ch) ch
+#endif
+#endif /* _CH_ */
+
+#ifndef RAWCURSES_CHTYPE_CASE
+#define RAWCURSES_CHTYPE_CASE(ch) (chtype) ch
+#endif
+
 static int wctoa(chtype ch)
 {
     if (rawcurses_raw)
@@ -13234,104 +13245,104 @@ static int wctoa(chtype ch)
 #endif
 #endif /* ! defined(UNICODE) */
     switch (ch) {
-    case (chtype) ACS_BLOCK:
-    case (chtype) ACS_CKBOARD:
+    case RAWCURSES_CHTYPE_CASE(ACS_BLOCK):
+    case RAWCURSES_CHTYPE_CASE(ACS_CKBOARD):
         ch = '#';
         break;
-    case (chtype) RAWCURSES__ACS_THALF:
+    case RAWCURSES_CHTYPE_CASE(RAWCURSES__ACS_THALF):
         ch = '\"';
         break;
-    case (chtype) RAWCURSES__ACS_BHALF:
+    case RAWCURSES_CHTYPE_CASE(RAWCURSES__ACS_BHALF):
         ch = ',';
         break;
-    case (chtype) RAWCURSES__ACS_LHALF:
-    case (chtype) RAWCURSES__ACS_RHALF:
+    case RAWCURSES_CHTYPE_CASE(RAWCURSES__ACS_LHALF):
+    case RAWCURSES_CHTYPE_CASE(RAWCURSES__ACS_RHALF):
         ch = '#';
         break;
-    case (chtype) ACS_PLUS:
-    case (chtype) ACS_LTEE:
-    case (chtype) ACS_BTEE:
-    case (chtype) ACS_TTEE:
-    case (chtype) ACS_RTEE:
+    case RAWCURSES_CHTYPE_CASE(ACS_PLUS):
+    case RAWCURSES_CHTYPE_CASE(ACS_LTEE):
+    case RAWCURSES_CHTYPE_CASE(ACS_BTEE):
+    case RAWCURSES_CHTYPE_CASE(ACS_TTEE):
+    case RAWCURSES_CHTYPE_CASE(ACS_RTEE):
         ch = '+';
         break;
-    case (chtype) ACS_BDDB:
-    case (chtype) ACS_BDSB:
-    case (chtype) ACS_BSDB:
+    case RAWCURSES_CHTYPE_CASE(ACS_BDDB):
+    case RAWCURSES_CHTYPE_CASE(ACS_BDSB):
+    case RAWCURSES_CHTYPE_CASE(ACS_BSDB):
         return wctoa(ACS_ULCORNER);
-    case (chtype) ACS_DDBB:
-    case (chtype) ACS_DSBB:
-    case (chtype) ACS_SDBB:
+    case RAWCURSES_CHTYPE_CASE(ACS_DDBB):
+    case RAWCURSES_CHTYPE_CASE(ACS_DSBB):
+    case RAWCURSES_CHTYPE_CASE(ACS_SDBB):
         return wctoa(ACS_LLCORNER);
-    case (chtype) ACS_DDDD:
-    case (chtype) ACS_DSDS:
-    case (chtype) ACS_SDSD:
+    case RAWCURSES_CHTYPE_CASE(ACS_DDDD):
+    case RAWCURSES_CHTYPE_CASE(ACS_DSDS):
+    case RAWCURSES_CHTYPE_CASE(ACS_SDSD):
         return wctoa(ACS_PLUS);
-    case (chtype) ACS_DDDB:
-    case (chtype) ACS_SDSB:
-    case (chtype) ACS_DSDB:
+    case RAWCURSES_CHTYPE_CASE(ACS_DDDB):
+    case RAWCURSES_CHTYPE_CASE(ACS_SDSB):
+    case RAWCURSES_CHTYPE_CASE(ACS_DSDB):
         return wctoa(ACS_LTEE);
-    case (chtype) ACS_DDBD:
-    case (chtype) ACS_SDBD:
-    case (chtype) ACS_DSBS:
+    case RAWCURSES_CHTYPE_CASE(ACS_DDBD):
+    case RAWCURSES_CHTYPE_CASE(ACS_SDBD):
+    case RAWCURSES_CHTYPE_CASE(ACS_DSBS):
         return wctoa(ACS_BTEE);
-    case (chtype) ACS_BDDD:
-    case (chtype) ACS_BDSD:
-    case (chtype) ACS_BSDS:
+    case RAWCURSES_CHTYPE_CASE(ACS_BDDD):
+    case RAWCURSES_CHTYPE_CASE(ACS_BDSD):
+    case RAWCURSES_CHTYPE_CASE(ACS_BSDS):
         return wctoa(ACS_TTEE);
-    case (chtype) ACS_DBBD:
-    case (chtype) ACS_DBBS:
-    case (chtype) ACS_SBBD:
+    case RAWCURSES_CHTYPE_CASE(ACS_DBBD):
+    case RAWCURSES_CHTYPE_CASE(ACS_DBBS):
+    case RAWCURSES_CHTYPE_CASE(ACS_SBBD):
         return wctoa(ACS_LRCORNER);
-    case (chtype) ACS_BBDD:
-    case (chtype) ACS_BBDS:
-    case (chtype) ACS_BBSD:
+    case RAWCURSES_CHTYPE_CASE(ACS_BBDD):
+    case RAWCURSES_CHTYPE_CASE(ACS_BBDS):
+    case RAWCURSES_CHTYPE_CASE(ACS_BBSD):
         return wctoa(ACS_URCORNER);
-    case (chtype) ACS_DBDD:
-    case (chtype) ACS_SBSD:
-    case (chtype) ACS_DBDS:
+    case RAWCURSES_CHTYPE_CASE(ACS_DBDD):
+    case RAWCURSES_CHTYPE_CASE(ACS_SBSD):
+    case RAWCURSES_CHTYPE_CASE(ACS_DBDS):
         return wctoa(ACS_RTEE);
-    case (chtype) ACS_HLINE:
+    case RAWCURSES_CHTYPE_CASE(ACS_HLINE):
         ch = '-';
         break;
-    case (chtype) ACS_BDBD:
+    case RAWCURSES_CHTYPE_CASE(ACS_BDBD):
         return wctoa(ACS_HLINE);
-    case (chtype) ACS_VLINE:
+    case RAWCURSES_CHTYPE_CASE(ACS_VLINE):
         ch = '|';
         break;
-    case (chtype) ACS_DBDB:
+    case RAWCURSES_CHTYPE_CASE(ACS_DBDB):
         return wctoa(ACS_VLINE);
 #ifdef UNICODE
-    case (chtype) 0x25a0U:
-    case (chtype) 0x25cbU:
-    case (chtype) 0x25cfU:
-    case (chtype) 0x25d8U:
+    case RAWCURSES_CHTYPE_CASE(0x25a0U):
+    case RAWCURSES_CHTYPE_CASE(0x25cbU):
+    case RAWCURSES_CHTYPE_CASE(0x25cfU):
+    case RAWCURSES_CHTYPE_CASE(0x25d8U):
         if (! (SWAPDOTS)) {
             return wctoa(ACS_BULLET);
         }
-    case (chtype) 0x2022U:
+    case RAWCURSES_CHTYPE_CASE(0x2022U):
         ch = 'o';
         if (rawcurses_stdio && rawcurses_stdio_petscii && ! rawcurses_stdio_petscii_ac)
         {
             ch = 'O';
         }
         break;
-    case (chtype) 0x30fbU:
+    case RAWCURSES_CHTYPE_CASE(0x30fbU):
         if (SWAPDOTS) {
             return wctoa(ACS_BULLET);
         }
-    case (chtype) 0x00b7U:
+    case RAWCURSES_CHTYPE_CASE(0x00b7U):
         ch = '.';
         break;
-    case (chtype) 0x3000U:
+    case RAWCURSES_CHTYPE_CASE(0x3000U):
         ch = ' ';
         break;
-    case (chtype) 0x2018U:
-    case (chtype) 0x2019U:
+    case RAWCURSES_CHTYPE_CASE(0x2018U):
+    case RAWCURSES_CHTYPE_CASE(0x2019U):
         ch = '\'';
         break;
-    case (chtype) 0x201cU:
-    case (chtype) 0x201dU:
+    case RAWCURSES_CHTYPE_CASE(0x201cU):
+    case RAWCURSES_CHTYPE_CASE(0x201dU):
         ch = '\"';
         break;
 #endif

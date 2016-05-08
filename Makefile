@@ -3807,6 +3807,7 @@ dist_program_files = \
 configure \
 src/fnt2bdf.c \
 src/myman.c \
+src/tccosx.c \
 utl/asc2txt.py \
 utl/bitmap2.py \
 utl/bitmap4.py \
@@ -3820,6 +3821,7 @@ utl/nacl.sh \
 utl/vmsbuild.com \
 utl/tccwin32.bat \
 utl/tccglibc.sh \
+utl/tccosx.sh \
 utl/lsic.bat \
 utl/pacificc.bat \
 utl/turboc.bat \

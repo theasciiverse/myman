@@ -1594,7 +1594,10 @@ render_inner_vline(int vline0, int r_off, int c_off, int x1, int y1, int rlines,
                         }
                     }
                 }
-                c = " \xdf\xdc\xdb"[(oldc != ' ') + 2 * (c != ' ')];
+                {
+                    static const char *blocks = " \xdf\xdc\xdb";
+                    c = blocks[(oldc != ' ') + 2 * (c != ' ')];
+                }
             }
         }
         oldc = 0;

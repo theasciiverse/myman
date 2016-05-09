@@ -62,7 +62,7 @@ main_noreturn() {
     local pwd
     pwd="$(pwd -P 2>&- || echo .)"
     srcdir="${srcdir#"$pwd"/}"
-    exec tcc -g -Wall -D__DARWIN_ONLY_UNIX_CONFORMANCE -D_OS__OSBYTEORDER_H=1 -D__MATH_H__=1 -DUNICODE -DPRIVATEDATADIR=\""$srcdir"\" -DRAWCURSES -I"$srcdir/"inc -I"$srcdir/"mygetopt -I/usr/include "$srcdir/"src/utils.c "$srcdir/"src/logic.c "$srcdir/"mygetopt/mygetopt.c "$srcdir/"src/tccosx.c -run "$srcdir/"src/myman.c -s spr/spr2h -t chr/khr2h  "$@"
+    exec tcc -g -Wall -D__DARWIN_ONLY_UNIX_CONFORMANCE -D_OS__OSBYTEORDER_H=1 -D__MATH_H__=1 -DMYMAN_FINAL_INCLUDE=\"tccosx.c\" -DUNICODE -DPRIVATEDATADIR=\""$srcdir"\" -DRAWCURSES -I"$srcdir/"inc -I"$srcdir/"mygetopt -I/usr/include "$srcdir/"src/utils.c "$srcdir/"src/logic.c "$srcdir/"mygetopt/mygetopt.c -run "$srcdir/"src/myman.c -s spr/spr2h -t chr/khr2h  "$@"
     exit $?
 }
 

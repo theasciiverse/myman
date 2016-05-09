@@ -9755,3 +9755,7 @@ const char _fpmath[] = { 0xCB };
 #endif
 size_t __stack = MYMAN_VBCC_STACK_SIZE;
 #endif
+
+#ifdef MYMAN_FINAL_INCLUDE
+#include MYMAN_FINAL_INCLUDE
+#endif

@@ -3895,6 +3895,8 @@ chr/chr8.afn \
 chr/chr8.asc \
 chr/chr8.bdf \
 chr/chr8.fnt \
+chr/chr8x14.bdf \
+chr/chr8x14.fnt \
 chr/chr8x16.bdf \
 chr/chr8x16.fnt \
 chr/chr8.png \

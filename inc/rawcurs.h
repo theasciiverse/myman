@@ -3340,26 +3340,6 @@ static const char *RAWCURSES_CP437LIKE =
     "rxvt-cygwin" "\0"
     "rxvt-cygwin-native" "\0"
     "screen.teraterm" "\0"
-    "syncterm" "\0"
-    "syncterm-25" "\0"
-    "syncterm-27" "\0"
-    "syncterm-28" "\0"
-    "syncterm-42" "\0"
-    "syncterm-43" "\0"
-    "syncterm-49" "\0"
-    "syncterm-50" "\0"
-    "syncterm-59" "\0"
-    "syncterm-60" "\0"
-    "syncterm-w" "\0"
-    "syncterm-25-w" "\0"
-    "syncterm-27-w" "\0"
-    "syncterm-28-w" "\0"
-    "syncterm-42-w" "\0"
-    "syncterm-43-w" "\0"
-    "syncterm-49-w" "\0"
-    "syncterm-50-w" "\0"
-    "syncterm-59-w" "\0"
-    "syncterm-60-w" "\0"
     "teraterm" "\0"
     "ttyemul-ansi" "\0"
     "uwin" "\0"
@@ -8879,7 +8859,7 @@ static int initscrWithHints(int h, int w, const char *title, const char *shortna
     }
     if (rawcurses_getenv_boolean("RAWCURSES_PETSCII_AC"))
     {
-        rawcurses_stdio_petscii_shifted = *(rawcurses_getenv_boolean("RAWCURSES_PETSCII_AC")) ? 1 : 0;
+        rawcurses_stdio_petscii_ac = *(rawcurses_getenv_boolean("RAWCURSES_PETSCII_AC")) ? 1 : 0;
     }
     else
     {
@@ -9558,6 +9538,10 @@ static int initscrWithHints(int h, int w, const char *title, const char *shortna
                 break;
             }
             cp437like += strlen(cp437like) + 1;
+        }
+        if (RAWCURSES__STARTSWITH(termType, "syncterm"))
+        {
+            rawcurses_stdio_cp437 = 1;
         }
     }
     if (rawcurses_getenv_boolean("RAWCURSES_CP850"))

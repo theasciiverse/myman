@@ -3779,17 +3779,37 @@ static const char *RAWCURSES_TEKLIKE =
     "tek4013" "\0"
     "tek4014" "\0"
     "tek4014-121x58" "\0"
-    "tek4014-121x58-color" "\0"
     "tek4014-121x58-16color" "\0"
+    "tek4014-121x58-8color" "\0"
+    "tek4014-121x58-color" "\0"
     "tek4014-133x64" "\0"
-    "tek4014-133x64-color" "\0"
     "tek4014-133x64-16color" "\0"
+    "tek4014-133x64-8color" "\0"
+    "tek4014-133x64-color" "\0"
+    "tek4014-16color" "\0"
+    "tek4014-16color-121x58" "\0"
+    "tek4014-16color-133x64" "\0"
+    "tek4014-16color-74x35" "\0"
+    "tek4014-16color-81x38" "\0"
+    "tek4014-16color-lg" "\0"
+    "tek4014-16color-sm" "\0"
+    "tek4014-16color-xsm" "\0"
     "tek4014-74x35" "\0"
-    "tek4014-74x35-color" "\0"
     "tek4014-74x35-16color" "\0"
+    "tek4014-74x35-8color" "\0"
+    "tek4014-74x35-color" "\0"
     "tek4014-81x38" "\0"
-    "tek4014-81x38-color" "\0"
     "tek4014-81x38-16color" "\0"
+    "tek4014-81x38-8color" "\0"
+    "tek4014-81x38-color" "\0"
+    "tek4014-8color" "\0"
+    "tek4014-8color-121x58" "\0"
+    "tek4014-8color-133x64" "\0"
+    "tek4014-8color-74x35" "\0"
+    "tek4014-8color-81x38" "\0"
+    "tek4014-8color-lg" "\0"
+    "tek4014-8color-sm" "\0"
+    "tek4014-8color-xsm" "\0"
     "tek4014-color" "\0"
     "tek4014-color-121x58" "\0"
     "tek4014-color-133x64" "\0"
@@ -3799,22 +3819,17 @@ static const char *RAWCURSES_TEKLIKE =
     "tek4014-color-sm" "\0"
     "tek4014-color-xsm" "\0"
     "tek4014-lg" "\0"
-    "tek4014-lg-color" "\0"
     "tek4014-lg-16color" "\0"
+    "tek4014-lg-8color" "\0"
+    "tek4014-lg-color" "\0"
     "tek4014-sm" "\0"
-    "tek4014-sm-color" "\0"
     "tek4014-sm-16color" "\0"
-    "tek4014-16color" "\0"
-    "tek4014-16color-121x58" "\0"
-    "tek4014-16color-133x64" "\0"
-    "tek4014-16color-74x35" "\0"
-    "tek4014-16color-81x38" "\0"
-    "tek4014-16color-lg" "\0"
-    "tek4014-16color-sm" "\0"
-    "tek4014-16color-xsm" "\0"
+    "tek4014-sm-8color" "\0"
+    "tek4014-sm-color" "\0"
     "tek4014-xsm" "\0"
-    "tek4014-xsm-color" "\0"
     "tek4014-xsm-16color" "\0"
+    "tek4014-xsm-8color" "\0"
+    "tek4014-xsm-color" "\0"
     "tek4015" "\0"
     "tek4015-sm" "\0"
     "tek4023" "\0"
@@ -5620,6 +5635,10 @@ static int rawcurses_fput_sgr(FILE *fh, attr_t a, attr_t a_rgb)
         case 5: tekco = 6; break;
         case 6: tekco = 5; break;
         default: tekco = 1;
+        }
+        if (COLORS == 16)
+        {
+            tekco = tekco | (ansifg & 8);
         }
         /* black is reserved for "invisible" corrective
          * overstriking */
@@ -8795,7 +8814,7 @@ static int initscrWithHints(int h, int w, const char *title, const char *shortna
         }
     }
     rawcurses_stdio_tekcm = 'L';
-    if (RAWCURSES__HASFLAG(termType, "16color"))
+    if (RAWCURSES__HASFLAG(termType, "16color") || RAWCURSES__HASFLAG(termType, "8color"))
     {
         rawcurses_stdio_tekcm = 'T';
     }

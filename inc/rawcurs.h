@@ -3777,7 +3777,13 @@ static const char *RAWCURSES_TEKLIKE =
     "tek4012" "\0"
     "tek4013" "\0"
     "tek4014" "\0"
+    "tek4014-81x38" "\0"
     "tek4014-sm" "\0"
+    "tek4014-121x58" "\0"
+    "tek4014-xsm" "\0"
+    "tek4014-133x64" "\0"
+    "tek4014-lg" "\0"
+    "tek4014-74x35" "\0"
     "tek4015" "\0"
     "tek4015-sm" "\0"
     "tek4023" "\0"
@@ -5050,8 +5056,9 @@ static int rawcurses_fput_cup(FILE *fh, int y, int x)
 #define RAWCURSES__TEK_XRES 4096
 #endif
 #ifndef RAWCURSES__TEK_YRES
-/* xterm might think this is 3072 */
-#define RAWCURSES__TEK_YRES 3120
+/* xterm might think this is 3072; comparison with the tek4010 suggests 3120 */
+/*#define RAWCURSES__TEK_YRES 3120*/
+#define RAWCURSES__TEK_YRES 3072
 #endif
 
         tekx = (int) ((RAWCURSES__TEK_XRES * (long) x) / rawcurses_w);

@@ -5626,25 +5626,45 @@ static int rawcurses_fput_sgr(FILE *fh, attr_t a, attr_t a_rgb)
         {
             ansifg = 7;
         }
-        switch (ansifg % 8) {
-        case 0: tekco = 0; break;
-        case 1: tekco = 2; break;
-        case 2: tekco = 3; break;
-        case 3: tekco = 7; break;
-        case 4: tekco = 4; break;
-        case 5: tekco = 6; break;
-        case 6: tekco = 5; break;
-        default: tekco = 1;
-        }
         if (COLORS == 16)
         {
-            tekco = tekco | (ansifg & 8);
+            switch (ansifg % 8) {
+            case 0: tekco = 0; break;
+            case 1: tekco = 2; break;
+            case 2: tekco = 3; break;
+            case 3: tekco = 8; break;
+            case 4: tekco = 4; break;
+            case 5: tekco = 12; break;
+            case 6: tekco = 10; break;
+            case 8: tekco = 14; break;
+            case 9: tekco = 13; break;
+            case 10: tekco = 9; break;
+            case 11: tekco = 7; break;
+            case 12: tekco = 11; break;
+            case 13: tekco = 6; break;
+            case 14: tekco = 5; break;
+            case 15: tekco = 1; break;
+            default: tekco = 15;
+            }
+        }
+        else
+        {
+            switch (ansifg % 8) {
+            case 0: tekco = 0; break;
+            case 1: tekco = 2; break;
+            case 2: tekco = 3; break;
+            case 3: tekco = 7; break;
+            case 4: tekco = 4; break;
+            case 5: tekco = 6; break;
+            case 6: tekco = 5; break;
+            default: tekco = 1;
+            }
         }
         /* black is reserved for "invisible" corrective
          * overstriking */
         if (tekco == 0)
         {
-            tekco = 1;
+            tekco = (COLORS == 15) ? 15 : 11;
             ansifg = 7;
         }
         if (rawcurses_stdio_tekansi)
@@ -5672,8 +5692,16 @@ static int rawcurses_fput_sgr(FILE *fh, attr_t a, attr_t a_rgb)
         }
         else
         {
-            fprintf(fh, ESCAPE("M%c1"), rawcurses_stdio_tekcm);
-            rawcurses_stdio_tekco = 1;
+            if (COLORS == 16)
+            {
+                fprintf(fh, ESCAPE("M%c?"), rawcurses_stdio_tekcm);
+                rawcurses_stdio_tekco = 15;
+            }
+            else
+            {
+                fprintf(fh, ESCAPE("M%c1"), rawcurses_stdio_tekcm);
+                rawcurses_stdio_tekco = 1;
+            }
         }
         return 1;
     }  

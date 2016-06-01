@@ -2495,6 +2495,7 @@ RAWCURSES_GLOBAL(int rawcurses_stdio_emacs, = 0);
 RAWCURSES_GLOBAL(int rawcurses_stdio_dumb, = 0);
 RAWCURSES_GLOBAL(int rawcurses_stdio_tek, = 0);
 RAWCURSES_GLOBAL(int rawcurses_stdio_tekco, = 1);
+RAWCURSES_GLOBAL(char rawcurses_stdio_tekcm, = 'L');
 RAWCURSES_GLOBAL(int rawcurses_stdio_invis, = 0);
 RAWCURSES_GLOBAL(rawcurses_chtype *rawcurses_backing, = NULL);
 RAWCURSES_GLOBAL(int rawcurses_backing_w, = 0);
@@ -3779,12 +3780,16 @@ static const char *RAWCURSES_TEKLIKE =
     "tek4014" "\0"
     "tek4014-121x58" "\0"
     "tek4014-121x58-color" "\0"
+    "tek4014-121x58-ttermpro" "\0"
     "tek4014-133x64" "\0"
     "tek4014-133x64-color" "\0"
+    "tek4014-133x64-ttermpro" "\0"
     "tek4014-74x35" "\0"
     "tek4014-74x35-color" "\0"
+    "tek4014-74x35-ttermpro" "\0"
     "tek4014-81x38" "\0"
     "tek4014-81x38-color" "\0"
+    "tek4014-81x38-ttermpro" "\0"
     "tek4014-color" "\0"
     "tek4014-color-121x58" "\0"
     "tek4014-color-133x64" "\0"
@@ -3795,10 +3800,21 @@ static const char *RAWCURSES_TEKLIKE =
     "tek4014-color-xsm" "\0"
     "tek4014-lg" "\0"
     "tek4014-lg-color" "\0"
+    "tek4014-lg-ttermpro" "\0"
     "tek4014-sm" "\0"
     "tek4014-sm-color" "\0"
+    "tek4014-sm-ttermpro" "\0"
+    "tek4014-ttermpro" "\0"
+    "tek4014-ttermpro-121x58" "\0"
+    "tek4014-ttermpro-133x64" "\0"
+    "tek4014-ttermpro-74x35" "\0"
+    "tek4014-ttermpro-81x38" "\0"
+    "tek4014-ttermpro-lg" "\0"
+    "tek4014-ttermpro-sm" "\0"
+    "tek4014-ttermpro-xsm" "\0"
     "tek4014-xsm" "\0"
     "tek4014-xsm-color" "\0"
+    "tek4014-xsm-ttermpro" "\0"
     "tek4015" "\0"
     "tek4015-sm" "\0"
     "tek4023" "\0"
@@ -5071,7 +5087,9 @@ static int rawcurses_fput_cup(FILE *fh, int y, int x)
 #define RAWCURSES__TEK_XRES 4096
 #endif
 #ifndef RAWCURSES__TEK_YRES
-/* xterm might think this is 3072; comparison with the tek4010 suggests 3120 */
+/* xterm might think this is 3072; comparison with the tek4010
+ * suggests 3120; documentation for other terminals in the series
+ * suggests 3132 or 3133 but with a home position at 3071 */
 /*#define RAWCURSES__TEK_YRES 3120*/
 #define RAWCURSES__TEK_YRES 3072
 #endif
@@ -5621,7 +5639,7 @@ static int rawcurses_fput_sgr(FILE *fh, attr_t a, attr_t a_rgb)
         }
         else
         {
-            fprintf(fh, ESCAPE("ML%c"), '0' + tekco);
+            fprintf(fh, ESCAPE("M%c%c"), rawcurses_stdio_tekcm, '0' + tekco);
             rawcurses_stdio_tekco = tekco;
         }
         return 1;
@@ -5635,7 +5653,7 @@ static int rawcurses_fput_sgr(FILE *fh, attr_t a, attr_t a_rgb)
         }
         else
         {
-            fprintf(fh, ESCAPE("ML1"));
+            fprintf(fh, ESCAPE("M%c1"), rawcurses_stdio_tekcm);
             rawcurses_stdio_tekco = 1;
         }
         return 1;
@@ -8101,7 +8119,7 @@ static void rawcurses_write_backing(int y, int x, rawcurses_chtype ch, int wcw)
                         }
                         else
                         {
-                            fprintf(stdout, ESCAPE("ML0"));
+                            fprintf(stdout, ESCAPE("M%c0"), rawcurses_stdio_tekcm);
                         }
 
                     }
@@ -8131,7 +8149,7 @@ static void rawcurses_write_backing(int y, int x, rawcurses_chtype ch, int wcw)
             }
             else
             {
-                fprintf(stdout, ESCAPE("ML%c"), rawcurses_stdio_tekco + '0');
+                fprintf(stdout, ESCAPE("M%c%c"), rawcurses_stdio_tekcm, rawcurses_stdio_tekco + '0');
             }
         }
     }
@@ -8775,6 +8793,15 @@ static int initscrWithHints(int h, int w, const char *title, const char *shortna
             }
             teklike += strlen(teklike) + 1;
         }
+    }
+    rawcurses_stdio_tekcm = 'L';
+    if (RAWCURSES__HASFLAG(termType, "ttermpro"))
+    {
+        rawcurses_stdio_tekcm = 'T';
+    }
+    if (rawcurses_getenv("RAWCURSES_TEKCM") && *rawcurses_getenv("RAWCURSES_TEKCM"))
+    {
+        rawcurses_stdio_tekcm = *rawcurses_getenv("RAWCURSES_TEKCM");
     }
     if (rawcurses_getenv_boolean("RAWCURSES_NOCLEAR"))
     {

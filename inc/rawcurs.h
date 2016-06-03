@@ -4445,6 +4445,7 @@ static int rawcurses_fput_clear(FILE *fh)
         }
         if (! rawcurses_stdio_relcup)
         {
+            fputs("\035\070`k @\037\b \n\v\r", fh);
             ret = rawcurses_fput_cup(fh, 0, 0) && ret;
         }
         return ret;
@@ -5622,13 +5623,9 @@ static int rawcurses_fput_sgr(FILE *fh, attr_t a, attr_t a_rgb)
             ansifg = ansibg;
             ansibg = 0;
         }
-        if (ansifg == 8)
-        {
-            ansifg = 7;
-        }
         if (COLORS == 16)
         {
-            switch (ansifg % 8) {
+            switch (ansifg) {
             case 0: tekco = 0; break;
             case 1: tekco = 2; break;
             case 2: tekco = 3; break;
@@ -5649,6 +5646,10 @@ static int rawcurses_fput_sgr(FILE *fh, attr_t a, attr_t a_rgb)
         }
         else
         {
+            if (ansifg == 8)
+            {
+                ansifg = 7;
+            }
             switch (ansifg % 8) {
             case 0: tekco = 0; break;
             case 1: tekco = 2; break;
@@ -5683,7 +5684,7 @@ static int rawcurses_fput_sgr(FILE *fh, attr_t a, attr_t a_rgb)
         }
         return 1;
     }
-    else if (rawcurses_stdio_tek && (rawcurses_stdio_tekco != (rawcurses_stdio_tekansi ? 7 : 1)))
+    else if (rawcurses_stdio_tek && (rawcurses_stdio_tekco != (rawcurses_stdio_tekansi ? 7 : (COLORS == 16) ? 15 : 1)))
     {
         if (rawcurses_stdio_tekansi)
         {
@@ -8355,6 +8356,8 @@ static int initscrWithHints(int h, int w, const char *title, const char *shortna
                  ||
                  RAWCURSES__STARTSWITH(termType, "xnuppc")
                  ||
+                 RAWCURSES__HASFLAG(termType, "8color")
+                 ||
                  RAWCURSES__HASBASE(termType, "ibm-3278")
                  ||
                  RAWCURSES__HASBASE(termType, "ibm-3279")
@@ -8846,9 +8849,9 @@ static int initscrWithHints(int h, int w, const char *title, const char *shortna
     {
         rawcurses_stdio_tekcm = 'T';
     }
-    if (rawcurses_getenv("RAWCURSES_TEKCM") && *rawcurses_getenv("RAWCURSES_TEKCM"))
+    if (myman_getenv("RAWCURSES_TEKCM") && *myman_getenv("RAWCURSES_TEKCM"))
     {
-        rawcurses_stdio_tekcm = *rawcurses_getenv("RAWCURSES_TEKCM");
+        rawcurses_stdio_tekcm = *myman_getenv("RAWCURSES_TEKCM");
     }
     if (rawcurses_getenv_boolean("RAWCURSES_NOCLEAR"))
     {
@@ -10996,7 +10999,6 @@ static int initscrWithHints(int h, int w, const char *title, const char *shortna
     {
         rawcurses_stdio_tekansi = 0;
     }
-    rawcurses_stdio_tekco = rawcurses_stdio_tekansi ? 7 : 1;
     if (rawcurses_stdio_scocolor && ! myman_getenv("RAWCURSES_BLINK"))
     {
         rawcurses_stdio_blink = 1;
@@ -11008,6 +11010,14 @@ static int initscrWithHints(int h, int w, const char *title, const char *shortna
     else
     {
         if (RAWCURSES__HASFLAG(termType, "color")
+            ||
+            RAWCURSES__HASFLAG(termType, "8color")
+            ||
+            RAWCURSES__HASFLAG(termType, "16color")
+            ||
+            RAWCURSES__HASFLAG(termType, "88color")
+            ||
+            RAWCURSES__HASFLAG(termType, "256color")
             ||
             RAWCURSES__HASFLAG(termType, "c"))
         {
@@ -11088,6 +11098,7 @@ static int initscrWithHints(int h, int w, const char *title, const char *shortna
 #endif /* USE_TOSCONSOLE */
         }
     }
+    rawcurses_stdio_tekco = rawcurses_stdio_tekansi ? 7 : (COLORS == 16) ? 15 : 1;
     if (rawcurses_getenv_boolean("RAWCURSES_INVIS"))
     {
         rawcurses_stdio_invis = *(rawcurses_getenv_boolean("RAWCURSES_INVIS")) ? 1 : 0;

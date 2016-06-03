@@ -4445,7 +4445,7 @@ static int rawcurses_fput_clear(FILE *fh)
         }
         if (! rawcurses_stdio_relcup)
         {
-            fputs("\035\070`k @\037\b \n\v\r", fh);
+            fputs("\035\?`r @\037\b \n\v\r", fh);
             ret = rawcurses_fput_cup(fh, 0, 0) && ret;
         }
         return ret;

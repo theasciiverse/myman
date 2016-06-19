@@ -2647,7 +2647,8 @@ RAWCURSES_GLOBAL(int rawcurses_palette_ever_changed, = 0);
 
 
 /* Palette maps for Amiga console; these recycle indices */
-static const char *RAWCURSES_AMIGA_PAL8 = "16473732";
+static const char *RAWCURSES_AMIGA_PAL4 = "1332333223323332";
+static const char *RAWCURSES_AMIGA_PAL8 = "1647373226473732";
 static const char *RAWCURSES_AMIGA_PAL16 = "AIJHLMNODGJKCMNB";
 
 
@@ -5885,7 +5886,7 @@ static int rawcurses_fput_sgr(FILE *fh, attr_t a, attr_t a_rgb)
         sgrbg = ansibg;
         if (rawcurses_stdio_amigapal)
         {
-            if (rawcurses_16color)
+            if (((rawcurses_stdio_amigapal < 4) && rawcurses_16color) || rawcurses_stdio_amigapal == 16)
             {
                 sgrfg = RAWCURSES_AMIGA_PAL16[ansifg % 16] % 16;
                 sgrbg = RAWCURSES_AMIGA_PAL16[ansibg % 16] % 16;
@@ -5896,15 +5897,26 @@ static int rawcurses_fput_sgr(FILE *fh, attr_t a, attr_t a_rgb)
                     sgrfg = RAWCURSES_AMIGA_PAL16[15] % 16;
                 }
             }
-            else
+            else if (rawcurses_stdio_amigapal == 4)
             {
-                sgrfg = RAWCURSES_AMIGA_PAL8[ansifg % 8] % 8;
-                sgrbg = RAWCURSES_AMIGA_PAL8[ansibg % 8] % 8;
+                sgrfg = RAWCURSES_AMIGA_PAL4[ansifg % 16] % 16;
+                sgrbg = RAWCURSES_AMIGA_PAL4[ansibg % 16] % 16;
                 if (sgrfg == sgrbg) {
-                    sgrfg = RAWCURSES_AMIGA_PAL8[0] % 8;
+                    sgrfg = RAWCURSES_AMIGA_PAL4[0] % 16;
                 }
                 if (sgrfg == sgrbg) {
-                    sgrfg = RAWCURSES_AMIGA_PAL8[7] % 8;
+                    sgrfg = RAWCURSES_AMIGA_PAL4[15] % 16;
+                }
+            }
+            else
+            {
+                sgrfg = RAWCURSES_AMIGA_PAL8[ansifg % 16] % 16;
+                sgrbg = RAWCURSES_AMIGA_PAL8[ansibg % 16] % 16;
+                if (sgrfg == sgrbg) {
+                    sgrfg = RAWCURSES_AMIGA_PAL8[0] % 16;
+                }
+                if (sgrfg == sgrbg) {
+                    sgrfg = RAWCURSES_AMIGA_PAL8[15] % 16;
                 }
             }
         }
@@ -8719,7 +8731,7 @@ static int initscrWithHints(int h, int w, const char *title, const char *shortna
     }
     if (rawcurses_getenv_boolean("RAWCURSES_AMIGAPAL"))
     {
-        rawcurses_stdio_amigapal = *(rawcurses_getenv_boolean("RAWCURSES_AMIGAPAL")) ? 1 : 0;
+        rawcurses_stdio_amigapal = atoi(myman_getenv("RAWCURSES_AMIGAPAL"));
     }
     else
     {
@@ -8727,6 +8739,10 @@ static int initscrWithHints(int h, int w, const char *title, const char *shortna
         if (RAWCURSES__EQ(termType, "amiga-color"))
         {
             rawcurses_stdio_amigapal = 0;
+        }
+        else if (RAWCURSES__HASFLAG(termType, "4color"))
+        {
+            rawcurses_stdio_amigapal = 4;
         }
     }
     if (rawcurses_getenv_boolean("RAWCURSES_EWAN"))

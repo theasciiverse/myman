@@ -2486,6 +2486,7 @@ RAWCURSES_GLOBAL(int rawcurses_stdio_tall, = 0);
 RAWCURSES_GLOBAL(int rawcurses_stdio_dwl, = 0);
 RAWCURSES_GLOBAL(int rawcurses_stdio_wide, = 0);
 RAWCURSES_GLOBAL(int rawcurses_stdio_amiga, = 0);
+RAWCURSES_GLOBAL(int rawcurses_stdio_amigapal, = 0);
 RAWCURSES_GLOBAL(int rawcurses_stdio_rounded, = 0);
 RAWCURSES_GLOBAL(int rawcurses_stdio_ewan, = 0);
 RAWCURSES_GLOBAL(int rawcurses_stdio_rsxwin, = 0);
@@ -5882,7 +5883,7 @@ static int rawcurses_fput_sgr(FILE *fh, attr_t a, attr_t a_rgb)
                   ((a_rgb & BACKGROUND_INTENSITY) ? 8 : 0));
         sgrfg = ansifg;
         sgrbg = ansibg;
-        if (rawcurses_stdio_amiga)
+        if (rawcurses_stdio_amigapal)
         {
             if (rawcurses_16color)
             {
@@ -6015,13 +6016,13 @@ static int rawcurses_fput_sgr(FILE *fh, attr_t a, attr_t a_rgb)
                     40 + sgrbg % 8);
             if (rawcurses_16color)
             {
-                if (a_rgb & FOREGROUND_INTENSITY)
+                if (sgrfg & 8)
                 {
                     fprintf(fh, "%s%d",
                             more_sgr,
                             90 + sgrfg % 8);
                 }
-                if (a_rgb & BACKGROUND_INTENSITY)
+                if (sgrbg & 8)
                 {
                     fprintf(fh, "%s%d",
                             more_sgr,
@@ -8716,6 +8717,18 @@ static int initscrWithHints(int h, int w, const char *title, const char *shortna
             amigalike += strlen(amigalike) + 1;
         }
     }
+    if (rawcurses_getenv_boolean("RAWCURSES_AMIGAPAL"))
+    {
+        rawcurses_stdio_amigapal = *(rawcurses_getenv_boolean("RAWCURSES_AMIGAPAL")) ? 1 : 0;
+    }
+    else
+    {
+        rawcurses_stdio_amigapal = rawcurses_stdio_amiga;
+        if (RAWCURSES__EQ(termType, "amiga-color"))
+        {
+            rawcurses_stdio_amigapal = 0;
+        }
+    }
     if (rawcurses_getenv_boolean("RAWCURSES_EWAN"))
     {
         rawcurses_stdio_ewan = *(rawcurses_getenv_boolean("RAWCURSES_EWAN")) ? 1 : 0;
@@ -9394,7 +9407,7 @@ static int initscrWithHints(int h, int w, const char *title, const char *shortna
              &&
              (! rawcurses_stdio_ccc_linux))
             ||
-            rawcurses_stdio_amiga
+            rawcurses_stdio_amigapal
             ||
             (rawcurses_16color
              &&

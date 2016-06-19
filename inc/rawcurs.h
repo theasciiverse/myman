@@ -2462,6 +2462,7 @@ RAWCURSES_GLOBAL(int rawcurses_stdio_ansicolor, = 0);
 RAWCURSES_GLOBAL(int rawcurses_stdio_scocolor, = 0);
 RAWCURSES_GLOBAL(int rawcurses_stdio_scocolor_bright, = 0);
 RAWCURSES_GLOBAL(int rawcurses_stdio_putty, = 0);
+RAWCURSES_GLOBAL(int rawcurses_stdio_syncterm, = 0);
 RAWCURSES_GLOBAL(int rawcurses_stdio_kaypro2x, = 0);
 RAWCURSES_GLOBAL(int rawcurses_stdio_noswapdots, = 0);
 RAWCURSES_GLOBAL(int rawcurses_stdio_cp437, = 0);
@@ -2485,6 +2486,7 @@ RAWCURSES_GLOBAL(int rawcurses_stdio_tall, = 0);
 RAWCURSES_GLOBAL(int rawcurses_stdio_dwl, = 0);
 RAWCURSES_GLOBAL(int rawcurses_stdio_wide, = 0);
 RAWCURSES_GLOBAL(int rawcurses_stdio_amiga, = 0);
+RAWCURSES_GLOBAL(int rawcurses_stdio_rounded, = 0);
 RAWCURSES_GLOBAL(int rawcurses_stdio_ewan, = 0);
 RAWCURSES_GLOBAL(int rawcurses_stdio_rsxwin, = 0);
 RAWCURSES_GLOBAL(int rawcurses_stdio_tw52, = 0);
@@ -2641,6 +2643,12 @@ RAWCURSES_GLOBAL(size_t rawcurses_reset_palette_buflen, = 0);
 RAWCURSES_GLOBAL(int rawcurses_reset_palette_seqs, = 0);
 RAWCURSES_GLOBAL(int rawcurses_palette_changed, = 0);
 RAWCURSES_GLOBAL(int rawcurses_palette_ever_changed, = 0);
+
+
+/* Palette maps for Amiga console; these recycle indices */
+static const char *RAWCURSES_AMIGA_PAL8 = "16473732";
+static const char *RAWCURSES_AMIGA_PAL16 = "AIJHLMNODGJKCMNB";
+
 
 /* list of terminals for which we send Atari ST-type color escape sequences */
 /* NOTE: these are prefix matches */
@@ -5856,7 +5864,7 @@ static int rawcurses_fput_sgr(FILE *fh, attr_t a, attr_t a_rgb)
     else if (rawcurses_stdio_bterm) fprintf(fh, "%s24", more_sgr);
     if (a & RAWCURSES__A_COLOR)
     {
-        int ansifg, ansibg;
+        int ansifg, ansibg, sgrfg, sgrbg;
 
         ansifg = (((a_rgb & FOREGROUND_RED) ? 1 : 0)
                   |
@@ -5872,10 +5880,44 @@ static int rawcurses_fput_sgr(FILE *fh, attr_t a, attr_t a_rgb)
                   ((a_rgb & BACKGROUND_BLUE) ? 4 : 0)
                   |
                   ((a_rgb & BACKGROUND_INTENSITY) ? 8 : 0));
-        if ((ansibg & 8) && rawcurses_stdio_putty && ! rawcurses_stdio_scocolor_bright)
+        sgrfg = ansifg;
+        sgrbg = ansibg;
+        if (rawcurses_stdio_amiga)
+        {
+            if (rawcurses_16color)
+            {
+                sgrfg = RAWCURSES_AMIGA_PAL16[ansifg % 16] % 16;
+                sgrbg = RAWCURSES_AMIGA_PAL16[ansibg % 16] % 16;
+                if (sgrfg == sgrbg) {
+                    sgrfg = RAWCURSES_AMIGA_PAL16[0] % 16;
+                }
+                if (sgrfg == sgrbg) {
+                    sgrfg = RAWCURSES_AMIGA_PAL16[15] % 16;
+                }
+            }
+            else
+            {
+                sgrfg = RAWCURSES_AMIGA_PAL8[ansifg % 8] % 8;
+                sgrbg = RAWCURSES_AMIGA_PAL8[ansibg % 8] % 8;
+                if (sgrfg == sgrbg) {
+                    sgrfg = RAWCURSES_AMIGA_PAL8[0] % 8;
+                }
+                if (sgrfg == sgrbg) {
+                    sgrfg = RAWCURSES_AMIGA_PAL8[7] % 8;
+                }
+            }
+        }
+        if ((sgrbg & 8) && rawcurses_stdio_putty && ! rawcurses_stdio_scocolor_bright)
         {
             fputs("m", fh);
             fputs(CSI("=E"), fh);
+            fputs(CSI(""), fh);
+            rawcurses_stdio_scocolor_bright = 1;
+        }
+        if ((sgrbg & 8) && rawcurses_stdio_syncterm && ! rawcurses_stdio_scocolor_bright)
+        {
+            fputs("m", fh);
+            fputs(CSI("\?33h"), fh);
             fputs(CSI(""), fh);
             rawcurses_stdio_scocolor_bright = 1;
         }
@@ -5968,22 +6010,22 @@ static int rawcurses_fput_sgr(FILE *fh, attr_t a, attr_t a_rgb)
         {
             fprintf(fh, "%s%d%s%d",
                     more_sgr,
-                    30 + ansifg % 8,
+                    30 + sgrfg % 8,
                     more_sgr,
-                    40 + ansibg % 8);
+                    40 + sgrbg % 8);
             if (rawcurses_16color)
             {
                 if (a_rgb & FOREGROUND_INTENSITY)
                 {
                     fprintf(fh, "%s%d",
                             more_sgr,
-                            90 + ansifg % 8);
+                            90 + sgrfg % 8);
                 }
                 if (a_rgb & BACKGROUND_INTENSITY)
                 {
                     fprintf(fh, "%s%d",
                             more_sgr,
-                            100 + ansibg % 8);
+                            100 + sgrbg % 8);
                 }
             }
         }
@@ -8511,6 +8553,8 @@ static int initscrWithHints(int h, int w, const char *title, const char *shortna
             ||
             RAWCURSES__EQ(termType, "aterm")
             ||
+            RAWCURSES__STARTSWITH(termType, "syncterm")
+            ||
             RAWCURSES__STARTSWITH(termType, "rxvt")
             ||
             RAWCURSES__STARTSWITH(termType, "putty")
@@ -8679,6 +8723,14 @@ static int initscrWithHints(int h, int w, const char *title, const char *shortna
     else
     {
         rawcurses_stdio_ewan = 0;
+    }
+    if (rawcurses_getenv_boolean("RAWCURSES_ROUNDED"))
+    {
+        rawcurses_stdio_rounded = *(rawcurses_getenv_boolean("RAWCURSES_ROUNDED")) ? 1 : 0;
+    }
+    else
+    {
+        rawcurses_stdio_rounded = rawcurses_stdio_amiga;
     }
     if (rawcurses_getenv_boolean("RAWCURSES_RSXWIN"))
     {
@@ -9341,6 +9393,8 @@ static int initscrWithHints(int h, int w, const char *title, const char *shortna
              (! rawcurses_stdio_ccc)
              &&
              (! rawcurses_stdio_ccc_linux))
+            ||
+            rawcurses_stdio_amiga
             ||
             (rawcurses_16color
              &&
@@ -10980,6 +11034,18 @@ static int initscrWithHints(int h, int w, const char *title, const char *shortna
         if (RAWCURSES__HASBASE(termType, "putty"))
         {
             rawcurses_stdio_putty = 1;
+        }
+    }
+    if (rawcurses_getenv_boolean("RAWCURSES_SYNCTERM"))
+    {
+        rawcurses_stdio_syncterm = *(rawcurses_getenv_boolean("RAWCURSES_SYNCTERM")) ? 1 : 0;
+    }
+    else
+    {
+        rawcurses_stdio_syncterm = 0;
+        if (RAWCURSES__HASBASE(termType, "syncterm"))
+        {
+            rawcurses_stdio_syncterm = 1;
         }
     }
     if (rawcurses_getenv_boolean("RAWCURSES_ANSICOLOR"))
@@ -13446,7 +13512,25 @@ static int wctoa(chtype ch)
             (ch == (chtype) ACS_LRCORNER) ||
             (ch == (chtype) ACS_URCORNER))
         {
-            ch = '+';
+            if (rawcurses_stdio_rounded)
+            {
+                if (ch == (chtype) ACS_LLCORNER)
+                {
+                    ch = '`';
+                }
+                else if (ch == (chtype) ACS_LRCORNER)
+                {
+                    ch = '\'';
+                }
+                else
+                {
+                    ch = '.';
+                }
+            }
+            else
+            {
+                ch = '+';
+            }
             break;
         }
         if (ch == (chtype) ACS_BULLET)

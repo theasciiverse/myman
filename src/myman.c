@@ -2539,6 +2539,8 @@ int use_basic_acs = 0;
 
 int use_extra_acs = 0;
 
+int use_rounded = 0;
+
 static int location_is_suspect = 0;
 
 static void
@@ -2668,7 +2670,7 @@ init_trans(int use_bullet_for_dots)
 #endif
     ascii_cp437[201] =
         ascii_cp437[218] =
-        '+';
+        use_rounded ? '.' : '+';
     altcharset_cp437[200] =
         altcharset_cp437[192] =
 #if USE_WIDEC_SUPPORT
@@ -2676,7 +2678,7 @@ init_trans(int use_bullet_for_dots)
 #endif
     ascii_cp437[200] =
         ascii_cp437[192] =
-        '+';
+        use_rounded ? '`' : '+';
     altcharset_cp437[187] =
         altcharset_cp437[191] =
 #if USE_WIDEC_SUPPORT
@@ -2684,7 +2686,7 @@ init_trans(int use_bullet_for_dots)
 #endif
     ascii_cp437[187] =
         ascii_cp437[191] =
-        '+';
+        use_rounded ? '.' : '+';
     altcharset_cp437[188] =
         altcharset_cp437[217] =
 #if USE_WIDEC_SUPPORT
@@ -2692,7 +2694,7 @@ init_trans(int use_bullet_for_dots)
 #endif
     ascii_cp437[188] =
         ascii_cp437[217] =
-        '+';
+        use_rounded ? '\'' : '+';
     ascii_cp437[181] =
         ascii_cp437[182] =
         ascii_cp437[180] =
@@ -2959,7 +2961,7 @@ init_trans(int use_bullet_for_dots)
 #endif
         ascii_cp437[201] =
             ascii_cp437[218] =
-            '+';
+            use_rounded ? '.' : '+';
         altcharset_cp437[200] =
             altcharset_cp437[192] =
 #ifdef MY_ACS_SSBB
@@ -2974,7 +2976,7 @@ init_trans(int use_bullet_for_dots)
 #endif
         ascii_cp437[200] =
             ascii_cp437[192] =
-            '+';
+            use_rounded ? '`' : '+';
         altcharset_cp437[187] =
             altcharset_cp437[191] =
 #ifdef MY_ACS_BBSS
@@ -2989,7 +2991,7 @@ init_trans(int use_bullet_for_dots)
 #endif
         ascii_cp437[187] =
             ascii_cp437[191] =
-            '+';
+            use_rounded ? '.' : '+';
         altcharset_cp437[188] =
             altcharset_cp437[217] =
 #ifdef MY_ACS_SBBS
@@ -3004,7 +3006,7 @@ init_trans(int use_bullet_for_dots)
 #endif
         ascii_cp437[188] =
             ascii_cp437[217] =
-            '+';
+            use_rounded ? '\'' : '+';
         altcharset_cp437[183] =
             altcharset_cp437[189] =
             altcharset_cp437[185] =
@@ -3530,7 +3532,6 @@ int xoff_received = 0;
 int use_fullwidth = 0;
 int use_bitmap = 0;
 
-int use_rounded = 0;
 int use_double = 0;
 int use_single = 0;
 

@@ -2650,6 +2650,7 @@ RAWCURSES_GLOBAL(int rawcurses_palette_ever_changed, = 0);
 static const char *RAWCURSES_AMIGA_PAL4 = "1332333223323332";
 static const char *RAWCURSES_AMIGA_PAL8 = "1647373226473732";
 static const char *RAWCURSES_AMIGA_PAL16 = "AIJHLMNODGJKCMNB";
+static const char *RAWCURSES_AROS_PAL8 = "1332333223323332";
 
 
 /* list of terminals for which we send Atari ST-type color escape sequences */
@@ -5887,38 +5888,30 @@ static int rawcurses_fput_sgr(FILE *fh, attr_t a, attr_t a_rgb)
         sgrbg = ansibg;
         if (rawcurses_stdio_amigapal)
         {
+            const char *amiga_pal;
+
+            amiga_pal = RAWCURSES_AMIGA_PAL8;
             if (((rawcurses_stdio_amigapal < 4) && rawcurses_16color) || rawcurses_stdio_amigapal == 16)
             {
-                sgrfg = RAWCURSES_AMIGA_PAL16[ansifg % 16] % 16;
-                sgrbg = RAWCURSES_AMIGA_PAL16[ansibg % 16] % 16;
-                if (sgrfg == sgrbg) {
-                    sgrfg = RAWCURSES_AMIGA_PAL16[0] % 16;
-                }
-                if (sgrfg == sgrbg) {
-                    sgrfg = RAWCURSES_AMIGA_PAL16[15] % 16;
-                }
+                amiga_pal = RAWCURSES_AMIGA_PAL16;
             }
             else if (rawcurses_stdio_amigapal == 4)
             {
-                sgrfg = RAWCURSES_AMIGA_PAL4[ansifg % 16] % 16;
-                sgrbg = RAWCURSES_AMIGA_PAL4[ansibg % 16] % 16;
-                if (sgrfg == sgrbg) {
-                    sgrfg = RAWCURSES_AMIGA_PAL4[0] % 16;
-                }
-                if (sgrfg == sgrbg) {
-                    sgrfg = RAWCURSES_AMIGA_PAL4[15] % 16;
-                }
+                amiga_pal = RAWCURSES_AMIGA_PAL4;
             }
-            else
+            else if (rawcurses_stdio_amigapal == 7)
             {
-                sgrfg = RAWCURSES_AMIGA_PAL8[ansifg % 16] % 16;
-                sgrbg = RAWCURSES_AMIGA_PAL8[ansibg % 16] % 16;
-                if (sgrfg == sgrbg) {
-                    sgrfg = RAWCURSES_AMIGA_PAL8[0] % 16;
-                }
-                if (sgrfg == sgrbg) {
-                    sgrfg = RAWCURSES_AMIGA_PAL8[15] % 16;
-                }
+                amiga_pal = RAWCURSES_AROS_PAL8;
+            }
+            sgrfg = amiga_pal[ansifg % 16] % 16;
+            sgrbg = amiga_pal[ansibg % 16] % 16;
+            if (sgrfg == sgrbg)
+            {
+                sgrfg = amiga_pal[0] % 16;
+            }
+            if (sgrfg == sgrbg)
+            {
+                sgrfg = amiga_pal[15] % 16;
             }
         }
         if ((sgrbg & 8) && rawcurses_stdio_putty && ! rawcurses_stdio_scocolor_bright)
@@ -8743,6 +8736,10 @@ static int initscrWithHints(int h, int w, const char *title, const char *shortna
         if (RAWCURSES__EQ(termType, "amiga-color"))
         {
             rawcurses_stdio_amigapal = 0;
+        }
+        else if (RAWCURSES__EQ(termType, "aros"))
+        {
+            rawcurses_stdio_amigapal = 7;
         }
         else if (RAWCURSES__HASFLAG(termType, "4color"))
         {

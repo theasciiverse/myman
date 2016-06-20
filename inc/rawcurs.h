@@ -8400,7 +8400,7 @@ static int initscrWithHints(int h, int w, const char *title, const char *shortna
                  ||
                  RAWCURSES__EQ(termType, "eterm-color")
                  ||
-                 RAWCURSES__EQ(termType, "amiga-color")
+                 RAWCURSES__EQ(termType, "aros")
                  ||
                  (RAWCURSES__STARTSWITH(termType, "nsterm-")
                   &&

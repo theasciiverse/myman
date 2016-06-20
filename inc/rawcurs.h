@@ -8400,6 +8400,8 @@ static int initscrWithHints(int h, int w, const char *title, const char *shortna
                  ||
                  RAWCURSES__EQ(termType, "eterm-color")
                  ||
+                 RAWCURSES__EQ(termType, "amiga-color")
+                 ||
                  (RAWCURSES__STARTSWITH(termType, "nsterm-")
                   &&
                   (RAWCURSES__HASFLAG(termType, "c")
@@ -8417,6 +8419,8 @@ static int initscrWithHints(int h, int w, const char *title, const char *shortna
                  RAWCURSES__STARTSWITH(termType, "xnuppc")
                  ||
                  RAWCURSES__HASFLAG(termType, "8color")
+                 ||
+                 RAWCURSES__HASFLAG(termType, "4color")
                  ||
                  RAWCURSES__HASBASE(termType, "ibm-3278")
                  ||

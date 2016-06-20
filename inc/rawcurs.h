@@ -2648,6 +2648,7 @@ RAWCURSES_GLOBAL(int rawcurses_palette_ever_changed, = 0);
 
 /* Palette maps for Amiga console; these recycle indices */
 static const char *RAWCURSES_AMIGA_PAL4 = "1332333203323332";
+static const char *RAWCURSES_AMIGA_PAL4_OLD = "2333030113330301";
 static const char *RAWCURSES_AMIGA_PAL8 = "1647373206473732";
 static const char *RAWCURSES_AMIGA_PAL16 = "AIJHLMNODGJKCMNB";
 static const char *RAWCURSES_AROS_PAL8 = "1435373604353736";
@@ -5891,13 +5892,17 @@ static int rawcurses_fput_sgr(FILE *fh, attr_t a, attr_t a_rgb)
             const char *amiga_pal;
 
             amiga_pal = RAWCURSES_AMIGA_PAL8;
-            if (((rawcurses_stdio_amigapal < 4) && rawcurses_16color) || rawcurses_stdio_amigapal == 16)
+            if (((rawcurses_stdio_amigapal <= 1) && rawcurses_16color) || rawcurses_stdio_amigapal == 16)
             {
                 amiga_pal = RAWCURSES_AMIGA_PAL16;
             }
             else if (rawcurses_stdio_amigapal == 4)
             {
                 amiga_pal = RAWCURSES_AMIGA_PAL4;
+            }
+            else if (rawcurses_stdio_amigapal == 3)
+            {
+                amiga_pal = RAWCURSES_AMIGA_PAL4_OLD;
             }
             else if (rawcurses_stdio_amigapal == 7)
             {
@@ -8744,6 +8749,10 @@ static int initscrWithHints(int h, int w, const char *title, const char *shortna
         else if (RAWCURSES__HASFLAG(termType, "4color"))
         {
             rawcurses_stdio_amigapal = 4;
+            if (RAWCURSES__HASFLAG(termType, "old"))
+            {
+                rawcurses_stdio_amigapal = 3;
+            }
         }
     }
     if (rawcurses_getenv_boolean("RAWCURSES_EWAN"))

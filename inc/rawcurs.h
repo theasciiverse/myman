@@ -2647,7 +2647,7 @@ RAWCURSES_GLOBAL(int rawcurses_palette_ever_changed, = 0);
 
 
 /* Palette maps for Amiga console; these recycle indices */
-static const char *RAWCURSES_AMIGA_PAL4 = "1332333203323332";
+static const char *RAWCURSES_AMIGA_PAL4 = "1030303000323032";
 static const char *RAWCURSES_AMIGA_PAL4_OLD = "2333030113330301";
 static const char *RAWCURSES_AMIGA_PAL8 = "1647373206473732";
 static const char *RAWCURSES_AMIGA_PAL16 = "AIJHLMNODGJKCMNB";

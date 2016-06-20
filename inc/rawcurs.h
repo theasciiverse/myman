@@ -8402,6 +8402,14 @@ static int initscrWithHints(int h, int w, const char *title, const char *shortna
                  ||
                  RAWCURSES__EQ(termType, "aros")
                  ||
+                 RAWCURSES__EQ(termType, "amiga")
+                 ||
+                 RAWCURSES__EQ(termType, "amiga-h")
+                 ||
+                 RAWCURSES__EQ(termType, "amiga-8bit")
+                 ||
+                 RAWCURSES__EQ(termType, "morphos")
+                 ||
                  (RAWCURSES__STARTSWITH(termType, "nsterm-")
                   &&
                   (RAWCURSES__HASFLAG(termType, "c")
@@ -8750,7 +8758,15 @@ static int initscrWithHints(int h, int w, const char *title, const char *shortna
         {
             rawcurses_stdio_amigapal = 7;
         }
-        else if (RAWCURSES__HASFLAG(termType, "4color"))
+        else if (RAWCURSES__HASFLAG(termType, "4color")
+                 ||
+                 RAWCURSES__EQ(termType, "amiga")
+                 ||
+                 RAWCURSES__EQ(termType, "amiga-h")
+                 ||
+                 RAWCURSES__EQ(termType, "amiga-8bit")
+                 ||
+                 RAWCURSES__EQ(termType, "morphos"))
         {
             rawcurses_stdio_amigapal = 4;
             if (RAWCURSES__HASFLAG(termType, "old"))
@@ -11140,6 +11156,12 @@ static int initscrWithHints(int h, int w, const char *title, const char *shortna
             RAWCURSES__HASFLAG(termType, "m")
             ||
             RAWCURSES__EQ(termType, "xtermm")
+            ||
+            RAWCURSES__EQ(termType, "amiga")
+            ||
+            RAWCURSES__EQ(termType, "amiga-h")
+            ||
+            RAWCURSES__EQ(termType, "amiga-8bit")
             ||
             RAWCURSES__EQ(termType, "et52"))
         {

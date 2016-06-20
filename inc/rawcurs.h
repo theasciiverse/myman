@@ -2647,10 +2647,10 @@ RAWCURSES_GLOBAL(int rawcurses_palette_ever_changed, = 0);
 
 
 /* Palette maps for Amiga console; these recycle indices */
-static const char *RAWCURSES_AMIGA_PAL4 = "1332333223323332";
-static const char *RAWCURSES_AMIGA_PAL8 = "1647373226473732";
+static const char *RAWCURSES_AMIGA_PAL4 = "1332333203323332";
+static const char *RAWCURSES_AMIGA_PAL8 = "1647373206473732";
 static const char *RAWCURSES_AMIGA_PAL16 = "AIJHLMNODGJKCMNB";
-static const char *RAWCURSES_AROS_PAL8 = "1435373624353736";
+static const char *RAWCURSES_AROS_PAL8 = "1435373604353736";
 
 
 /* list of terminals for which we send Atari ST-type color escape sequences */

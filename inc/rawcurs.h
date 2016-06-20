@@ -3389,6 +3389,7 @@ static const char *RAWCURSES_KOI8RLIKE =
 /* list of terminals for which we assume Amiga-style quirks */
 static const char *RAWCURSES_AMIGALIKE =
     "amiga" "\0"
+    "aros" "\0"
     "morphos" "\0"
     "\0\0";
 
@@ -8062,7 +8063,10 @@ static const char *rawcurses_term_type(void)
 #if defined(MORPHOS)
     if (! termType) termType = "morphos";
 #endif
-#if defined(__AROS__) || defined(AMIGA)
+#if defined(__AROS__)
+    if (! termType) termType = "aros";
+#endif
+#if defined(AMIGA)
     if (! termType) termType = "amiga";
 #endif
 #ifdef __MSDOS__

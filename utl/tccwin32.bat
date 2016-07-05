@@ -9,4 +9,4 @@ set CC=tcc
 
 if errorlevel 1 set CC=c:\tcc\tcc
 
-%CC% -DRAWCURSES -Iinc -Imygetopt -Lobj src\myman.c mygetopt\mygetopt.c src\utils.c src\logic.c -luser32 %1 %2 %3 %4 %5 %6 %7 %8 %9
+%CC% -DRAWCURSES -Iinc -Imygetopt -Lobj src\myman.c mygetopt\mygetopt.c src\utils.c src\logic.c -luser32 %*

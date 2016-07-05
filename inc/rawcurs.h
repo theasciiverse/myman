@@ -400,8 +400,10 @@
 #endif
 
 #ifdef __TINYC__
+#ifndef _TIMEVAL_DEFINED
 #ifndef HAVE_STRUCT_TIMEVAL
 #define HAVE_STRUCT_TIMEVAL 0
+#endif
 #endif
 #endif
 
@@ -2650,6 +2652,7 @@ RAWCURSES_GLOBAL(int rawcurses_palette_ever_changed, = 0);
 static const char *RAWCURSES_AMIGA_PAL4 = "1030303000323032";
 static const char *RAWCURSES_AMIGA_PAL4_OLD = "2333030113330301";
 static const char *RAWCURSES_AMIGA_PAL8 = "1647373206473732";
+static const char *RAWCURSES_AMIGA_PAL8_WB31 = "1565456005654562";
 static const char *RAWCURSES_AMIGA_PAL16 = "AIJHLMNODGJKCMNB";
 static const char *RAWCURSES_AROS_PAL8 = "1435373604353736";
 
@@ -5904,6 +5907,10 @@ static int rawcurses_fput_sgr(FILE *fh, attr_t a, attr_t a_rgb)
             {
                 amiga_pal = RAWCURSES_AMIGA_PAL4_OLD;
             }
+            else if (rawcurses_stdio_amigapal == 6)
+            {
+                amiga_pal = RAWCURSES_AMIGA_PAL8_WB31;
+            }
             else if (rawcurses_stdio_amigapal == 7)
             {
                 amiga_pal = RAWCURSES_AROS_PAL8;
@@ -8426,7 +8433,9 @@ static int initscrWithHints(int h, int w, const char *title, const char *shortna
                  ||
                  RAWCURSES__STARTSWITH(termType, "xnuppc")
                  ||
-                 RAWCURSES__HASFLAG(termType, "8color")
+                 (RAWCURSES__HASFLAG(termType, "8color")
+                  &&
+                  ! RAWCURSES__HASFLAG(termType, "wb31"))
                  ||
                  RAWCURSES__HASFLAG(termType, "4color")
                  ||
@@ -8773,6 +8782,10 @@ static int initscrWithHints(int h, int w, const char *title, const char *shortna
             {
                 rawcurses_stdio_amigapal = 3;
             }
+        }
+        else if (RAWCURSES__HASFLAG(termType, "wb31"))
+        {
+            rawcurses_stdio_amigapal = 6;
         }
     }
     if (rawcurses_getenv_boolean("RAWCURSES_EWAN"))

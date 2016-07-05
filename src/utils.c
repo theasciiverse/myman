@@ -49,7 +49,11 @@
 
 #include <ctype.h>
 #if HAVE_UNISTD_H
+#ifdef MY_UNISTD_H
+#include MY_UNISTD_H
+#else
 #include <unistd.h>
+#endif
 #endif
 #if HAVE_ERRNO_H
 #include <errno.h>

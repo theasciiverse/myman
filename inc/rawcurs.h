@@ -2483,6 +2483,7 @@ RAWCURSES_GLOBAL(int rawcurses_stdio_revbg, = 0);
 RAWCURSES_GLOBAL(int rawcurses_stdio_bterm, = 0);
 RAWCURSES_GLOBAL(int rawcurses_stdio_vt52, = 0);
 RAWCURSES_GLOBAL(int rawcurses_stdio_st52, = 0);
+RAWCURSES_GLOBAL(int rawcurses_stdio_qnx, = 0);
 RAWCURSES_GLOBAL(int rawcurses_stdio_hp, = 0);
 RAWCURSES_GLOBAL(int rawcurses_stdio_tall, = 0);
 RAWCURSES_GLOBAL(int rawcurses_stdio_dwl, = 0);
@@ -4508,6 +4509,7 @@ static int rawcurses_fput_civis(FILE *fh)
 #endif
     if (rawcurses_stdio_m100) return fputs(ESCAPE("Q"), fh) != EOF;
     if (rawcurses_stdio_st52) return fputs(ESCAPE("f"), fh) != EOF;
+    if (rawcurses_stdio_qnx) return fputs(ESCAPE("y0"), fh) != EOF;
     if (rawcurses_stdio_wy60) return fputs(ESCAPE("`0"), fh) != EOF;
     if (rawcurses_stdio_kaypro2x) return fputs(ESCAPE("C4"), fh) != EOF;
     if (rawcurses_stdio_petscii && rawcurses_color && (rawcurses_w == 80)) return fputs(ESCAPE("U"), fh) != EOF;
@@ -4531,6 +4533,7 @@ static int rawcurses_fput_cnorm(FILE *fh)
 #endif
     if (rawcurses_stdio_m100) return fputs(ESCAPE("P"), fh) != EOF;
     if (rawcurses_stdio_st52) return fputs(ESCAPE("e"), fh) != EOF;
+    if (rawcurses_stdio_qnx) return fputs(ESCAPE("y1"), fh) != EOF;
     if (rawcurses_stdio_wy60) return fputs(ESCAPE("`1"), fh) != EOF;
     if (rawcurses_stdio_kaypro2x) return fputs(ESCAPE("B4"), fh) != EOF;
     if (rawcurses_stdio_petscii && rawcurses_color && (rawcurses_w == 80)) return fputs(ESCAPE("S"), fh) != EOF;
@@ -4652,6 +4655,7 @@ static int rawcurses_fput_smacs(FILE *fh)
     if (rawcurses_stdio_acs_so) return fputc('\x0e', fh) != EOF;
     if (rawcurses_stdio_acs_active) return 1;
     if (rawcurses_stdio_m100) return 1;
+    if (rawcurses_stdio_qnx) return 1;
     if (rawcurses_stdio_vt52) return fputs(ESCAPE("F"), fh) != EOF;
     if (rawcurses_stdio_acs_h19) return fputs("\x0e" CSI("10m"), fh) != EOF;
     if (rawcurses_stdio_wy60 && rawcurses_stdio_acs_wy60) return fputs(ESCAPE("H"), fh) != EOF;
@@ -4692,6 +4696,7 @@ static int rawcurses_fput_rmacs(FILE *fh)
     if (rawcurses_stdio_acs_so) return fputc('\x0f', fh) != EOF;
     if (rawcurses_stdio_acs_active) return 1;
     if (rawcurses_stdio_m100) return 1;
+    if (rawcurses_stdio_qnx) return 1;
     if (rawcurses_stdio_vt52) return fputs(ESCAPE("G"), fh) != EOF;
     if (rawcurses_stdio_acs_h19) return fputs(CSI("11m\x0f"), fh) != EOF;
     if (rawcurses_stdio_wy60 && rawcurses_stdio_acs_wy60) return 1;
@@ -5423,6 +5428,80 @@ static int rawcurses_fput_sgr(FILE *fh, attr_t a, attr_t a_rgb)
                 {
                     fprintf(fh, ESCAPE("p"));
                 }
+            }
+            return 1;
+        }
+        if (rawcurses_stdio_qnx)
+        {
+            int qnxfg, qnxbg;
+
+            qnxfg = (((a_rgb & FOREGROUND_RED) ? 4 : 0)
+                        |
+                        ((a_rgb & FOREGROUND_GREEN) ? 2 : 0)
+                        |
+                        ((a_rgb & FOREGROUND_BLUE) ? 1 : 0)
+                        |
+                        ((a_rgb & FOREGROUND_INTENSITY) ? 8 : 0));
+            qnxbg = (((a_rgb & BACKGROUND_RED) ? 4 : 0)
+                        |
+                        ((a_rgb & BACKGROUND_GREEN) ? 2 : 0)
+                        |
+                        ((a_rgb & BACKGROUND_BLUE) ? 1 : 0)
+                        |
+                        ((a_rgb & BACKGROUND_INTENSITY) ? 8 : 0));
+            fprintf(fh, ESCAPE(")"));
+            fprintf(fh, ESCAPE("R"));
+            if (a & RAWCURSES__A_COLOR)
+            {
+                if ((qnxfg != qnxbg) &&
+                    (((qnxfg == 8) ? 7 : (qnxfg % 8)) ==
+                     ((qnxbg == 8) ? 7 : (qnxbg % 8))))
+                {
+                    qnxfg = qnxbg ? 0 : 15;
+                }
+                fprintf(fh,
+                        ESCAPE("@%c%c"),
+                        '0' + ((qnxfg == 8) ? 7 : (qnxfg % 8)),
+                        '0' + ((qnxbg == 8) ? 7 : (qnxbg % 8)));
+                if ((qnxfg & FOREGROUND_INTENSITY) && (qnxfg != 8))
+                {
+                    fprintf(fh, ESCAPE("<"));
+                }
+                else
+                {
+                    fprintf(fh, ESCAPE(">"));
+                }
+            }
+            else
+            {
+                if (a & A_BOLD)
+                {
+                    fprintf(fh, ESCAPE("<"));
+                }
+                else
+                {
+                    fprintf(fh, ESCAPE(">"));
+                }
+            }
+            if ((qnxbg & BACKGROUND_INTENSITY) && (qnxbg != 8) && rawcurses_stdio_blink)
+            {
+                fprintf(fh, ESCAPE("{"));
+            }
+            else
+            {
+                fprintf(fh, ESCAPE("}"));
+            }
+            if (a & A_UNDERLINE)
+            {
+                fprintf(fh, ESCAPE("["));
+            }
+            else
+            {
+                fprintf(fh, ESCAPE("]"));
+            }
+            if ((a & (A_STANDOUT | A_REVERSE)) && ! (a & RAWCURSES__A_COLOR))
+            {
+                fprintf(fh, ESCAPE("("));
             }
             return 1;
         }
@@ -8863,6 +8942,28 @@ static int initscrWithHints(int h, int w, const char *title, const char *shortna
             st52like += strlen(st52like) + 1;
         }
     }
+    if (rawcurses_getenv_boolean("RAWCURSES_QNX"))
+    {
+        rawcurses_stdio_qnx = *(rawcurses_getenv_boolean("RAWCURSES_QNX")) ? 1 : 0;
+    }
+    else
+    {
+        rawcurses_stdio_qnx = 0;
+        if (RAWCURSES__STARTSWITH(termType, "qnx")
+            ||
+            RAWCURSES__STARTSWITH(termType, "qnx4")
+            ||
+            RAWCURSES__STARTSWITH(termType, "qnxt")
+            ||
+            RAWCURSES__STARTSWITH(termType, "qnxt4")
+            ||
+            RAWCURSES__STARTSWITH(termType, "qnxm")
+            ||
+            RAWCURSES__STARTSWITH(termType, "qnxw"))
+        {
+            rawcurses_stdio_qnx = 1;
+        }
+    }
     if (rawcurses_getenv_boolean("RAWCURSES_GEMPAL"))
     {
         rawcurses_stdio_gempal = *(rawcurses_getenv_boolean("RAWCURSES_GEMPAL")) ? 1 : 0;
@@ -11183,7 +11284,7 @@ static int initscrWithHints(int h, int w, const char *title, const char *shortna
         }
         else
         {
-            rawcurses_color = rawcurses_stdio ? (rawcurses_stdio_scocolor || rawcurses_stdio_ansicolor || ! ((rawcurses_stdio_vt52 && ! (rawcurses_stdio_st52 || rawcurses_stdio_z100)) || rawcurses_stdio_adm3a || rawcurses_stdio_emacs || rawcurses_stdio_dumb || (rawcurses_stdio_tek && ! rawcurses_stdio_tekansi) || rawcurses_stdio_atascii)) : 1;
+            rawcurses_color = rawcurses_stdio ? (rawcurses_stdio_scocolor || rawcurses_stdio_ansicolor || ! ((rawcurses_stdio_vt52 && ! (rawcurses_stdio_st52 || rawcurses_stdio_qnx || rawcurses_stdio_z100)) || rawcurses_stdio_adm3a || rawcurses_stdio_emacs || rawcurses_stdio_dumb || (rawcurses_stdio_tek && ! rawcurses_stdio_tekansi) || rawcurses_stdio_atascii)) : 1;
 #if USE_CONIO
 #if ! defined(_CONIO2_H_)
             if (rawcurses_stdio_conio)

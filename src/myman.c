@@ -184,7 +184,11 @@
 #include <math.h>
 #include <ctype.h>
 #if HAVE_UNISTD_H
+#ifdef MY_UNISTD_H
+#include MY_UNISTD_H
+#else
 #include <unistd.h>
+#endif
 #endif
 #include <stdlib.h>
 #include <string.h>

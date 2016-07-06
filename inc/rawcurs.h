@@ -3361,6 +3361,7 @@ static const char *RAWCURSES_CP437LIKE =
     "ttyemul-ansi" "\0"
     "uwin" "\0"
     "vt100+" "\0"
+    "vt52-netterm" "\0"
     "vtnt" "\0"
     "wy60-AT" "\0"
     "wy60-PC" "\0"

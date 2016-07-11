@@ -5913,7 +5913,7 @@ static int rawcurses_fput_sgr(FILE *fh, attr_t a, attr_t a_rgb)
         return 1;
     }
     if ((rawcurses_stdio_adm3a || rawcurses_stdio_emacs || rawcurses_stdio_dumb || rawcurses_stdio_tek) && ! rawcurses_stdio_ansicolor) return 0;
-    if (rawcurses_stdio_vt52 && rawcurses_stdio_ansicolor) fputs(ESCAPE("<"), fh);
+    if (rawcurses_stdio_vt52 && (rawcurses_stdio_ansicolor == 2)) fputs(ESCAPE("<"), fh);
     if (rawcurses_stdio_bterm) fputs(CSI("m"), fh);
     fputs(CSI("0"), fh);
     if (((a_rgb & BACKGROUND_INTENSITY)
@@ -6145,7 +6145,7 @@ static int rawcurses_fput_sgr(FILE *fh, attr_t a, attr_t a_rgb)
         }
     }
     ret = fputc('m', fh) != EOF;
-    if (rawcurses_stdio_vt52 && rawcurses_stdio_ansicolor) fputs(CSI("?2l"), fh);
+    if (rawcurses_stdio_vt52 && (rawcurses_stdio_ansicolor == 2)) fputs(CSI("?2l"), fh);
     return ret;
 }
 
@@ -11228,7 +11228,7 @@ static int initscrWithHints(int h, int w, const char *title, const char *shortna
     }
     if (rawcurses_getenv_boolean("RAWCURSES_ANSICOLOR"))
     {
-        rawcurses_stdio_ansicolor = *(rawcurses_getenv_boolean("RAWCURSES_ANSICOLOR")) ? 1 : 0;
+        rawcurses_stdio_ansicolor = atoi(myman_getenv("RAWCURSES_ANSICOLOR"));
     }
     else
     {

@@ -4659,6 +4659,7 @@ static int rawcurses_fput_smacs(FILE *fh)
     if (rawcurses_stdio_acs_active) return 1;
     if (rawcurses_stdio_m100) return 1;
     if (rawcurses_stdio_qnx) return 1;
+    if (rawcurses_stdio_vt52 && (rawcurses_stdio_ansicolor == 2)) fputs(ESCAPE("<") ESCAPE("(0") CSI("?2l"), fh);
     if (rawcurses_stdio_vt52) return fputs(ESCAPE("F"), fh) != EOF;
     if (rawcurses_stdio_acs_h19) return fputs("\x0e" CSI("10m"), fh) != EOF;
     if (rawcurses_stdio_wy60 && rawcurses_stdio_acs_wy60) return fputs(ESCAPE("H"), fh) != EOF;
@@ -4700,6 +4701,7 @@ static int rawcurses_fput_rmacs(FILE *fh)
     if (rawcurses_stdio_acs_active) return 1;
     if (rawcurses_stdio_m100) return 1;
     if (rawcurses_stdio_qnx) return 1;
+    if (rawcurses_stdio_vt52 && (rawcurses_stdio_ansicolor == 2)) fputs(ESCAPE("<") ESCAPE("(B") CSI("?2l"), fh);
     if (rawcurses_stdio_vt52) return fputs(ESCAPE("G"), fh) != EOF;
     if (rawcurses_stdio_acs_h19) return fputs(CSI("11m\x0f"), fh) != EOF;
     if (rawcurses_stdio_wy60 && rawcurses_stdio_acs_wy60) return 1;

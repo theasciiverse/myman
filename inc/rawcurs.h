@@ -3011,6 +3011,8 @@ static const char *RAWCURSES_VT52LIKE =
     "wyse60-316X" "\0"
     "X-hpterm" "\0"
     "xterm-vt52" "\0"
+    "xterm-vt52-xorg" "\0"
+    "xterm-vt52-color" "\0"
     "z-100" "\0"
     "z-100bw" "\0"
     "z100" "\0"
@@ -5911,6 +5913,7 @@ static int rawcurses_fput_sgr(FILE *fh, attr_t a, attr_t a_rgb)
         return 1;
     }
     if ((rawcurses_stdio_adm3a || rawcurses_stdio_emacs || rawcurses_stdio_dumb || rawcurses_stdio_tek) && ! rawcurses_stdio_ansicolor) return 0;
+    if (rawcurses_stdio_vt52 && rawcurses_stdio_ansicolor) fputs(ESCAPE("<"), fh);
     if (rawcurses_stdio_bterm) fputs(CSI("m"), fh);
     fputs(CSI("0"), fh);
     if (((a_rgb & BACKGROUND_INTENSITY)
@@ -6142,6 +6145,7 @@ static int rawcurses_fput_sgr(FILE *fh, attr_t a, attr_t a_rgb)
         }
     }
     ret = fputc('m', fh) != EOF;
+    if (rawcurses_stdio_vt52 && rawcurses_stdio_ansicolor) fputs(CSI("?2l"), fh);
     return ret;
 }
 
@@ -11232,6 +11236,10 @@ static int initscrWithHints(int h, int w, const char *title, const char *shortna
         if (RAWCURSES__EQ(termType, "vt52-color"))
         {
             rawcurses_stdio_ansicolor = 1;
+        }
+        else if (RAWCURSES__EQ(termType, "xterm-vt52-color"))
+        {
+            rawcurses_stdio_ansicolor = 2;
         }
     }
     if (rawcurses_getenv_boolean("RAWCURSES_TEKANSI"))

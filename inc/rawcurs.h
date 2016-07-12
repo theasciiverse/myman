@@ -12482,6 +12482,13 @@ static int rawcurses_getch(void)
             if (ret == 0x8d) return '\n';
             return ret;
         }
+        if (rawcurses_stdio_qnx)
+        {
+            if (ret == 0xa1) return KEY_UP;
+            if (ret == 0xa9) return KEY_DOWN;
+            if (ret == 0xa4) return KEY_LEFT;
+            if (ret == 0xa6) return KEY_RIGHT;
+        }
         if ((ret == 0x7f)
             &&
             (rawcurses_input_state != RAWCURSES_INPUT_STATE_DEFAULT)

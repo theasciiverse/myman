@@ -9394,6 +9394,10 @@ static int initscrWithHints(int h, int w, const char *title, const char *shortna
         {
             rawcurses_stdio_iso2022 = 0;
         }
+        if (rawcurses_getenv_boolean("NCURSES_NO_UTF8_ACS"))
+        {
+            rawcurses_stdio_iso2022 = 0;
+        }
     }
     if (rawcurses_getenv_boolean("RAWCURSES_ACS"))
     {
@@ -9491,6 +9495,10 @@ static int initscrWithHints(int h, int w, const char *title, const char *shortna
             /* HACK: avoid ACS in cygwin rxvt running in native Win32
              * GUI mode since the font lacks the ACS glyphs */
             rawcurses_stdio_acs = 1;
+        }
+        if (rawcurses_getenv_boolean("NCURSES_NO_UTF8_ACS"))
+        {
+            rawcurses_stdio_acs = 0;
         }
     }
     if (rawcurses_getenv_boolean("RAWCURSES_NOBULLET"))

@@ -9393,6 +9393,8 @@ static int initscrWithHints(int h, int w, const char *title, const char *shortna
             ||
             RAWCURSES__STARTSWITH(termType, "pcansi")
             ||
+            RAWCURSES__STARTSWITH(termType, "avatar")
+            ||
             RAWCURSES__STARTSWITH(termType, "syncterm")
             ||
             RAWCURSES__STARTSWITH(termType, "ttyemul-ansi")

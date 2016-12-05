@@ -3374,6 +3374,8 @@ static const char *RAWCURSES_CP437LIKE =
     "rxvt-cygwin" "\0"
     "rxvt-cygwin-native" "\0"
     "scoansi" "\0"
+    "scoansi-new" "\0"
+    "scoansi-old" "\0"
     "screen.teraterm" "\0"
     "teraterm" "\0"
     "ttyemul-ansi" "\0"

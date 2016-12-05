@@ -375,6 +375,14 @@
 #define HAVE_UNISTD_H 0
 #endif
 
+/* MY_UNISTD_H: alternate location for <unistd.h> */
+
+#ifdef __TINYC__
+#ifdef WIN32
+#define MY_UNISTD_H <sys/unistd.h>
+#endif
+#endif
+
 /* HAVE_UNIXIO_H: do we have <unixio.h>? */
 
 #ifndef HAVE_UNIXIO_H

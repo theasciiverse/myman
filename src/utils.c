@@ -168,7 +168,7 @@ static const char *myman_legal_notice_data[] = {
     "the property of their respective owners. No mention of a trademark, ",
     "trademark owner, or other party shall be construed as an endorsement ",
     "of MyMan or any other product by any party. If you believe that by ",
-    "using or posessing MyMan the rights of others would be infringed, you ",
+    "using or possessing MyMan the rights of others would be infringed, you ",
     "are strongly encouraged to cease using MyMan and its derivatives and ",
     "delete all copies of the MyMan software and its derivatives, and to ",
     "inform the author or authors of MyMan and the distributor or ",

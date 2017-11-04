@@ -1118,10 +1118,13 @@ render_inner_vline(int vline0, int r_off, int c_off, int x1, int y1, int rlines,
          vcol0++) {
         int vloff, vcoff = 0;
         int xtile, ytile;
+        int xtile2, ytile2;
         int x_off, y_off;
         int s;
         int vline1, vcol1;
+        int vline2;
         int is_wall = 0;
+        int line2, col2;
 
         vloff = vcol0 % (use_bitmap ? 2 : 1);
         if (! vloff) {
@@ -1130,20 +1133,27 @@ render_inner_vline(int vline0, int r_off, int c_off, int x1, int y1, int rlines,
         }
         vline1 = vline0 + vloff;
         vcol1 = (vcol0 / (use_bitmap ? 2 : 1)) + vcoff;
+        vline2 = vline0 + ((vcol0 ^ 1) % (use_bitmap ? 2 : 1));
         if (reflect)
         {
             line = vcol1;
+            line2 = vcol1;
             col = vline1;
+            col2 = vline2;
         }
         else
         {
             line = vline1;
+            line2 = vline2;
             col = vcol1;
+            col2 = vcol1;
         }
         p = MY_PEN_NORMAL;
         c = 0;
         xtile = XTILE((i = col + x1));
         ytile = YTILE((j = line + y1));
+        xtile2 = XTILE((col2 + x1));
+        ytile2 = YTILE((line2 + y1));
         if (! (line || col))
         {
             int nscrolling;
@@ -1212,9 +1222,12 @@ render_inner_vline(int vline0, int r_off, int c_off, int x1, int y1, int rlines,
                 {
                     p = MY_PEN_REVERSE;
                 }
+                mark_cell(xtile, ytile);
             }
         }
         if (IS_CELL_DIRTY(xtile, ytile)
+            ||
+            IS_CELL_DIRTY(xtile2, ytile2)
             ||
             ISPELLET((unsigned) (my_uchar) (char) mazes[maze_level][ytile * (maze_w[maze_level] + 1)+xtile])
             ||
@@ -1537,28 +1550,134 @@ render_inner_vline(int vline0, int r_off, int c_off, int x1, int y1, int rlines,
             if (! c)
                 c = ' ';
         }
-        if (use_bitmap) {
-            if (! vloff) {
+        if (use_bitmap)
+        {
+            if (! vloff)
+            {
                 oldc = c;
                 oldp = p;
                 continue;
             }
-            if (c || oldc) {
-                if (! c) {
+            if (c || oldc)
+            {
+                if (! c)
+                {
                     c = ' ';
-                    p = MY_PEN_NORMAL;
                 }
-                if (! oldc) {
+                if (! oldc)
+                {
                     oldc = ' ';
-                    oldp = MY_PEN_NORMAL;
                 }
-                c = fallback_cp437[c & 255];
-                oldc = fallback_cp437[oldc & 255];
-                if (((p / 16) != (p % 16)) || ((oldp / 16) != (oldp % 16))) {
+                while (fallback_cp437[c & 255] != c)
+                {
+                    c = fallback_cp437[c & 255];
+                }
+                while (fallback_cp437[oldc & 255] != oldc)
+                {
+                    oldc = fallback_cp437[oldc & 255];
+                }
+                if (((p / 16) != (p % 16)) || ((oldp / 16) != (oldp % 16)))
+                {
                     oldp = pen_to_color_pen(oldp);
                     p = pen_to_color_pen(p);
                 }
-                if (p != oldp) {
+                oldc = (oldc == ' ') ? ' ' : '#';
+                c = (c == ' ') ? ' ' : '#';
+                if (p != oldp)
+                {
+                    if (c == ' ')
+                    {
+                        if ((p % 16) != (p / 16))
+                        {
+                            if (p / 16)
+                            {
+                                p = p / 16;
+                                c = '#';
+                            }
+                            else
+                            {
+                                p = 7;
+                            }
+                        }
+                        else
+                        {
+                            if ((p & (MY_PEN___SPECIAL | MY_PEN_REVERSE)) == MY_PEN_REVERSE)
+                            {
+                                c = '#';
+                                p &= ~MY_PEN_REVERSE;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        if ((p % 16) != (p / 16))
+                        {
+                            if (p % 16)
+                            {
+                                p = p % 16;
+                            }
+                            else
+                            {
+                                c = ' ';
+                                p = 7;
+                            }
+                        }
+                        else
+                        {
+                            if ((p & (MY_PEN___SPECIAL | MY_PEN_REVERSE)) == MY_PEN_REVERSE)
+                            {
+                                c = ' ';
+                                p &= ~MY_PEN_REVERSE;
+                            }
+                        }
+                    }
+                    if (oldc == ' ')
+                    {
+                        if ((oldp % 16) != (oldp / 16))
+                        {
+                            if (oldp / 16)
+                            {
+                                oldp = oldp / 16;
+                                oldc = '#';
+                            }
+                            else
+                            {
+                                oldp = 7;
+                            }
+                        }
+                        else
+                        {
+                            if ((oldp & (MY_PEN___SPECIAL | MY_PEN_REVERSE)) == MY_PEN_REVERSE)
+                            {
+                                oldc = '#';
+                                oldp &= ~MY_PEN_REVERSE;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        if ((oldp % 16) != (oldp / 16))
+                        {
+                            if (oldp % 16)
+                            {
+                                oldp = oldp % 16;
+                            }
+                            else
+                            {
+                                oldc = ' ';
+                                oldp = 7;
+                            }
+                        }
+                        else
+                        {
+                            if ((oldp & (MY_PEN___SPECIAL | MY_PEN_REVERSE)) == MY_PEN_REVERSE)
+                            {
+                                oldc = ' ';
+                                oldp &= ~MY_PEN_REVERSE;
+                            }
+                        }
+                    }
+/*
                     if (((oldp / 16) != (oldp % 16)) ? (oldp / 16) : (oldp & MY_PEN_REVERSE)) {
                         oldc = (oldc == '#') ? ' ' : '#';
                         oldp = ((oldp / 16) != (oldp % 16)) ? (oldp / 16) : (oldp & ~MY_PEN_REVERSE);
@@ -1577,21 +1696,85 @@ render_inner_vline(int vline0, int r_off, int c_off, int x1, int y1, int rlines,
                     } else {
                         c = (c == ' ') ? ' ' : '#';
                     }
-                    if ((c == ' ') && (oldc != ' ')) {
-                        p = oldp;
-                    }
-                    if (((p % 16) != (oldp % 16)) &&
-                        (c != ' ') &&
-                        (oldc != ' ') &&
-                        ((p / 16) != (p % 16))) {
-                        if ((p % 16) > (oldp % 16)) {
-                            p = (p % 16) + 16 * (oldp % 16);
-                            oldp = (oldp / 16) + 16 * (oldp % 16);
-                            oldc = ' ';
-                        } else {
-                            p = (oldp % 16) + 16 * (p % 16);
-                            c = ' ';
+*/
+                    if ((((p / 16) != (p % 16))) || ((oldp / 16) != (oldp % 16)))
+                    {
+                        if ((c == ' ') && (oldc != ' '))
+                        {
+                            if ((oldp % 16) != (p / 16))
+                            {
+                                oldp = p = (oldp % 16) + 16 * (p / 16);
+                            }
+                            else
+                            {
+                                oldc = ' ';
+                                oldp = p;
+                            }
                         }
+                        else if ((c == ' ') && (oldc == ' '))
+                        {
+                            if ((oldp / 16) != (p / 16))
+                            {
+                                c = '#';
+                                oldp = p = (p / 16) + 16 * (oldp / 16);
+                            }
+                            else
+                            {
+                                oldp = p;
+                            }
+                        }
+                        else if ((c != ' ') && (oldc == ' '))
+                        {
+                            if ((oldp / 16) != (p % 16))
+                            {
+                                oldp = p = (p % 16) + 16 * (oldp / 16);
+                            }
+                            else
+                            {
+                                oldc = '#';
+                                oldp = p;
+                            }
+                        }
+                        else if ((c != ' ') && (oldc != ' '))
+                        {
+                            if ((oldp % 16) != (p % 16))
+                            {
+                                oldc = ' ';
+                                oldp = p = (p % 16) + 16 * (oldp % 16);
+                            }
+                            else
+                            {
+                                oldp = p;
+                            }
+                        }
+                        if ((((p % 16) % 8) < ((p / 16) % 8)) || (((p % 16) == 0) && ((p / 16) == 8))) {
+                            p = (p / 16) + 16 * (p % 16);
+                            oldp = (oldp / 16) + 16 * (oldp % 16);
+                            c = (c == ' ') ? '#' : ' ';
+                            oldc = (oldc == ' ') ? '#' : ' ';
+                        }
+                    }
+                    else
+                    {
+                        if (oldp & MY_PEN_REVERSE)
+                        {
+                            oldc = (oldc == '#') ? ' ' : '#';
+                            oldp &= ~MY_PEN_REVERSE;
+                        }
+                        if (p & MY_PEN_REVERSE)
+                        {
+                            c = (c == '#') ? ' ' : '#';
+                            p &= ~MY_PEN_REVERSE;
+                        }
+                        if (oldc == ' ')
+                        {
+                            oldp = 0;
+                        }
+                        if (c == ' ')
+                        {
+                            p = 0;
+                        }
+                        oldp = p = (p | oldp);
                     }
                 }
                 {

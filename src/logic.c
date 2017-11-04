@@ -1223,6 +1223,7 @@ render_inner_vline(int vline0, int r_off, int c_off, int x1, int y1, int rlines,
                     p = MY_PEN_REVERSE;
                 }
                 mark_cell(xtile, ytile);
+                mark_cell(xtile2, ytile2);
             }
         }
         if (IS_CELL_DIRTY(xtile, ytile)
@@ -1230,6 +1231,8 @@ render_inner_vline(int vline0, int r_off, int c_off, int x1, int y1, int rlines,
             IS_CELL_DIRTY(xtile2, ytile2)
             ||
             ISPELLET((unsigned) (my_uchar) (char) mazes[maze_level][ytile * (maze_w[maze_level] + 1)+xtile])
+            ||
+            ISPELLET((unsigned) (my_uchar) (char) mazes[maze_level][ytile2 * (maze_w[maze_level] + 1)+xtile2])
             ||
             winning)
         {

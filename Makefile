@@ -697,7 +697,7 @@ endif
 
 # Directory of maze, tile, sprite and graphics datafiles
 ifeq ($(subst default,undefined,$(origin privatedatadir)),undefined)
-privatedatadir = ${datadir}/${DIST}
+privatedatadir = ${datadir}/${MYMAN}
 endif
 # Directory of maze datafiles
 ifeq ($(subst default,undefined,$(origin mazedir)),undefined)
@@ -717,7 +717,7 @@ gfxdir = ${privatedatadir}/gfx
 endif
 # Directory of documentation
 ifeq ($(subst default,undefined,$(origin privatedocdir)),undefined)
-privatedocdir = ${docdir}/${DIST}
+privatedocdir = ${docdir}/${MYMAN}
 endif
 
 # variable names for shared installation directories
@@ -1716,24 +1716,6 @@ MYMANCOMMAND_EXE = $(call program,${MYMANCOMMAND})
 endif
 ifeq ($(subst default,undefined,$(origin MYMAN_CT_EXE)),undefined)
 MYMAN_CT_EXE = $(call program,${MYMAN_CT})
-endif
-
-## Tools for updating the "whatis" database
-
-# newer mandb style
-ifeq ($(subst default,undefined,$(origin MANDB)),undefined)
-MANDB = mandb
-endif
-ifeq ($(subst default,undefined,$(origin MANDBFLAGS)),undefined)
-MANDBFLAGS = 
-endif
-
-# older makewhatis style (used if newer mandb style fails)
-ifeq ($(subst default,undefined,$(origin MAKEWHATIS)),undefined)
-MAKEWHATIS = makewhatis
-endif
-ifeq ($(subst default,undefined,$(origin MAKEWHATISFLAGS)),undefined)
-MAKEWHATISFLAGS = 
 endif
 
 ## C preprocessing flags
@@ -6129,27 +6111,7 @@ endif
         ))
 	${NORMAL_UNPACK}
 	${POST_INSTALL}
-	@${MAKE} ${MAKELOOP} \
-            update-whatis
 	${NORMAL_INSTALL}
-
-.PHONY: update-whatis
-
-update-whatis:
-	@-(dir=$(call q,${DESTDIR}${mandir}); \
-        export dir; \
-        if ${SHELL} -c $(call q,${MANDB} ${MANDBFLAGS} ${EXTRAMANDBFLAGS} "$${dir}") </dev/null >/dev/null 2>&1 || \
-            ${SHELL} -c $(call q,${MAKEWHATIS} ${MAKEWHATISFLAGS} ${EXTRAMAKEWHATISFLAGS} "$${dir}") </dev/null; \
-        then \
-            ${ECHOLINEX} updated whatis database for "$${dir}"; \
-        else \
-            echo $@: failed to update whatis database >&2; \
-            ${ECHOLINEX} '** ' you should update the whatis database for "$${dir}" >&2; \
-            echo '** ' if you would like the \`apropos\' and \`whatis\' programs to >&2; \
-            ${ECHOLINEX} '** ' find ${MYMAN}\; if you have the \`mandb\' and/or \`makewhatis\' >&2; \
-            echo '** ' programs, add their directories to your PATH and re-run this command >&2; \
-            exit 1; \
-        fi)
 
 uninstall-files: $(call mw,${MAKEFILE})
 ifeq (yes,${with_app})
@@ -6163,8 +6125,6 @@ endif
             $(call uninstall_file,${file}) \
                 || exit $$?; \
         ))
-	@${MAKE} ${MAKELOOP} \
-            update-whatis
 	${NORMAL_UNINSTALL}
 
 uninstalldirs: $(call mw,${MAKEFILE}) uninstall-files

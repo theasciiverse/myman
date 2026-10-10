@@ -1,0 +1,21 @@
+[COPY] --- T2-COPYRIGHT-BEGIN ---
+[COPY] t2/package/*/myman/myman.desc
+[COPY] Copyright (C) 2022 - 2026 The T2 SDE Project
+[COPY] SPDX-License-Identifier: GPL-2.0
+[COPY] --- T2-COPYRIGHT-END ---
+
+[I] A text-mode videogame inspired by Pac-Man
+
+[T] MyMan is a text-mode videogame inspired by Namco's Pac-Man.
+
+[U] https://myman.sourceforge.io
+
+[A] Benjamin C. W. Sittler <bsittler@gmail.com>
+[M] René Rebe <rene@exactco.de>
+
+[C] extra/game
+
+[L] MIT
+[V] 0.7
+
+[D] 8c66e5b1bca9fff70c96e5c08af60f0af16fa9352a66f85ed4122d18 myman-0.7.0.tar.gz https://prdownloads.sourceforge.net/sourceforge/myman/

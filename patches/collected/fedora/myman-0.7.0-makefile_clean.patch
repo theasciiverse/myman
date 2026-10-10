@@ -1,0 +1,233 @@
+--- Makefile.orig	2008-07-20 22:45:40.000000000 +0200
++++ Makefile	2016-12-07 13:07:15.550082528 +0100
+@@ -639,7 +639,7 @@
+ 
+ # Directory of maze, tile and sprite datafiles
+ ifeq ($(subst default,undefined,$(origin privatedatadir)),undefined)
+-privatedatadir = $(datadir)/$(DIST)
++privatedatadir = $(datadir)/$(MYMAN)
+ endif
+ # Directory of maze datafiles
+ ifeq ($(subst default,undefined,$(origin mazedir)),undefined)
+@@ -655,7 +655,7 @@
+ endif
+ # Directory of documentation
+ ifeq ($(subst default,undefined,$(origin privatedocdir)),undefined)
+-privatedocdir = $(docdir)/$(DIST)
++privatedocdir = $(docdir)/$(MYMAN)
+ endif
+ 
+ # variable names for shared installation directories
+@@ -1147,13 +1147,6 @@
+ export GROFF_NO_SGR
+ GROFF_NO_SGR:=t
+ 
+-ifeq ($(subst default,undefined,$(origin TROFFTXT)),undefined)
+-TROFFTXT = $(TROFF)
+-endif
+-ifeq ($(subst default,undefined,$(origin TROFFTXTFLAGS)),undefined)
+-TROFFTXTFLAGS = $(TROFFFLAGS) $(TROFFTXTDRIVER)
+-endif
+-
+ ifeq ($(subst default,undefined,$(origin TROFFPS)),undefined)
+ TROFFPS = $(TROFF)
+ endif
+@@ -1161,13 +1154,6 @@
+ TROFFPSFLAGS = $(TROFFFLAGS) -Tps
+ endif
+ 
+-ifeq ($(subst default,undefined,$(origin TROFFDVI)),undefined)
+-TROFFDVI = $(TROFF)
+-endif
+-ifeq ($(subst default,undefined,$(origin TROFFDVIFLAGS)),undefined)
+-TROFFDVIFLAGS = $(TROFFFLAGS) -Tdvi
+-endif
+-
+ ifeq ($(subst default,undefined,$(origin TROFFHTML)),undefined)
+ TROFFHTML = $(TROFF)
+ endif
+@@ -1175,29 +1161,14 @@
+ TROFFHTMLFLAGS = $(TROFFFLAGS) -Thtml
+ endif
+ 
+-ifeq ($(subst default,undefined,$(origin FORMAT_MANPAGE_TXT)),undefined)
+-FORMAT_MANPAGE_TXT = $(TROFFTXT) $(TROFFTXTFLAGS)
+-endif
+ ifeq ($(subst default,undefined,$(origin FORMAT_MANPAGE_PS)),undefined)
+ FORMAT_MANPAGE_PS = $(TROFFPS) $(TROFFPSFLAGS)
+ endif
+-ifeq ($(subst default,undefined,$(origin FORMAT_MANPAGE_DVI)),undefined)
+-FORMAT_MANPAGE_DVI = $(TROFFDVI) $(TROFFDVIFLAGS)
+-endif
+ ifeq ($(subst default,undefined,$(origin FORMAT_MANPAGE_HTML)),undefined)
+ FORMAT_MANPAGE_HTML = $(TROFFHTML) $(TROFFHTMLFLAGS)
+ endif
+ 
+ # manpage conversions
+-ifeq ($(subst default,undefined,$(origin MANTOTXT)),undefined)
+-MANTOTXT = \
+-$(ECHOLINEX) creating $(call q,$@) from $(call q,$<) && \
+-$(SHELL) -c $(call q,$(FORMAT_MANPAGE_TXT) | $(FILTER_BACKSPACES)) < $(call q,$<) > $(call q,$@) || \
+-    ( \
+-        $(REMOVE) $(call q,$@) ; \
+-        exit 1 \
+-    )
+-endif
+ ifeq ($(subst default,undefined,$(origin MANTOPS)),undefined)
+ MANTOPS = \
+ $(ECHOLINEX) creating $(call q,$@) from $(call q,$<) && \
+@@ -1207,15 +1178,6 @@
+         exit 1 \
+     )
+ endif
+-ifeq ($(subst default,undefined,$(origin MANTODVI)),undefined)
+-MANTODVI = \
+-$(ECHOLINEX) creating $(call q,$@) from $(call q,$<) && \
+-$(SHELL) -c $(call q,$(FORMAT_MANPAGE_DVI)) < $(call q,$<) > $(call q,$@) || \
+-    ( \
+-        $(REMOVE) $(call q,$@) ; \
+-        exit 1 \
+-    )
+-endif
+ ifeq ($(subst default,undefined,$(origin MANTOHTML)),undefined)
+ MANTOHTML = \
+ $(ECHOLINEX) creating $(call q,$@) from $(call q,$<) && \
+@@ -1365,24 +1327,6 @@
+ MYMAN_CT_EXE = $(call program,$(MYMAN_CT))
+ endif
+ 
+-## Tools for updating the "whatis" database
+-
+-# newer mandb style
+-ifeq ($(subst default,undefined,$(origin MANDB)),undefined)
+-MANDB = mandb
+-endif
+-ifeq ($(subst default,undefined,$(origin MANDBFLAGS)),undefined)
+-MANDBFLAGS = 
+-endif
+-
+-# older makewhatis style (used if newer mandb style fails)
+-ifeq ($(subst default,undefined,$(origin MAKEWHATIS)),undefined)
+-MAKEWHATIS = makewhatis
+-endif
+-ifeq ($(subst default,undefined,$(origin MAKEWHATISFLAGS)),undefined)
+-MAKEWHATISFLAGS = 
+-endif
+-
+ ## C preprocessing flags
+ ifeq ($(subst default,undefined,$(origin CPPFLAGS)),undefined)
+ CPPFLAGS = $(MY_GETOPTCPPFLAGS) $(EXTRACPPFLAGS)
+@@ -3484,15 +3428,9 @@
+ 
+ fill-dir-$(BINDIST):: $(call mw,$(MAKEFILE)) all $(addprefix $(call mw,$(srcdir))/,$(doc_files)) empty-dir-xq-$(call mwxq,$(BINDIST))
+ 	@-$(MAKE) $(MAKELOOP) \
+-             install-data-xq-$(call qxq,$(BINDIST)/$(MYMAN)$(txt)) \
+-             data_file=$(MYMAN)$(txt)
+-	@-$(MAKE) $(MAKELOOP) \
+              install-data-xq-$(call qxq,$(BINDIST)/$(MYMAN).ps) \
+              data_file=$(MYMAN).ps
+ 	@-$(MAKE) $(MAKELOOP) \
+-             install-data-xq-$(call qxq,$(BINDIST)/$(MYMAN).dvi) \
+-             data_file=$(MYMAN).dvi
+-	@-$(MAKE) $(MAKELOOP) \
+              install-data-xq-$(call qxq,$(BINDIST)/$(MYMAN)$(htm)) \
+              data_file=$(MYMAN)$(htm)
+ 	$(POST_UNPACK)
+@@ -3683,11 +3621,7 @@
+ 
+ .PHONY: docs
+ 
+-docs: $(MYMAN)$(man6ext) $(MYMAN)$(txt) $(MYMAN).ps dvi $(MYMAN)$(htm) $(addprefix $(call mw,$(srcdir))/,$(doc_files))
+-
+-.PHONY: dvi
+-
+-dvi: $(MYMAN).dvi
++docs: $(MYMAN)$(man6ext) $(MYMAN).ps $(MYMAN)$(htm) $(addprefix $(call mw,$(srcdir))/,$(doc_files))
+ 
+ ifeq (yes,$(with_mac))
+ clean:: wipe-dir-xq-$(call mwxq,$(MYMAN).app)
+@@ -3705,7 +3639,7 @@
+ 	-$(REMOVE) $(MYMAN)$(htm)$(tmp) $(call q,$(objdir))/*$o $(MYMAN)$x TAGS
+ 	-$(REMOVE) $(call q,$(objdir))/*$O
+ 	-$(REMOVE) _sanity?$X $(call q,$(objdir)/_sanity)?.c
+-	-$(REMOVE) $(MYMAN)$(man6ext) $(MYMAN)$(txt) $(MYMAN).ps $(MYMAN).dvi $(MYMAN)$(htm)
++	-$(REMOVE) $(MYMAN)$(man6ext) $(MYMAN).ps $(MYMAN)$(htm)
+ 	-$(REMOVE) $(XMYMAN)$(sh) $(XMYMAN2)$(sh) $(XMYMAN3)$(sh) $(XMYMAN4)$(sh) $(XBIGMAN)$(sh) $(XHUGEMAN)$(sh) $(XBITMAN)$(sh) $(XBITMAN2)$(sh) $(XBITMAN3)$(sh) $(XBITMAN4)$(sh) $(XBITMAN5)$(sh) $(XBITMAN6)$(sh) $(XQUACKMAN)$(sh) $(MYMANCOMMAND)
+ 	-$(REMOVE) $(foreach variant,$(MYMANVARIANTS),$(call q,$(call mymanvariant_data,$(variant)).c))
+ 	-$(REMOVE) $(foreach size,$(MYMANSIZES),$(call q,$(call mymansize_data,$(size)).c))
+@@ -3823,15 +3757,9 @@
+         ))
+ 	$(NORMAL_UNPACK)
+ 	@-$(MAKE) $(MAKELOOP) \
+-             install-data-xq-$(call qxq,$(DESTDIR)$(privatedocdir)/$(MYMAN)$(txt)) \
+-             data_file=$(MYMAN)$(txt)
+-	@-$(MAKE) $(MAKELOOP) \
+              install-data-xq-$(call qxq,$(DESTDIR)$(privatedocdir)/$(MYMAN).ps) \
+              data_file=$(MYMAN).ps
+ 	@-$(MAKE) $(MAKELOOP) \
+-             install-data-xq-$(call qxq,$(DESTDIR)$(privatedocdir)/$(MYMAN).dvi) \
+-             data_file=$(MYMAN).dvi
+-	@-$(MAKE) $(MAKELOOP) \
+              install-data-xq-$(call qxq,$(DESTDIR)$(privatedocdir)/$(MYMAN)$(htm)) \
+              data_file=$(MYMAN)$(htm)
+ 	@-$(MAKE) $(MAKELOOP) \
+@@ -3966,40 +3894,20 @@
+         ))
+ 	$(NORMAL_UNPACK)
+ 	$(POST_INSTALL)
+-	@$(MAKE) $(MAKELOOP) \
+-            update-whatis
++	@$(MAKE) $(MAKELOOP)
+ 	$(NORMAL_INSTALL)
+ 
+-.PHONY: update-whatis
+-
+-update-whatis:
+-	@-(dir=$(call q,$(DESTDIR)$(mandir)); \
+-        export dir; \
+-        if $(SHELL) -c $(call q,$(MANDB) $(MANDBFLAGS) $(EXTRAMANDBFLAGS) "$${dir}") </dev/null >/dev/null 2>&1 || \
+-            $(SHELL) -c $(call q,$(MAKEWHATIS) $(MAKEWHATISFLAGS) $(EXTRAMAKEWHATISFLAGS) "$${dir}") </dev/null; \
+-        then \
+-            $(ECHOLINEX) updated whatis database for "$${dir}"; \
+-        else \
+-            echo $@: failed to update whatis database >&2; \
+-            $(ECHOLINEX) '** ' you should update the whatis database for "$${dir}" >&2; \
+-            echo '** ' if you would like the \`apropos\' and \`whatis\' programs to >&2; \
+-            $(ECHOLINEX) '** ' find $(MYMAN)\; if you have the \`mandb\' and/or \`makewhatis\' >&2; \
+-            echo '** ' programs, add their directories to your PATH and re-run this command >&2; \
+-            exit 1; \
+-        fi)
+-
+ uninstall-files: $(call mw,$(MAKEFILE))
+ ifeq (yes,$(with_mac))
+ 	@($(call uninstall_file,$(DESTDIR)$(appdir_MYMAN_APP_CONTENTS)/Info.plist))
+ 	@($(call uninstall_file,$(DESTDIR)$(appdir_MYMAN_APP_CONTENTS_PLATFORM)/$(MYMAN_EXE)$x))
+ 	@($(call uninstall_file,$(DESTDIR)$(appdir_MYMAN_APP_CONTENTS_RESOURCES)/$(MYMAN_ICNS)))
+ endif
+-	@($(foreach file,$(DESTDIR)$(bindir)/$(MYMAN_EXE)$x $(DESTDIR)$(bindir)/$(DIST_EXE)$x $(DESTDIR)$(bindir)/$(XMYMAN_EXE)$(sh) $(DESTDIR)$(bindir)/$(XMYMAN2_EXE)$(sh) $(DESTDIR)$(bindir)/$(XMYMAN3_EXE)$(sh) $(DESTDIR)$(bindir)/$(XMYMAN4_EXE)$(sh) $(DESTDIR)$(bindir)/$(XBIGMAN_EXE)$(sh) $(DESTDIR)$(bindir)/$(XHUGEMAN_EXE)$(sh) $(DESTDIR)$(bindir)/$(XBITMAN_EXE)$(sh) $(DESTDIR)$(bindir)/$(XBITMAN2_EXE)$(sh) $(DESTDIR)$(bindir)/$(XBITMAN3_EXE)$(sh) $(DESTDIR)$(bindir)/$(XBITMAN4_EXE)$(sh) $(DESTDIR)$(bindir)/$(XBITMAN5_EXE)$(sh) $(DESTDIR)$(bindir)/$(XBITMAN6_EXE)$(sh) $(DESTDIR)$(bindir)/$(XQUACKMAN_EXE)$(sh) $(DESTDIR)$(bindir)/$(MYMANCOMMAND_EXE) $(DESTDIR)$(bindir)/$(MYMAN_CT_EXE) $(DESTDIR)$(privatedocdir)/ChangeLog $(DESTDIR)$(privatedocdir)/INSTALL $(DESTDIR)$(privatedocdir)/LICENSE $(DESTDIR)$(privatedocdir)/README $(DESTDIR)$(privatedocdir)/TODO $(DESTDIR)$(privatedocdir)/NEWS $(DESTDIR)$(privatedocdir)/ONEWS $(DESTDIR)$(privatedocdir)/COPYRIGHT $(DESTDIR)$(privatedocdir)/VERSION $(DESTDIR)$(privatedocdir)/$(MYMAN)$(txt) $(DESTDIR)$(privatedocdir)/$(MYMAN).ps $(DESTDIR)$(privatedocdir)/$(MYMAN).dvi $(DESTDIR)$(privatedocdir)/$(MYMAN)$(htm) $(DESTDIR)$(man6dir)/$(MYMAN_EXE)$(man6ext) $(DESTDIR)$(man6dir)/$(MYMAN_CT_EXE)$(man6ext) $(DESTDIR)$(man6dir)/$(XQUACKMAN_EXE)$(man6ext) $(DESTDIR)$(man6dir)/$(MYMANCOMMAND_EXE)$(man6ext) $(DESTDIR)$(man6dir)/$(XHUGEMAN_EXE)$(man6ext) $(DESTDIR)$(man6dir)/$(XBITMAN_EXE)$(man6ext) $(DESTDIR)$(man6dir)/$(XBITMAN2_EXE)$(man6ext) $(DESTDIR)$(man6dir)/$(XBITMAN3_EXE)$(man6ext) $(DESTDIR)$(man6dir)/$(XBITMAN4_EXE)$(man6ext) $(DESTDIR)$(man6dir)/$(XBITMAN5_EXE)$(man6ext) $(DESTDIR)$(man6dir)/$(XBITMAN6_EXE)$(man6ext) $(DESTDIR)$(man6dir)/$(XBIGMAN_EXE)$(man6ext) $(DESTDIR)$(man6dir)/$(XMYMAN4_EXE)$(man6ext) $(DESTDIR)$(man6dir)/$(XMYMAN3_EXE)$(man6ext) $(DESTDIR)$(man6dir)/$(XMYMAN2_EXE)$(man6ext) $(DESTDIR)$(man6dir)/$(XMYMAN_EXE)$(man6ext) $(DESTDIR)$(man6dir)/$(DIST_EXE)$(man6ext) $(DESTDIR)$(man6dir)/$(MYMAN_EXE)$x$(man6ext) $(DESTDIR)$(man6dir)/$(DIST_EXE)$x$(man6ext) $(DESTDIR)$(man6dir)/$(XQUACKMAN_EXE)$(sh)$(man6ext) $(DESTDIR)$(man6dir)/$(XHUGEMAN_EXE)$(sh)$(man6ext) $(DESTDIR)$(man6dir)/$(XBITMAN_EXE)$(sh)$(man6ext) $(DESTDIR)$(man6dir)/$(XBITMAN2_EXE)$(sh)$(man6ext) $(DESTDIR)$(man6dir)/$(XBITMAN3_EXE)$(sh)$(man6ext) $(DESTDIR)$(man6dir)/$(XBITMAN4_EXE)$(sh)$(man6ext) $(DESTDIR)$(man6dir)/$(XBITMAN5_EXE)$(sh)$(man6ext) $(DESTDIR)$(man6dir)/$(XBITMAN6_EXE)$(sh)$(man6ext) $(DESTDIR)$(man6dir)/$(XBIGMAN_EXE)$(sh)$(man6ext) $(DESTDIR)$(man6dir)/$(XMYMAN4_EXE)$(sh)$(man6ext) $(DESTDIR)$(man6dir)/$(XMYMAN3_EXE)$(sh)$(man6ext) $(DESTDIR)$(man6dir)/$(XMYMAN2_EXE)$(sh)$(man6ext) $(DESTDIR)$(man6dir)/$(XMYMAN_EXE)$(sh)$(man6ext) $(foreach variant,$(MYMANVARIANTS),$(call s,$(call xq,$(srcdir)/lvl/)%,$(call xq,$(DESTDIR)$(mazedir)/)%,$(call mazefile,$(variant)))) $(foreach size,$(MYMANSIZES),$(call s,$(call xq,$(srcdir)/chr/)%,$(call xq,$(DESTDIR)$(tiledir)/)%,$(call tilefile,$(size))) $(call s,$(call xq,$(srcdir)/spr/)%,$(call xq,$(DESTDIR)$(spritedir)/)%,$(call spritefile,$(size)))),\
++	@($(foreach file,$(DESTDIR)$(bindir)/$(MYMAN_EXE)$x $(DESTDIR)$(bindir)/$(DIST_EXE)$x $(DESTDIR)$(bindir)/$(XMYMAN_EXE)$(sh) $(DESTDIR)$(bindir)/$(XMYMAN2_EXE)$(sh) $(DESTDIR)$(bindir)/$(XMYMAN3_EXE)$(sh) $(DESTDIR)$(bindir)/$(XMYMAN4_EXE)$(sh) $(DESTDIR)$(bindir)/$(XBIGMAN_EXE)$(sh) $(DESTDIR)$(bindir)/$(XHUGEMAN_EXE)$(sh) $(DESTDIR)$(bindir)/$(XBITMAN_EXE)$(sh) $(DESTDIR)$(bindir)/$(XBITMAN2_EXE)$(sh) $(DESTDIR)$(bindir)/$(XBITMAN3_EXE)$(sh) $(DESTDIR)$(bindir)/$(XBITMAN4_EXE)$(sh) $(DESTDIR)$(bindir)/$(XBITMAN5_EXE)$(sh) $(DESTDIR)$(bindir)/$(XBITMAN6_EXE)$(sh) $(DESTDIR)$(bindir)/$(XQUACKMAN_EXE)$(sh) $(DESTDIR)$(bindir)/$(MYMANCOMMAND_EXE) $(DESTDIR)$(bindir)/$(MYMAN_CT_EXE) $(DESTDIR)$(privatedocdir)/ChangeLog $(DESTDIR)$(privatedocdir)/INSTALL $(DESTDIR)$(privatedocdir)/LICENSE $(DESTDIR)$(privatedocdir)/README $(DESTDIR)$(privatedocdir)/TODO $(DESTDIR)$(privatedocdir)/NEWS $(DESTDIR)$(privatedocdir)/ONEWS $(DESTDIR)$(privatedocdir)/COPYRIGHT $(DESTDIR)$(privatedocdir)/VERSION $(DESTDIR)$(privatedocdir)/$(MYMAN).ps $(DESTDIR)$(privatedocdir)/$(MYMAN)$(htm) $(DESTDIR)$(man6dir)/$(MYMAN_EXE)$(man6ext) $(DESTDIR)$(man6dir)/$(MYMAN_CT_EXE)$(man6ext) $(DESTDIR)$(man6dir)/$(XQUACKMAN_EXE)$(man6ext) $(DESTDIR)$(man6dir)/$(MYMANCOMMAND_EXE)$(man6ext) $(DESTDIR)$(man6dir)/$(XHUGEMAN_EXE)$(man6ext) $(DESTDIR)$(man6dir)/$(XBITMAN_EXE)$(man6ext) $(DESTDIR)$(man6dir)/$(XBITMAN2_EXE)$(man6ext) $(DESTDIR)$(man6dir)/$(XBITMAN3_EXE)$(man6ext) $(DESTDIR)$(man6dir)/$(XBITMAN4_EXE)$(man6ext) $(DESTDIR)$(man6dir)/$(XBITMAN5_EXE)$(man6ext) $(DESTDIR)$(man6dir)/$(XBITMAN6_EXE)$(man6ext) $(DESTDIR)$(man6dir)/$(XBIGMAN_EXE)$(man6ext) $(DESTDIR)$(man6dir)/$(XMYMAN4_EXE)$(man6ext) $(DESTDIR)$(man6dir)/$(XMYMAN3_EXE)$(man6ext) $(DESTDIR)$(man6dir)/$(XMYMAN2_EXE)$(man6ext) $(DESTDIR)$(man6dir)/$(XMYMAN_EXE)$(man6ext) $(DESTDIR)$(man6dir)/$(DIST_EXE)$(man6ext) $(DESTDIR)$(man6dir)/$(MYMAN_EXE)$x$(man6ext) $(DESTDIR)$(man6dir)/$(DIST_EXE)$x$(man6ext) $(DESTDIR)$(man6dir)/$(XQUACKMAN_EXE)$(sh)$(man6ext) $(DESTDIR)$(man6dir)/$(XHUGEMAN_EXE)$(sh)$(man6ext) $(DESTDIR)$(man6dir)/$(XBITMAN_EXE)$(sh)$(man6ext) $(DESTDIR)$(man6dir)/$(XBITMAN2_EXE)$(sh)$(man6ext) $(DESTDIR)$(man6dir)/$(XBITMAN3_EXE)$(sh)$(man6ext) $(DESTDIR)$(man6dir)/$(XBITMAN4_EXE)$(sh)$(man6ext) $(DESTDIR)$(man6dir)/$(XBITMAN5_EXE)$(sh)$(man6ext) $(DESTDIR)$(man6dir)/$(XBITMAN6_EXE)$(sh)$(man6ext) $(DESTDIR)$(man6dir)/$(XBIGMAN_EXE)$(sh)$(man6ext) $(DESTDIR)$(man6dir)/$(XMYMAN4_EXE)$(sh)$(man6ext) $(DESTDIR)$(man6dir)/$(XMYMAN3_EXE)$(sh)$(man6ext) $(DESTDIR)$(man6dir)/$(XMYMAN2_EXE)$(sh)$(man6ext) $(DESTDIR)$(man6dir)/$(XMYMAN_EXE)$(sh)$(man6ext) $(foreach variant,$(MYMANVARIANTS),$(call s,$(call xq,$(srcdir)/lvl/)%,$(call xq,$(DESTDIR)$(mazedir)/)%,$(call mazefile,$(variant)))) $(foreach size,$(MYMANSIZES),$(call s,$(call xq,$(srcdir)/chr/)%,$(call xq,$(DESTDIR)$(tiledir)/)%,$(call tilefile,$(size))) $(call s,$(call xq,$(srcdir)/spr/)%,$(call xq,$(DESTDIR)$(spritedir)/)%,$(call spritefile,$(size)))),\
+             $(call uninstall_file,$(file)) \
+                 || exit $$?; \
+         ))
+-	@$(MAKE) $(MAKELOOP) \
+-            update-whatis
++	@$(MAKE) $(MAKELOOP)
+ 	$(NORMAL_UNINSTALL)
+ 
+ uninstalldirs: $(call mw,$(MAKEFILE)) uninstall-files
+@@ -4142,15 +4050,9 @@
+ $(MYMAN)$(man6ext): $(call mw,$(srcdir))/src/myman.man $(call mw,$(MAKEFILE)) $(call mw,$(srcdir))/VERSION $(call mw,$(srcdir))/COPYRIGHT
+ 	@$(TROFF_SUBSTITUTE)
+ 
+-$(MYMAN)$(txt): $(MYMAN)$(man6ext)
+-	@-$(MANTOTXT)
+-
+ $(MYMAN).ps: $(MYMAN)$(man6ext)
+ 	@-$(MANTOPS)
+ 
+-$(MYMAN).dvi: $(MYMAN)$(man6ext)
+-	@-$(MANTODVI)
+-
+ $(MYMAN)$(htm): $(MYMAN)$(man6ext)
+ 	@-$(MANTOHTML)
+ 

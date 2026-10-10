@@ -1889,7 +1889,7 @@ else
 ifneq (,$(findstring bcc32,${CC}))
 LINK = ${CC} ${CFLAGS} ${EXTRACFLAGS} -e$(call q,$@) $(call q,$<)
 else
-LINK = ${CC} ${CFLAGS} ${EXTRACFLAGS} -o $(call q,$@) $(call q,$<)
+LINK = ${CC} ${CFLAGS} $(LDFLAGS) ${EXTRACFLAGS} -o $(call q,$@) $(call q,$<)
 endif
 endif
 else
@@ -1904,7 +1904,7 @@ else
 ifneq (,$(findstring bcc32,${HOSTCC}))
 HOSTLINK = ${HOSTCC} ${HOSTCFLAGS} -e$(call q,$@) $(call q,$<)
 else
-HOSTLINK = ${HOSTCC} ${HOSTCFLAGS} -o $(call q,$@) $(call q,$<)
+HOSTLINK = ${HOSTCC} $(LDFLAGS) ${HOSTCFLAGS} -o $(call q,$@) $(call q,$<)
 endif
 endif
 else

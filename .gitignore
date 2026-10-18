@@ -59,3 +59,10 @@ xquackman.sh
 _sanity[0-9]*
 snap[0-9][0-9][0-9][0-9].*
 *.cast
+# Asciiverse packaging: build output, archives, and the catalog preview kept
+out/
+stage/
+dist/
+__pycache__/
+!asciiverse/casts/*.cast
+!asciiverse/archive/*.txt

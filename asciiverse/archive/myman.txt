@@ -1,0 +1,5 @@
+# myman (every maze and sprite set compiled in), man page, licence, readme
+out/myman
+myman.6
+LICENSE
+README

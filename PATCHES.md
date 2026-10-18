@@ -72,8 +72,9 @@ done with each one.
   4. to 6. Remove the compiler sanity check (`compiler.ok`, `_sanity0/1`),
      which runs freshly built test programs and so fails when cross
      compiling. Hunk 5 no longer applies (upstream changed this rule to run
-     through `${RUN}`, which can name an emulator). **Not applied**; revisit
-     if Asciiverse cross-compiles MyMan.
+     through `${RUN}`, which can name an emulator). **Not applied**; the
+     Windows build cross-compiles with MinGW (see "Packaging" below) and
+     did not need it.
 - Note: in this Makefile `CC`/`LINK` build the build-machine tools and
   `HOSTCC`/`HOSTLINK` build the game itself, so it is the `HOSTLINK` line that
   makes `LDFLAGS=... ./configure` reach the `myman` binary.
@@ -99,6 +100,51 @@ done with each one.
   - Remove the plain-text and DVI manual formats (`myman.txt`, `myman.dvi`).
     **Not ported**: it removes documentation, and upstream already ignores
     failures from these rules when `groff`/`col` lack a device.
+
+## Our own changes
+
+Added 2026-10-18, after the imported commits and the two patches above.
+
+- **Snapshots in the data folder.** `T` saved `snap####.html` and
+  `snap####.txt` in the current directory, which for a game started by
+  av is its install folder, replaced on update. They now go to `myman/`
+  under `$XDG_DATA_HOME`, else `~/.local/share`, else `%APPDATA%` on
+  Windows, made as needed (`snapshot_dir()` in `src/myman.c`); with none
+  of those set, or on a system without `mkdir`, the current directory as
+  before. The key help (`src/utils.c`) and the man page say where. MyMan
+  writes nothing else: high scores are kept only for the session, and
+  `~/.mymanrc` is read, never written.
+- **The intro no longer leaves text behind.** With the small tiles the
+  maze is 56 columns wide, and the ghosts' names and nicknames on the
+  attract screen (CHASER, "SCARLET") run past its right
+  edge, where redrawing the maze never erases them, so their ends stayed
+  on screen for the demo and the game. The screen is now cleared once
+  when the intro ends (`src/utils.c`).
+
+## Packaging (new files)
+
+- `asciiverse/build.sh` runs upstream's own `configure` and Makefile and
+  copies the binary to `out/`; the environment picks the target (see its
+  header). Make runs with `-j2` by default (`JOBS`).
+- `asciiverse/package.sh` packs `asciiverse/archive/myman.txt` (the
+  binary, `myman.6`, `LICENSE`, `README`) into `dist/myman-<target>.tar.gz`,
+  `.zip` on Windows; the same script as the NetBSD games'.
+- `.github/workflows/release.yml`: on a tag, static Linux in Alpine
+  (x86_64, aarch64; checked locally for x86_64), macOS (x86_64, arm64;
+  not run yet: links the system ncurses and builds with GNU sed from
+  Homebrew, as Homebrew's own formula does) and Windows x86_64, plus
+  SHA256SUMS. Windows is cross-built with MinGW on upstream's Win32
+  console driver (`--with-raw --without-win-icon`), so it needs no
+  curses library; `-lwinpthread` supplies `nanosleep`, and `-static`
+  leaves only system DLLs (`KERNEL32`, `msvcrt`, `USER32`). Checked
+  under Wine: it draws the maze and plays.
+- `asciiverse/record/`: `rec.py` (from the NetBSD games', taught the
+  scroll sequences `CSI S` and `CSI T` that MyMan scrolls the maze with)
+  and `myman.py`, a small bot that plays the first maze for the preview,
+  `asciiverse/casts/myman.cast` (100x30, 44 s).
+- `.gitignore`: build output, and exceptions so the preview and the
+  archive list (whose `.cast` and `.txt` names the CVS-era rules ignore)
+  are tracked.
 
 ## Patches collected but not applied
 

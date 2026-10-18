@@ -4495,26 +4495,74 @@ static int snapshot_pen = MY_PEN_NORMAL;
 static int snapshot_active_pen = MY_PEN_NORMAL;
 static int snapshot_use_color = 0;
 
+/* Asciiverse: the folder snapshots are saved in. The game is started
+ * from its install folder, which an update replaces, so snapshots go
+ * to "myman" under $XDG_DATA_HOME, else ~/.local/share, else %APPDATA%
+ * on Windows, made as needed. With none of those set, or on a system
+ * without mkdir, it is the current directory, as it always was. */
+#if defined(_WIN32)
+#include <direct.h>
+#define SNAPSHOT_MKDIR(path) _mkdir(path)
+#elif defined(unix) || defined(__unix__) || defined(__unix) || defined(__APPLE__)
+#include <sys/stat.h>
+#define SNAPSHOT_MKDIR(path) mkdir((path), 0777)
+#endif
+
+static const char *snapshot_dir(void)
+{
+    static char path[1024];
+#ifdef SNAPSHOT_MKDIR
+    const char *base;
+    char *p;
+
+    if ((base = getenv("XDG_DATA_HOME")) != NULL && *base)
+        sprintf(path, "%.1000s/myman", base);
+    else if ((base = getenv("HOME")) != NULL && *base)
+        sprintf(path, "%.990s/.local/share/myman", base);
+    else if ((base = getenv("APPDATA")) != NULL && *base)
+        sprintf(path, "%.1000s/myman", base);
+    else
+        return "";
+    for (p = path + 1; ; p ++)
+    {
+        if ((*p == '/') || (*p == '\\') || (*p == '\0'))
+        {
+            char c = *p;
+
+            *p = '\0';
+            SNAPSHOT_MKDIR(path);
+            if ((*p = c) == '\0') break;
+        }
+    }
+    strcat(path, "/");
+#else
+    path[0] = '\0';
+#endif
+    return path;
+}
+
 /* start taking a snapshot */
 void snapshot_start(void)
 {
-    char buf[128];
-    char buf_txt[128];
+    char buf[1100];
+    char buf_txt[1100];
+    const char *dir;
     my_uint idx;
 
     if ((! snapshot)
         &&
         (! snapshot_txt))
     {
+        dir = snapshot_dir();
         /* try to find a free slot */
         for (idx = 0; idx <= 9999; idx ++)
         {
             sprintf(buf,
-                    "snap%4.4u%s",
-                    idx, HTM_SUFFIX);
+                    "%ssnap%4.4u%s",
+                    dir, idx, HTM_SUFFIX);
             sprintf(buf_txt,
-                    "snap%4.4u%s",
-                    idx, TXT_SUFFIX);
+                    "%ssnap%4.4u%s",
+                    dir, idx, TXT_SUFFIX);
             if (access(buf, F_OK) && access(buf_txt, F_OK))
             {
                 break;

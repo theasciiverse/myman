@@ -547,7 +547,8 @@ save an HTML screenshot to the file \fIsnap####@HTM_SUFFIX@\fP, where
 \fI####\fP is a four-digit sequence number, and flash the screen
 briefly; a plain text (UTF-8) version is saved as
 \fIsnap####@TXT_SUFFIX@\fP using backspacing to represent underlined
-and bold text
+and bold text; both are saved in the \fImyman\fP folder under
+\fB$XDG_DATA_HOME\fP, else \fI~/.local/share\fP, else \fB%APPDATA%\fP
 .TP
 .BR O " or " 0 :
 toggle appearance of power pellets and dots

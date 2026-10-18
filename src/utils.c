@@ -4923,6 +4923,12 @@ gamecycle(int lines, int cols)
         {
             myman_intro = 0;
             myman_demo = 1;
+            /* the ghosts' names and nicknames run past the right edge
+             * of a narrow maze, where redrawing the maze never erases
+             * them: clear the whole screen before the maze returns */
+            my_clear();
+            my_clearok(1);
+            DIRTY_ALL();
         }
     }
     if (myman_demo && ! (paused || snapshot || snapshot_txt))

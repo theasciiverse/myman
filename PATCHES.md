@@ -203,3 +203,9 @@ feature request ("Hi-scores"), no bug reports or patches.
 
 Also found, not a source patch: an AmigaOS 4 binary port of 0.6 (2007,
 "Spot / PFP") on OS4Depot and Aminet.
+
+## Ours
+
+- **How to play it, at the top of README.** A short note on installing and
+  starting it with av, or from a release archive; the original text follows
+  unchanged.

@@ -1,3 +1,18 @@
+Play it with Asciiverse
+=======================
+
+With av, the Asciiverse client (https://asciiverse.sh):
+
+    av install myman
+    av play myman
+
+Or download the archive for your system from this repository's Releases,
+unpack it and run ./myman (myman.exe on Windows).
+
+The original README follows.
+
+------------------------------------------------------------------------
+
 README - basic documentation for the MyMan video game
 Copyright 1997-2009, Benjamin C. Wiley Sittler <bsittler@gmail.com>
 

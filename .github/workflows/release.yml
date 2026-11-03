@@ -79,6 +79,10 @@ jobs:
         run: |
           brew install gnu-sed
           export NCURSESLIBS=-lncurses NCURSESCFLAGS=
+          # the game's own copies of mygetopt, utils and logic get their
+          # own object names (hostprefix), apart from the helpers' native
+          # ones; without it the x86_64 game would link arm64 objects
+          export hostprefix=${{ matrix.arch }}-
           CONFIGURE=--with-ncurses SED=gsed CFLAGS=-O2 HOSTCC="cc -arch ${{ matrix.arch }}" asciiverse/build.sh
           strip out/myman
           file out/myman

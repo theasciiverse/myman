@@ -7,8 +7,10 @@
 # Everything goes through asciiverse/build.sh, which runs upstream's own
 # configure and Makefile. Linux builds run in Alpine and link ncurses
 # statically, so the binaries carry the -musl triple that av looks for
-# first. macOS links the system ncurses; upstream's Makefile wants GNU
-# sed there, and the game (HOSTCC) is built for each architecture while
+# first. macOS links the system ncurses (-lncurses, which has the wide
+# functions too); the Makefile asks ncurses5-config for the flags, which
+# macOS does not have, so they are given directly. Upstream's Makefile
+# wants GNU sed there, and the game (HOSTCC) is built for each architecture while
 # the helper programs that run during the build stay native. Windows is
 # cross-built with MinGW on the Win32 console API (--with-raw), so it
 # needs no curses library, linked statically, hence the -gnu triple.
@@ -75,6 +77,7 @@ jobs:
       - name: Build and package
         run: |
           brew install gnu-sed
+          export NCURSESLIBS=-lncurses NCURSESCFLAGS=
           CONFIGURE=--with-ncurses SED=gsed CFLAGS=-O2 HOSTCC="cc -arch ${{ matrix.arch }}" asciiverse/build.sh
           strip out/myman
           file out/myman

@@ -8,7 +8,8 @@
 #
 #   asciiverse/build.sh                                  # Debian, Ubuntu
 #   LDFLAGS="-static -s" asciiverse/build.sh             # Alpine, static
-#   CONFIGURE=--with-ncurses SED=gsed asciiverse/build.sh  # macOS
+#   NCURSESLIBS=-lncurses NCURSESCFLAGS= \
+#     CONFIGURE=--with-ncurses SED=gsed asciiverse/build.sh  # macOS
 #   CONFIGURE="--host=x86_64-w64-mingw32 --with-raw --without-win-icon" \
 #     HOSTCC=x86_64-w64-mingw32-gcc HOSTLIBS=-lwinpthread \
 #     LDFLAGS="-static -s" asciiverse/build.sh           # Windows

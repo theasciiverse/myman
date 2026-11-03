@@ -1,8 +1,9 @@
 # Builds MyMan for the Asciiverse catalog: one archive per target, named
 # myman-<target>.tar.gz (Linux, macOS) or .zip (Windows), plus a SHA256SUMS
 # file, attached to a GitHub release (hub/catalog/SCHEMA.md,
-# release.source = "github"). Runs on a pushed tag, or by hand for an
-# existing tag.
+# release.source = "github"). Runs on a pushed release tag, upstream's
+# version, snapshot date, then ours (0.7.1+20171104-av.1), or by hand for
+# an existing one.
 #
 # Everything goes through asciiverse/build.sh, which runs upstream's own
 # configure and Makefile. Linux builds run in Alpine and link ncurses
@@ -19,7 +20,7 @@ name: release
 
 on:
   push:
-    tags: ["*"]
+    tags: ["*-av.*"]
   workflow_dispatch:
     inputs:
       tag:
